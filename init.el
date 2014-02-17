@@ -207,10 +207,6 @@
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
 
-; dired
-(setq
- dired-listing-switches "-alh"
- dired-dwim-target t) ; Move files between split pane
 
 ;(set-default 'imenu-auto-rescan t)
 (setq-default show-trailing-whitespace t)
@@ -502,13 +498,31 @@
         ("django" . "\\.html\\'")))
 
 ;;==================================================
+;; Dired settings
+;;==================================================
+
+(require 'dired)
+
+; dired
+(setq dired-listing-switches "-alh")
+(setq dired-dwim-target t) ; Move files between split pane
+
+;; M-up is nicer in dired if it moves to the fourth line - the first file
+(defun dired-back-to-top ()
+  (interactive)
+  (beginning-of-buffer)
+  (dired-next-line 4))
+
+(define-key dired-mode-map (vector 'remap 'beginning-of-buffer) 'dired-back-to-top)
+(define-key dired-mode-map (vector 'remap 'smart-up) 'dired-back-to-top)
+
+;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
 
 (require 'smooth-scrolling)
 (require 'wgrep)
 (require 'gl-conf-mode)
-(require 'dired)
 
 ;; keep scratch around
 (save-excursion
