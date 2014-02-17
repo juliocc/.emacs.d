@@ -721,6 +721,11 @@ comment to the line."
     (setq deactivate-mark nil)))
 
 
+;;==================================================
+;; faces
+;;==================================================
+(set-face-foreground 'which-func "#ffcc33")
+
 ;; Emacs server
 (require 'server)
 (unless (server-running-p)
