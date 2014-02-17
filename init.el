@@ -494,7 +494,6 @@
 ;;==================================================
 
 (require 'web-mode)
-(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
 (setq web-mode-engines-alist 
       '(("php" . "\\.phtml\\'")
         ("django" . "\\.html\\'")))
@@ -674,6 +673,7 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 
 (require 'smooth-scrolling)
 (require 'wgrep)
+(require 'gl-conf-mode)
 
 ;; keep scratch around
 (save-excursion
@@ -735,6 +735,13 @@ comment to the line."
 ;; faces
 ;;==================================================
 (set-face-foreground 'which-func "#ffcc33")
+
+;;==================================================
+;; Mode mappings
+;;==================================================
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("gitolite\\.conf\\'" . gl-conf-mode))
+(add-to-list 'auto-mode-alist '("\\.sls\\'"   . yaml-mode))
 
 ;; Emacs server
 (require 'server)
