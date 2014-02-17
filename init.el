@@ -104,7 +104,8 @@
      smex
      tangotango-theme
      smooth-scrolling
-     window-numbering)))
+     window-numbering
+     rainbow-mode)))
 
 (condition-case nil
     (init--install-packages)
@@ -524,6 +525,9 @@
 (require 'wgrep)
 (require 'gl-conf-mode)
 
+(add-hook 'css-mode-hook 'rainbow-mode)
+(add-hook 'html-mode-hook 'rainbow-mode)
+
 ;; keep scratch around
 (save-excursion
   (set-buffer (get-buffer-create "*scratch*"))
@@ -753,6 +757,16 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 ;;==================================================
 (set-face-foreground 'which-func "#ffcc33")
 
+(set-face-foreground 'rainbow-delimiters-unmatched-face "red")
+(set-face-foreground 'rainbow-delimiters-depth-1-face "white")
+(set-face-foreground 'rainbow-delimiters-depth-2-face "#fdb462")
+(set-face-foreground 'rainbow-delimiters-depth-3-face "#8dd3c7")
+(set-face-foreground 'rainbow-delimiters-depth-4-face "#ffff55")
+(set-face-foreground 'rainbow-delimiters-depth-5-face "#beaada")
+(set-face-foreground 'rainbow-delimiters-depth-6-face "#fb8072")
+(set-face-foreground 'rainbow-delimiters-depth-7-face "#b3de69")
+(set-face-foreground 'rainbow-delimiters-depth-8-face "#fccd35")
+(set-face-foreground 'rainbow-delimiters-depth-9-face "#00FF80")
 ;;==================================================
 ;; Mode mappings
 ;;==================================================
