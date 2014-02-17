@@ -100,7 +100,8 @@
      guide-key
      smex
      tangotango-theme
-     smooth-scrolling)))
+     smooth-scrolling
+     window-numbering)))
 
 (condition-case nil
     (init--install-packages)
@@ -252,6 +253,7 @@
 (winner-mode 1)                         ; stack window settings
 (which-function-mode 1)                 ; show me where I'm standing
 (global-rainbow-delimiters-mode 1)
+(window-numbering-mode 1)
 
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
