@@ -550,7 +550,7 @@ and so on."
 (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
 (global-set-key (kbd "C-S-c C-e") 'mc/edit-ends-of-lines)
 (global-set-key (kbd "C-S-c C-a") 'mc/edit-beginnings-of-lines)
-(global-set-key (kbd "C-s-SPC") 'set-rectangular-region-anchor)
+;(global-set-key (kbd "C-s-SPC") 'set-rectangular-region-anchor)
 
 ;; move-text
 (global-set-key (kbd "<M-up>") 'move-text-up)
