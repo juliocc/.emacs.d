@@ -502,6 +502,70 @@
         ("django" . "\\.html\\'")))
 
 ;;==================================================
+;; Misc packages and utilities
+;;==================================================
+
+(require 'smooth-scrolling)
+(require 'wgrep)
+(require 'gl-conf-mode)
+(require 'dired)
+
+;; keep scratch around
+(save-excursion
+  (set-buffer (get-buffer-create "*scratch*"))
+  (lisp-interaction-mode)
+  (make-local-variable 'kill-buffer-query-functions)
+  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer))
+
+(defun kill-scratch-buffer ()
+  ;; The next line is just in case someone calls this manually
+  (set-buffer (get-buffer-create "*scratch*"))
+  ;; Kill the current (*scratch*) buffer
+  (remove-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
+  (kill-buffer (current-buffer))
+  ;; Make a brand new *scratch* buffer
+  (set-buffer (get-buffer-create "*scratch*"))
+  (lisp-interaction-mode)
+  (make-local-variable 'kill-buffer-query-functions)
+  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
+  (insert initial-scratch-message)
+  ;; Since we killed it, don't let caller do that.
+  nil)
+
+
+(defun chmod+x-this ()
+  "Add executable permissions to the current file."
+  (interactive)
+  (if buffer-file-name
+      (let ((new-mode (logior #o111 (file-modes buffer-file-name))))
+        (set-file-modes buffer-file-name new-mode))
+    (message "No such file to make executable.")))
+
+(defun find-shell-init-file ()
+  "Edit the shell init file in another window."
+  (interactive)
+  (let* ((shell (car (reverse (split-string (getenv "SHELL") "/"))))
+         (shell-init-file (cond
+                           ((string-equal "zsh" shell) ".zshrc")
+                           ((string-equal "bash" shell) ".bashrc")
+                           (t (error "Unknown shell")))))
+    (find-file-other-window (expand-file-name shell-init-file (getenv "HOME")))))
+
+(defadvice comment-dwim (around comment-line-maybe activate)
+  "If invoked from the beginning of a line or the beginning of
+text on a line, comment the current line instead of appending a
+comment to the line."
+  (if (and (not (use-region-p))
+           (not (eq (line-end-position)
+                    (save-excursion (back-to-indentation) (point))))
+           (or (eq (point) (line-beginning-position))
+               (eq (point) (save-excursion (back-to-indentation) (point)))))
+      (comment-or-uncomment-region (line-beginning-position)
+                                   (line-end-position))
+    ad-do-it
+    (setq deactivate-mark nil)))
+
+;;==================================================
 ;; Other keybindings
 ;;==================================================
 
@@ -669,70 +733,6 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 (global-set-key (kbd "M-p") 'goto-match-paren)
 
 (global-set-key (kbd "M-/") 'hippie-expand)
-
-;;==================================================
-;; Misc packages and utilities
-;;==================================================
-
-(require 'smooth-scrolling)
-(require 'wgrep)
-(require 'gl-conf-mode)
-
-;; keep scratch around
-(save-excursion
-  (set-buffer (get-buffer-create "*scratch*"))
-  (lisp-interaction-mode)
-  (make-local-variable 'kill-buffer-query-functions)
-  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer))
-
-(defun kill-scratch-buffer ()
-  ;; The next line is just in case someone calls this manually
-  (set-buffer (get-buffer-create "*scratch*"))
-  ;; Kill the current (*scratch*) buffer
-  (remove-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-  (kill-buffer (current-buffer))
-  ;; Make a brand new *scratch* buffer
-  (set-buffer (get-buffer-create "*scratch*"))
-  (lisp-interaction-mode)
-  (make-local-variable 'kill-buffer-query-functions)
-  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-  (insert initial-scratch-message)
-  ;; Since we killed it, don't let caller do that.
-  nil)
-
-
-(defun chmod+x-this ()
-  "Add executable permissions to the current file."
-  (interactive)
-  (if buffer-file-name
-      (let ((new-mode (logior #o111 (file-modes buffer-file-name))))
-        (set-file-modes buffer-file-name new-mode))
-    (message "No such file to make executable.")))
-
-(defun find-shell-init-file ()
-  "Edit the shell init file in another window."
-  (interactive)
-  (let* ((shell (car (reverse (split-string (getenv "SHELL") "/"))))
-         (shell-init-file (cond
-                           ((string-equal "zsh" shell) ".zshrc")
-                           ((string-equal "bash" shell) ".bashrc")
-                           (t (error "Unknown shell")))))
-    (find-file-other-window (expand-file-name shell-init-file (getenv "HOME")))))
-
-(defadvice comment-dwim (around comment-line-maybe activate)
-  "If invoked from the beginning of a line or the beginning of
-text on a line, comment the current line instead of appending a
-comment to the line."
-  (if (and (not (use-region-p))
-           (not (eq (line-end-position)
-                    (save-excursion (back-to-indentation) (point))))
-           (or (eq (point) (line-beginning-position))
-               (eq (point) (save-excursion (back-to-indentation) (point)))))
-      (comment-or-uncomment-region (line-beginning-position)
-                                   (line-end-position))
-    ad-do-it
-    (setq deactivate-mark nil)))
-
 
 ;;==================================================
 ;; faces
