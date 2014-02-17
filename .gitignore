@@ -1,0 +1,14 @@
+auto-save-list
+backups
+*~
+.places
+session.*
+tramp
+elpa
+swank
+emms
+*.elc
+/.ido.last
+/.recentf
+/.savehist
+/projectile-bookmarks.eld
