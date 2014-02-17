@@ -457,6 +457,16 @@
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
 
 ;;==================================================
+;; browse-kill-ring settings
+;;==================================================
+(require 'browse-kill-ring)
+(require 'browse-kill-ring+)
+(browse-kill-ring-default-keybindings)
+(setq browse-kill-ring-highlight-current-entry t)
+(setq browse-kill-ring-highlight-inserted-item t)
+(setq browse-kill-ring-quit-action 'save-and-restore)
+
+;;==================================================
 ;; scss-mode settings
 ;;==================================================
 
