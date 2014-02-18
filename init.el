@@ -483,9 +483,9 @@ This is useful when followed by an immediate kill."
 (global-set-key (kbd "C-x C-z") 'magit-status)
 (setq magit-repo-dirs '("~/code/"))
 
-(set-default 'magit-stage-all-confirm nil)
-(set-default 'magit-unstage-all-confirm nil)
 (setq-default
+ magit-stage-all-confirm nil
+ magit-unstage-all-confirm nil
  magit-save-some-buffers nil
  magit-process-popup-time 5
  magit-diff-refine-hunk t
