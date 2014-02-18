@@ -61,7 +61,7 @@
      flx
      flx-ido
      yasnippet
-     ;smartparens
+     smartparens
      ido-vertical-mode
      ido-ubiquitous
      ;simple-httpd
@@ -167,6 +167,7 @@
 (eval-after-load "guide-key" '(diminish 'guide-key-mode))
 (eval-after-load "auto-complete" '(diminish 'auto-complete-mode))
 (eval-after-load "flymake" '(diminish 'flymake-mode))
+(eval-after-load "smartparens" '(diminish 'smartparens-mode))
 
 
 ;; just in case
@@ -303,6 +304,11 @@
 (setq uniquify-separator "/")
 (setq uniquify-after-kill-buffer-p t)    ; rename after killing uniquified
 (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
+
+;; smartparens
+(require 'smartparens)
+(require 'smartparens-config)
+(smartparens-global-mode)
 
 ;; use shift + arrow keys to switch between visible buffers
 (require 'windmove)
