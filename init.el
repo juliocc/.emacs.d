@@ -56,8 +56,7 @@
 
 (defun init--install-packages ()
   (packages-install
-   '(dash
-     s
+   '(s
      flx
      flx-ido
      yasnippet
