@@ -132,7 +132,7 @@
   (blink-cursor-mode -1))
 
 ;; Put fringe on the side
-(if (fboundp 'fringe-mode) (fringe-mode 4))
+(if (fboundp 'fringe-mode) (fringe-mode 5))
 
 ;; Set default font
 (set-face-font 'default "Inconsolata 11")
