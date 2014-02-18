@@ -109,7 +109,8 @@
      virtualenvwrapper
      jedi
      keyfreq
-     annoying-arrows-mode)))
+     annoying-arrows-mode
+     fic-mode)))
 
 (condition-case nil
     (init--install-packages)
@@ -154,7 +155,6 @@
 (line-number-mode 1)
 (column-number-mode 1)
 
-;; TODO: document
 (setq scroll-margin 0
       scroll-conservatively 100000
       scroll-preserve-screen-position 1)
@@ -168,6 +168,7 @@
 (eval-after-load "auto-complete" '(diminish 'auto-complete-mode))
 (eval-after-load "flymake" '(diminish 'flymake-mode))
 (eval-after-load "smartparens" '(diminish 'smartparens-mode))
+(eval-after-load "fic-mode" '(diminish 'fic-mode))
 
 
 ;; just in case
@@ -221,6 +222,9 @@
 (setq-default show-trailing-whitespace t)
 (setq-default indicate-empty-lines t)
 (setq-default truncate-lines t)         ; don't word-wrap
+
+;; Delete whitespace at the end of lines when saving
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
@@ -553,7 +557,7 @@ is considered to be a project root."
 ;;==================================================
 
 (require 'web-mode)
-(setq web-mode-engines-alist 
+(setq web-mode-engines-alist
       '(("php" . "\\.phtml\\'")
         ("django" . "\\.html\\'")))
 
@@ -583,9 +587,11 @@ is considered to be a project root."
 (require 'smooth-scrolling)
 (require 'wgrep)
 (require 'gl-conf-mode)
+(require 'fic-mode)
 
 (add-hook 'css-mode-hook 'rainbow-mode)
 (add-hook 'html-mode-hook 'rainbow-mode)
+(add-hook 'prog-mode-hook 'turn-on-fic-mode)
 
 (keyfreq-mode 1)
 
@@ -832,12 +838,19 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 (set-face-foreground 'rainbow-delimiters-depth-7-face "#b3de69")
 (set-face-foreground 'rainbow-delimiters-depth-8-face "#fccd35")
 (set-face-foreground 'rainbow-delimiters-depth-9-face "#00FF80")
+(set-face-attribute 'font-lock-fic-face nil
+  :inherit font-lock-warning-face
+  :foreground nil
+  :background nil
+  :underline nil)
+
 ;;==================================================
 ;; Mode mappings
 ;;==================================================
 (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
 (add-to-list 'auto-mode-alist '("gitolite\\.conf\\'" . gl-conf-mode))
 (add-to-list 'auto-mode-alist '("\\.sls\\'"   . yaml-mode))
+
 
 ;; Emacs server
 (require 'server)
