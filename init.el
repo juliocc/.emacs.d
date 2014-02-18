@@ -164,6 +164,9 @@
 (eval-after-load "volatile-highlights" '(diminish 'volatile-highlights-mode))
 ;; (diminish 'subword-mode)
 (eval-after-load "guide-key" '(diminish 'guide-key-mode))
+(eval-after-load "auto-complete" '(diminish 'auto-complete-mode))
+(eval-after-load "flymake" '(diminish 'flymake-mode))
+
 
 ;; just in case
 (global-font-lock-mode t)
