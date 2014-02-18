@@ -58,7 +58,6 @@
   (packages-install
    '(dash
      s
-     magit
      flx
      flx-ido
      yasnippet
@@ -71,9 +70,13 @@
      ;highlight-escape-sequences
      ;whitespace-cleanup-mode
      ;elisp-slime-nav
+     magit
+     git-blame
      git-commit-mode
+     git-rebase-mode
      gitconfig-mode
      gitignore-mode
+     git-messenger
      ;clojure-mode
      ;groovy-mode
      ;prodigy
@@ -481,7 +484,7 @@ This is useful when followed by an immediate kill."
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
 
 ;;==================================================
-;; magit settings
+;; git and magit settings
 ;;==================================================
 (require 'magit)
 (global-set-key (kbd "C-x C-z") 'magit-status)
@@ -489,7 +492,11 @@ This is useful when followed by an immediate kill."
 
 (set-default 'magit-stage-all-confirm nil)
 (set-default 'magit-unstage-all-confirm nil)
-
+(setq-default
+ magit-save-some-buffers nil
+ magit-process-popup-time 5
+ magit-diff-refine-hunk t
+ magit-completing-read-function 'magit-ido-completing-read)
 
 ;; ;; C-c C-a to amend without any prompt
 ;; (defun magit-just-amend ()
@@ -533,6 +540,8 @@ This is useful when followed by an immediate kill."
   (magit-refresh))
 
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
+
+(global-set-key (kbd "C-x v p") 'git-messenger:popup-message)
 
 ;;==================================================
 ;; ibuffer
