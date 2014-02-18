@@ -110,7 +110,8 @@
      jedi
      keyfreq
      annoying-arrows-mode
-     fic-mode)))
+     fic-mode
+     anzu)))
 
 (condition-case nil
     (init--install-packages)
@@ -169,6 +170,7 @@
 (eval-after-load "flymake" '(diminish 'flymake-mode))
 (eval-after-load "smartparens" '(diminish 'smartparens-mode))
 (eval-after-load "fic-mode" '(diminish 'fic-mode))
+(eval-after-load "anzu" '(diminish 'anzu-mode))
 
 
 ;; just in case
@@ -268,6 +270,7 @@
 (window-numbering-mode 1)
 (minibuffer-depth-indicate-mode 1)
 (annoying-arrows-mode 1)
+(global-anzu-mode 1)                    ; show number of matches while searching
 
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
@@ -733,6 +736,9 @@ and so on."
 (global-set-key "\C-r" 'isearch-backward-regexp)
 (global-set-key "\C-\M-s" 'isearch-forward)
 (global-set-key "\C-\M-r" 'isearch-backward)
+
+(global-set-key [remap query-replace-regexp] 'anzu-query-replace-regexp)
+(global-set-key [remap query-replace] 'anzu-query-replace)
 
 (defun open-line-below ()
   (interactive)
