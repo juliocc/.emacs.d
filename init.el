@@ -63,7 +63,6 @@
      yasnippet
      ;smartparens
      ido-vertical-mode
-     ido-at-point
      ido-ubiquitous
      ;simple-httpd
      ;nodejs-repl
@@ -105,7 +104,11 @@
      tangotango-theme
      smooth-scrolling
      window-numbering
-     rainbow-mode)))
+     rainbow-mode
+     jump-char
+     virtualenvwrapper
+     jedi
+     keyfreq)))
 
 (condition-case nil
     (init--install-packages)
@@ -254,6 +257,7 @@
 (which-function-mode 1)                 ; show me where I'm standing
 (global-rainbow-delimiters-mode 1)
 (window-numbering-mode 1)
+(minibuffer-depth-indicate-mode 1)
 
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
@@ -457,6 +461,46 @@
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
 
 ;;==================================================
+;; jedi
+;;==================================================
+(require 'virtualenvwrapper)
+
+(defun project-directory (buffer-name)
+  "Returns the root directory of the project that contains the
+given buffer. Any directory with a .git or .jedi file/directory
+is considered to be a project root."
+  (interactive)
+  (let ((root-dir (file-name-directory buffer-name)))
+    (while (and root-dir
+                (not (file-exists-p (concat root-dir ".git")))
+                (not (file-exists-p (concat root-dir ".jedi"))))
+      (setq root-dir
+            (if (equal root-dir "/")
+                nil
+              (file-name-directory (directory-file-name root-dir)))))
+    root-dir))
+
+(defun project-name (buffer-name)
+  "Returns the name of the project that contains the given buffer."
+  (let ((root-dir (project-directory buffer-name)))
+    (if root-dir
+        (file-name-nondirectory
+         (directory-file-name root-dir))
+      nil)))
+
+(defun jedi-setup-venv ()
+  "Activates the virtualenv of the current buffer."
+  (let ((project-name (project-name buffer-file-name)))
+    (when
+        (message "Using %s for jedi virtualenv" project-name)
+        project-name (venv-workon project-name))))
+
+(setq jedi:setup-keys t)
+(setq jedi:complete-on-dot t)
+(add-hook 'python-mode-hook 'jedi-setup-venv)
+(add-hook 'python-mode-hook 'jedi:setup)
+
+;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
 (require 'browse-kill-ring)
@@ -527,6 +571,8 @@
 
 (add-hook 'css-mode-hook 'rainbow-mode)
 (add-hook 'html-mode-hook 'rainbow-mode)
+
+(keyfreq-mode 1)
 
 ;; keep scratch around
 (save-excursion
@@ -614,6 +660,10 @@ and so on."
 (require 'expand-region)
 (global-set-key (kbd "C-'") 'ace-jump-mode)
 (global-set-key (kbd "C-c w") (make-repeatable-command 'er/expand-region))
+
+(require 'jump-char)
+(global-set-key [(meta m)] 'jump-char-forward)
+(global-set-key [(shift meta m)] 'jump-char-backward)
 
 (require 'yasnippet)
 (yas/global-mode 1)
