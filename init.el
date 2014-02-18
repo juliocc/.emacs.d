@@ -28,6 +28,7 @@
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)
 
+(require 'jc-utils)
 ;;==================================================
 ;; Packages
 ;;==================================================
@@ -161,16 +162,16 @@
       scroll-preserve-screen-position 1)
 
 ;; diminish settings
-(eval-after-load "projectile" '(diminish 'projectile-mode))
-(eval-after-load "yasnippet" '(diminish 'yas-minor-mode))
-(eval-after-load "volatile-highlights" '(diminish 'volatile-highlights-mode))
 ;; (diminish 'subword-mode)
-(eval-after-load "guide-key" '(diminish 'guide-key-mode))
-(eval-after-load "auto-complete" '(diminish 'auto-complete-mode))
-(eval-after-load "flymake" '(diminish 'flymake-mode))
-(eval-after-load "smartparens" '(diminish 'smartparens-mode))
-(eval-after-load "fic-mode" '(diminish 'fic-mode))
-(eval-after-load "anzu" '(diminish 'anzu-mode))
+(after-load 'projectile (diminish 'projectile-mode))
+(after-load 'yasnippet (diminish 'yas-minor-mode))
+(after-load 'volatile-highlights (diminish 'volatile-highlights-mode))
+(after-load 'guide-key (diminish 'guide-key-mode))
+(after-load 'auto-complete (diminish 'auto-complete-mode))
+(after-load 'flymake (diminish 'flymake-mode))
+(after-load 'smartparens (diminish 'smartparens-mode))
+(after-load 'fic-mode (diminish 'fic-mode))
+(after-load 'anzu (diminish 'anzu-mode))
 
 
 ;; just in case
@@ -339,7 +340,7 @@
 (setq guide-key/popup-window-position 'bottom)
 
 ;; Font lock dash.el
-(eval-after-load "dash" '(dash-enable-font-lock))
+(after-load 'dash (dash-enable-font-lock))
 
 ;; Don't cripple my emacs
 (put 'downcase-region 'disabled nil)
@@ -534,6 +535,46 @@ This is useful when followed by an immediate kill."
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
 
 ;;==================================================
+;; ibuffer
+;;==================================================
+
+(after-load 'ibuffer
+  ;; Use human readable Size column instead of original one
+  (define-ibuffer-column size-h
+    (:name "Size" :inline t)
+    (cond
+     ((> (buffer-size) 1000000) (format "%7.1fM" (/ (buffer-size) 1000000.0)))
+     ((> (buffer-size) 1000) (format "%7.1fk" (/ (buffer-size) 1000.0)))
+     (t (format "%8d" (buffer-size)))))
+  )
+
+(after-load 'ibuffer
+            (require 'ibuffer-git)
+            (require 'ibuffer-vc))
+
+(setq ibuffer-formats
+      '((mark modified read-only vc-status-mini " "
+              (name 18 18 :left :elide)
+              " "
+              (size-h 9 -1 :right)
+              " "
+              (mode 16 16 :left :elide)
+              " "
+              filename-and-process)
+        (mark modified read-only vc-status-mini " "
+              (name 18 18 :left :elide)
+              " "
+              (size-h 9 -1 :right)
+              " "
+              (mode 16 16 :left :elide)
+              " "
+              (vc-status 16 16 :left)
+              ""
+              (git-status 8 8 :left)
+              " "
+              filename-and-process)))
+
+;;==================================================
 ;; Python (jedi + flymake)
 ;;==================================================
 (require 'virtualenvwrapper)
@@ -591,7 +632,7 @@ is considered to be a project root."
 ;; scss-mode settings
 ;;==================================================
 
-(eval-after-load 'scss-mode '(setq scss-compile-at-save nil))
+(after-load 'scss-mode (setq scss-compile-at-save nil))
 
 ;;==================================================
 ;; smex settings
