@@ -464,7 +464,7 @@
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
 
 ;;==================================================
-;; jedi
+;; Python (jedi + flymake)
 ;;==================================================
 (require 'virtualenvwrapper)
 
@@ -494,7 +494,7 @@ is considered to be a project root."
 (defun jedi-setup-venv ()
   "Activates the virtualenv of the current buffer."
   (let ((project-name (project-name buffer-file-name)))
-    (when
+    (when project-name
         (message "Using %s for jedi virtualenv" project-name)
         project-name (venv-workon project-name))))
 
@@ -502,6 +502,10 @@ is considered to be a project root."
 (setq jedi:complete-on-dot t)
 (add-hook 'python-mode-hook 'jedi-setup-venv)
 (add-hook 'python-mode-hook 'jedi:setup)
+
+(require 'flymake-python-pyflakes)
+(add-hook 'python-mode-hook 'flymake-python-pyflakes-load)
+(setq flymake-python-pyflakes-executable "/home/julio/.virtualenvs/clitools/bin/flake8")
 
 ;;==================================================
 ;; browse-kill-ring settings
