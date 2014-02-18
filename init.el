@@ -203,7 +203,8 @@
  set-mark-command-repeat-p t
  isearch-allow-scroll t
  blink-matching-paren-distance 51200
- next-line-add-newlines nil) ; don't add new lines when scrolling down
+ next-line-add-newlines nil
+ ) ; don't add new lines when scrolling down
 
 (setq hippie-expand-try-functions-list '(try-expand-dabbrev
                                          try-expand-dabbrev-all-buffers
@@ -218,9 +219,12 @@
 
 
 ;(set-default 'imenu-auto-rescan t)
+(setq-default visible-bell t)
 (setq-default show-trailing-whitespace t)
 (setq-default indicate-empty-lines t)
 (setq-default truncate-lines t)         ; don't word-wrap
+(setq-default save-interprogram-paste-before-kill t)
+(setq-default set-mark-command-repeat-pop t)
 
 ;; Delete whitespace at the end of lines when saving
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -251,7 +255,6 @@
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
-
 
 ;; Useful modes
 (auto-image-file-mode 1)                ; display images
@@ -750,6 +753,50 @@ comment to the line."
                                    (line-end-position))
     ad-do-it
     (setq deactivate-mark nil)))
+
+(defun split-window-horizontally-instead ()
+  (interactive)
+  (save-excursion
+    (delete-other-windows)
+    (funcall (split-window-func-with-other-buffer 'split-window-horizontally))))
+
+(defun split-window-vertically-instead ()
+  (interactive)
+  (save-excursion
+    (delete-other-windows)
+    (funcall (split-window-func-with-other-buffer 'split-window-vertically))))
+
+(global-set-key "\C-x|" 'split-window-horizontally-instead)
+(global-set-key "\C-x_" 'split-window-vertically-instead)
+
+;; Borrowed from http://postmomentum.ch/blog/201304/blog-on-emacs
+(defun sanityinc/split-window()
+  "Split the window to see the most recent buffer in the other window.
+Call a second time to restore the original window configuration."
+  (interactive)
+  (if (eq last-command 'sanityinc/split-window)
+      (progn
+        (jump-to-register :sanityinc/split-window)
+        (setq this-command 'sanityinc/unsplit-window))
+    (window-configuration-to-register :sanityinc/split-window)
+    (switch-to-buffer-other-window nil)))
+
+(global-set-key (kbd "<f7>") 'sanityinc/split-window)
+(global-set-key (kbd "<f6>")
+                (lambda ()
+                  (interactive)
+                  (switch-to-buffer nil)))
+
+; When splitting window, show (other-buffer) in the new window
+(defun split-window-func-with-other-buffer (split-function)
+  (lexical-let ((s-f split-function))
+    (lambda ()
+      (interactive)
+      (funcall s-f)
+      (set-window-buffer (next-window) (other-buffer)))))
+
+(global-set-key "\C-x2" (split-window-func-with-other-buffer 'split-window-vertically))
+(global-set-key "\C-x3" (split-window-func-with-other-buffer 'split-window-horizontally))
 
 ;;==================================================
 ;; Other keybindings
