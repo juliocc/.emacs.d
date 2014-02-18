@@ -108,7 +108,8 @@
      jump-char
      virtualenvwrapper
      jedi
-     keyfreq)))
+     keyfreq
+     annoying-arrows-mode)))
 
 (condition-case nil
     (init--install-packages)
@@ -261,6 +262,7 @@
 (global-rainbow-delimiters-mode 1)
 (window-numbering-mode 1)
 (minibuffer-depth-indicate-mode 1)
+(annoying-arrows-mode 1)
 
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
