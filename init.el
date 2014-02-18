@@ -65,11 +65,8 @@
      ido-vertical-mode
      ido-ubiquitous
      ;simple-httpd
-     ;nodejs-repl
      ;restclient
-     ;highlight-escape-sequences
      ;whitespace-cleanup-mode
-     ;elisp-slime-nav
      magit
      git-blame
      git-commit-mode
@@ -77,11 +74,7 @@
      gitconfig-mode
      gitignore-mode
      git-messenger
-     ;clojure-mode
-     ;groovy-mode
      ;prodigy
-     ;cider
-     ;cider-tracing
      scss-mode
      yaml-mode
      haml-mode
