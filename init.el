@@ -540,6 +540,13 @@ This is useful when followed by an immediate kill."
 (global-set-key (kbd "C-x v p") 'git-messenger:popup-message)
 
 ;;==================================================
+;; ediff
+;;==================================================
+
+(setq ediff-window-setup-function 'ediff-setup-windows-plain)
+(setq ediff-split-window-function 'split-window-horizontally)
+
+;;==================================================
 ;; ibuffer
 ;;==================================================
 
