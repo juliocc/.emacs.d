@@ -107,7 +107,8 @@
      keyfreq
      annoying-arrows-mode
      fic-mode
-     anzu)))
+     anzu
+     js2-mode)))
 
 (condition-case nil
     (init--install-packages)
@@ -637,6 +638,21 @@ is considered to be a project root."
 ;;==================================================
 
 (after-load 'scss-mode (setq scss-compile-at-save nil))
+
+;;==================================================
+;; javascript settings
+;;==================================================
+
+(add-to-list 'auto-mode-alist '("\\.js\\'"   . js2-mode))
+(after-load 'js2-mode
+  (add-hook 'js2-mode-hook '(lambda () (setq mode-name "JS2"))))
+
+(setq js2-use-font-lock-faces t
+      js2-mode-must-byte-compile nil
+      js2-basic-offset 2
+      js2-indent-on-enter-key t
+      js2-auto-indent-p t
+      js2-bounce-indent-p nil)
 
 ;;==================================================
 ;; smex settings
