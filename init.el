@@ -108,7 +108,8 @@
      annoying-arrows-mode
      fic-mode
      anzu
-     js2-mode)))
+     js2-mode
+     fasd)))
 
 (condition-case nil
     (init--install-packages)
@@ -660,6 +661,13 @@ is considered to be a project root."
       js2-indent-on-enter-key t
       js2-auto-indent-p t
       js2-bounce-indent-p nil)
+
+;;==================================================
+;; fasd settings
+;;==================================================
+
+(global-set-key (kbd "C-h C-/") 'fasd-find-file)
+(global-fasd-mode 1)
 
 ;;==================================================
 ;; smex settings
