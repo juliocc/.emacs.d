@@ -37,6 +37,7 @@
 (require 'dash)
 
 ;; Add melpa to package repos
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
 ;; Add marmalade to repos
 ;; (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
@@ -109,7 +110,8 @@
      fic-mode
      anzu
      js2-mode
-     fasd)))
+     fasd
+     org-plus-contrib)))
 
 (condition-case nil
     (init--install-packages)
@@ -334,7 +336,7 @@
 (setq gc-cons-threshold 20000000)
 
 ;; guide-key setup
-(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8" "C-x C-k" "<f8>"))
+(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8" "C-x C-k" "<f8>" "C-c !"))
 (guide-key-mode 1)
 (setq guide-key/recursive-key-sequence-flag t)
 (setq guide-key/popup-window-position 'bottom)
@@ -539,6 +541,22 @@ This is useful when followed by an immediate kill."
 (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)
 
 (global-set-key (kbd "C-x v p") 'git-messenger:popup-message)
+
+;;==================================================
+;; org
+;;==================================================
+(setq org-log-done 'note)
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "STARTED(s!)" "WAITING(w@/!)" "MAYBE(m@)"
+		  "|" "DONE(d!)" "CANCELED(c@)" "POSTPONED(p@)")))
+(setq org-lowest-priority ?C)
+(setq org-default-priority ?B)
+
+;; Make windmove work in org-mode:
+(add-hook 'org-shiftup-final-hook 'windmove-up)
+(add-hook 'org-shiftleft-final-hook 'windmove-left)
+(add-hook 'org-shiftdown-final-hook 'windmove-down)
+(add-hook 'org-shiftright-final-hook 'windmove-right)
 
 ;;==================================================
 ;; ediff
