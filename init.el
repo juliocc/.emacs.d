@@ -232,6 +232,14 @@
 ;; Delete whitespace at the end of lines when saving
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
+;; But don't show trailing whitespace in these modes
+(dolist (hook '(term-mode-hook
+                comint-mode-hook
+                compilation-mode-hook))
+  (add-hook hook
+            (lambda () (setq show-trailing-whitespace nil))))
+
+
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
   (remq 'process-kill-buffer-query-function
