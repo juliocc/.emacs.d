@@ -112,7 +112,9 @@
      anzu
      js2-mode
      fasd
-     org-plus-contrib)))
+     org-plus-contrib
+     flycheck
+     json-mode)))
 
 (condition-case nil
     (init--install-packages)
@@ -180,7 +182,7 @@
 
 ;;==================================================
 ;; General settings
-;;==================================================
+;;=================================================
 
 (setq mouse-wheel-scroll-amount
       '(1 ((shift) . 1)))               ; ??
@@ -392,6 +394,22 @@
   (interactive)
   (flyspell-goto-next-error)
   (ispell-word))
+
+;;==================================================
+;; flycheck settings
+;;==================================================
+(dolist (hook '(css-mode-hook
+                js2-mode-hook
+                ;; python ; use flymake for now
+                ;; sass-mode-hook ; figure out how to use rvm's version
+                ;; scss-mode-hook
+                sh-mode-hook-hook
+                haskell-mode-hook
+                json-mode
+                ;; web-mode-hook
+                ))
+  (add-hook hook 'flycheck-mode))
+
 
 ;;==================================================
 ;; ido settings
