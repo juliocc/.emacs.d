@@ -13,3 +13,6 @@ emms
 /.savehist
 /projectile-bookmarks.eld
 /ac-comphist.dat
+\#*
+.#*
+/bookmarks

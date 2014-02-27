@@ -554,12 +554,52 @@ This is useful when followed by an immediate kill."
 ;;==================================================
 ;; org
 ;;==================================================
-(setq org-log-done 'note)
-(setq org-todo-keywords
+
+(setq org-agenda-include-diary t
+      org-log-done 'note
+      org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s!)" "WAITING(w@/!)" "MAYBE(m@)"
-		  "|" "DONE(d!)" "CANCELED(c@)" "POSTPONED(p@)")))
-(setq org-lowest-priority ?C)
-(setq org-default-priority ?B)
+		  "|" "DONE(d!)" "CANCELED(c@)" "POSTPONED(p@)"))
+      org-lowest-priority ?C
+      org-default-priority ?B
+      org-completion-use-ido t
+      org-agenda-ndays 14
+      org-agenda-start-on-weekday 1
+      org-agenda-show-all-dates t
+      org-agenda-skip-scheduled-if-done nil
+      org-return-follows-link t
+      org-agenda-tags-column -100
+      org-agenda-todo-ignore-scheduled nil
+      org-columns-default-format
+        ;"%30ITEM(Task) %1PRIORITY(P) %7Effort(Effort){:} %CLOCKSUM %20SCHEDULED %DEADLINE %TODO(T)"
+        "%30ITEM %1PRIORITY(P) %SCHEDULED %DEADLINE %TODO %ALLTAGS "
+      org-deadline-warning-days 7
+      ;; org-global-properties
+      ;; '(("Effort_ALL" .
+      ;;    "0:05 0:10 0:15 0:30 0:45 1:00 1:30 2:00 3:00 4:00 5:00 6:00 7:00 8:00"))
+      org-hide-leading-stars t
+      org-special-ctrl-a/e t
+      org-special-ctrl-k t
+      org-agenda-skip-deadline-if-done t
+      org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-timestamp-if-done t
+      org-agenda-use-time-grid t
+      org-blank-before-new-entry '((heading . t) (plain-list-item . t))
+      org-clock-out-remove-zero-time-clocks t
+      org-clock-persist t
+      org-use-fast-todo-selection t
+      org-use-fast-tag-selection nil
+      org-default-notes-file "~/org/notes.org"
+      org-refile-targets '((org-agenda-files :maxlevel . 2)
+                           ("~/org/research.org" :maxlevel . 3))
+      org-agenda-restore-windows-after-quit t
+      org-odd-levels-only t
+      )
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-co" 'org-switchb)
+
 
 ;; Make windmove work in org-mode:
 (add-hook 'org-shiftup-final-hook 'windmove-up)
