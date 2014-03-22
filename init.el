@@ -283,7 +283,9 @@
 (global-rainbow-delimiters-mode 1)
 (window-numbering-mode 1)
 (minibuffer-depth-indicate-mode 1)
-(global-annoying-arrows-mode 1)
+;(global-annoying-arrows-mode 1)
+(electric-indent-mode 0)             ; make return key not auto indent
+(desktop-save-mode 1)
 
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
@@ -347,7 +349,8 @@
 (setq gc-cons-threshold 20000000)
 
 ;; guide-key setup
-(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8" "C-x C-k" "<f8>" "C-c !"))
+(setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
+                                     "C-x C-k" "<f8>" "C-c !" "M-s"))
 (guide-key-mode 1)
 (setq guide-key/recursive-key-sequence-flag t)
 (setq guide-key/popup-window-position 'bottom)
@@ -582,7 +585,7 @@ This is useful when followed by an immediate kill."
       org-default-priority ?B
       org-completion-use-ido t
       org-agenda-ndays 14
-      org-agenda-start-on-weekday 1
+      org-agenda-start-on-weekday nil
       org-agenda-show-all-dates t
       org-agenda-skip-scheduled-if-done nil
       org-return-follows-link t
@@ -615,6 +618,7 @@ This is useful when followed by an immediate kill."
       )
 
 (global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-cc" 'org-capture)
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-co" 'org-switchb)
 
@@ -1084,23 +1088,25 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 ;;==================================================
 ;; faces
 ;;==================================================
-;; (set-face-foreground 'which-func "#ffcc33")
-
-;; (set-face-foreground 'rainbow-delimiters-unmatched-face "red")
-;; (set-face-foreground 'rainbow-delimiters-depth-1-face "white")
-;; (set-face-foreground 'rainbow-delimiters-depth-2-face "#fdb462")
-;; (set-face-foreground 'rainbow-delimiters-depth-3-face "#8dd3c7")
-;; (set-face-foreground 'rainbow-delimiters-depth-4-face "#ffff55")
-;; (set-face-foreground 'rainbow-delimiters-depth-5-face "#beaada")
-;; (set-face-foreground 'rainbow-delimiters-depth-6-face "#fb8072")
-;; (set-face-foreground 'rainbow-delimiters-depth-7-face "#b3de69")
-;; (set-face-foreground 'rainbow-delimiters-depth-8-face "#fccd35")
-;; (set-face-foreground 'rainbow-delimiters-depth-9-face "#00FF80")
 (set-face-attribute 'font-lock-fic-face nil
   :inherit font-lock-warning-face
   :foreground nil
   :background nil
   :underline nil)
+
+(require 'paren) ; show-paren-mismatch is defined in paren.el
+(set-face-attribute 'rainbow-delimiters-unmatched-face nil
+                    :foreground 'unspecified
+                    :inherit 'show-paren-mismatch)
+
+(defface my-outermost-paren-face
+  '((t (:weight bold)))
+  "Face used for outermost parens.")
+
+(setq rainbow-delimiters-outermost-only-face-count 1)
+(set-face-attribute 'rainbow-delimiters-depth-1-face nil
+                    :foreground 'unspecified
+                    :inherit 'my-outermost-paren-face)
 
 ;;==================================================
 ;; Mode mappings
