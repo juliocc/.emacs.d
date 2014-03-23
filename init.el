@@ -84,6 +84,7 @@
      idle-highlight-mode
      rainbow-delimiters
      ace-jump-mode
+     ace-jump-buffer
      expand-region
      change-inner
      wgrep
@@ -952,9 +953,18 @@ and so on."
   (intern (concat (symbol-name cmd) "-repeat")))
 
 
-(require 'expand-region)
 (global-set-key (kbd "C-'") 'ace-jump-mode)
+
+(require 'expand-region)
 (global-set-key (kbd "C-c w") (make-repeatable-command 'er/expand-region))
+
+
+(defun switch-to-previous-buffer ()
+  (interactive)
+  (switch-to-buffer (other-buffer)))
+
+(global-set-key (kbd "<f9>") 'switch-to-previous-buffer)
+(global-set-key (kbd "C-<f9>") 'ace-jump-buffer)
 
 (require 'jump-char)
 (global-set-key [(meta m)] 'jump-char-forward)
