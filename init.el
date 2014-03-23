@@ -429,7 +429,6 @@
       ido-default-file-method 'selected-window
       ido-ignore-extensions t
       ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
-                                  ".org"
                                   ".rb" ".org" ".txt"
                                   ".c" ".cpp" ".cxx" ".h" ".hpp"))
 (setq confirm-nonexistent-file-or-buffer nil)
