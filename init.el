@@ -328,9 +328,9 @@
 (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
 
 ;; smartparens
-(require 'smartparens)
-(require 'smartparens-config)
-(smartparens-global-mode)
+;; (require 'smartparens)
+;; (require 'smartparens-config)
+;; (smartparens-global-mode)
 
 ;; use shift + arrow keys to switch between visible buffers
 (require 'windmove)
