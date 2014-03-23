@@ -821,6 +821,8 @@ is considered to be a project root."
 (add-hook 'html-mode-hook 'rainbow-mode)
 (add-hook 'prog-mode-hook 'turn-on-fic-mode)
 
+(add-hook 'package-menu-mode-hook 'hl-line-mode)
+
 (keyfreq-mode 1)
 
 ;; keep scratch around
