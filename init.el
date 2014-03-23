@@ -197,7 +197,8 @@
  confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
  history-length 1000                    ; looong history
  use-dialog-box nil                     ; never show a dialog box
- browse-url-browser-function 'browse-url-firefox
+ browse-url-browser-function 'browse-url-generic
+ browse-url-generic-program "firefox-trunk"
  ; browse-url-new-window-flag  t
  ; browse-url-firefox-new-window-is-tab
  mark-even-if-inactive t                ;
