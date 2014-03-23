@@ -758,6 +758,12 @@ is considered to be a project root."
 (global-fasd-mode 1)
 
 ;;==================================================
+;; auto-complete settings
+;;==================================================
+(require 'auto-complete-config)
+(ac-config-default)
+
+;;==================================================
 ;; smex settings
 ;;==================================================
 
