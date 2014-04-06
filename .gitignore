@@ -19,3 +19,4 @@ emms
 /.emacs.desktop
 /.emacs.desktop.lock
 /.mc-lists.el
+/.python-environments/
