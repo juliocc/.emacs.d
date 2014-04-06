@@ -281,7 +281,7 @@
 (auto-compression-mode t)               ; open compressed files a la dired
 (transient-mark-mode 1)                 ; show me the region, please
 (winner-mode 1)                         ; stack window settings
-(which-function-mode 1)                 ; show me where I'm standing
+
 (global-rainbow-delimiters-mode 1)
 (window-numbering-mode 1)
 (minibuffer-depth-indicate-mode 1)
@@ -375,6 +375,17 @@
       ad-do-it)
     (dotimes (i 10)
       (when (= p (point)) ad-do-it))))
+
+;;==================================================
+;; which-func-mode settings
+;;==================================================
+(which-function-mode 1)                 ; show me where I'm standing
+(setq-default header-line-format
+              '((which-func-mode ("" which-func-format " "))))
+(setq mode-line-misc-info
+            ;; We remove Which Function Mode from the mode line, because it's mostly
+            ;; invisible here anyway.
+            (assq-delete-all 'which-func-mode mode-line-misc-info))
 
 ;;==================================================
 ;; ispell settings
