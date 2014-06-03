@@ -274,6 +274,8 @@
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
+(set-language-environment 'utf-8)
+(set-default-coding-systems 'utf-8)
 
 ;; Useful modes
 (auto-image-file-mode 1)                ; display images
@@ -322,6 +324,9 @@
 ;; Never ever use tabs
 (set-default 'indent-tabs-mode nil)
 (setq-default tab-width 8)            ;; but maintain correct apeparance
+
+;; warn when opening files bigger than 100MB
+(setq large-file-warning-threshold 100000000)
 
 ;; uniquify
 ;; provide meaningful names for buffers with the same name
