@@ -99,7 +99,7 @@
      php-mode
      guide-key
      smex
-                                        ;tangotango-theme
+     tangotango-theme
      zenburn-theme
      smooth-scrolling
      window-numbering
@@ -128,7 +128,7 @@
 ;;==================================================
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
-(load-theme 'zenburn)
+(load-theme 'tangotango)
 
 ;; Don't defer screen updates when performing operations
 (setq redisplay-dont-pause t)
