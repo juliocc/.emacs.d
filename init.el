@@ -115,7 +115,10 @@
      fasd
      org-plus-contrib
      flycheck
-     json-mode)))
+     json-mode
+     paredit
+     clojure-mode
+     cider)))
 
 (condition-case nil
     (init--install-packages)
@@ -525,6 +528,18 @@ This is useful when followed by an immediate kill."
   (goto-char isearch-other-end))
 
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
+
+
+;;==================================================
+;; clojure
+;;==================================================
+(require 'clojure-mode)
+(require 'cider)
+(add-hook 'clojure-mode-hook 'paredit-mode)
+(add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
+(setq cider-repl-use-clojure-font-lock t)
+(add-hook 'cider-repl-mode-hook 'paredit-mode)
+
 
 ;;==================================================
 ;; git and magit settings
