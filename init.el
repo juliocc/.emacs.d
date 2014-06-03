@@ -232,6 +232,7 @@
 ;(set-default 'imenu-auto-rescan t)
 (setq-default visible-bell t)
 (setq-default show-trailing-whitespace t)
+(setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
 (setq-default truncate-lines t)         ; don't word-wrap
 (setq-default save-interprogram-paste-before-kill t)
@@ -243,6 +244,7 @@
 ;; But don't show trailing whitespace in these modes
 (dolist (hook '(term-mode-hook
                 comint-mode-hook
+                ido-minibuffer-setup-hook
                 compilation-mode-hook))
   (add-hook hook
             (lambda () (setq show-trailing-whitespace nil))))
