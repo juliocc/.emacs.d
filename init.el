@@ -119,7 +119,9 @@
      json-mode
      paredit
      clojure-mode
-     cider)))
+     cider
+     fancy-narrow
+     discover-my-major)))
 
 (condition-case nil
     (init--install-packages)
@@ -289,6 +291,7 @@
 (auto-compression-mode t)               ; open compressed files a la dired
 (transient-mark-mode 1)                 ; show me the region, please
 (winner-mode 1)                         ; stack window settings
+(fancy-narrow-mode)
 
 (global-rainbow-delimiters-mode 1)
 ;(window-numbering-mode 1)
@@ -365,7 +368,8 @@
 
 ;; guide-key setup
 (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
-                                     "C-x C-k" "<f8>" "C-c !" "M-s"))
+                                     "C-x C-k" "<f8>" "C-c !" "M-s"
+                                     "C-x n"))
 (guide-key-mode 1)
 (setq guide-key/recursive-key-sequence-flag t)
 (setq guide-key/popup-window-position 'bottom)
@@ -547,9 +551,11 @@ This is useful when followed by an immediate kill."
 (require 'cider)
 (add-hook 'clojure-mode-hook 'paredit-mode)
 (add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
-(setq cider-repl-use-clojure-font-lock t)
 (add-hook 'cider-repl-mode-hook 'paredit-mode)
-
+(setq cider-repl-use-clojure-font-lock t
+      nrepl-hide-special-buffers t
+      cider-popup-stacktraces nil
+      cider-repl-popup-stacktraces t)
 
 ;;==================================================
 ;; git and magit settings
@@ -660,6 +666,9 @@ This is useful when followed by an immediate kill."
 (global-set-key "\C-cc" 'org-capture)
 (global-set-key "\C-ca" 'org-agenda)
 (global-set-key "\C-co" 'org-switchb)
+
+(define-key 'help-command (kbd "C-k") 'find-function-on-key)
+(define-key 'help-command (kbd "C-m") 'discover-my-major)
 
 
 ;; Make windmove work in org-mode:
@@ -785,7 +794,7 @@ is considered to be a project root."
 
 (setq js2-use-font-lock-faces t
       js2-mode-must-byte-compile nil
-      js2-basic-offset 2
+      js2-basic-offset 4
       js2-indent-on-enter-key t
       js2-auto-indent-p t
       js2-bounce-indent-p nil)
