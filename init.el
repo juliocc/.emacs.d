@@ -809,8 +809,8 @@ is considered to be a project root."
 ;;==================================================
 ;; auto-complete settings
 ;;==================================================
-(require 'auto-complete-config)
-(ac-config-default)
+;; (require 'auto-complete-config)
+;; (ac-config-default)
 
 ;;==================================================
 ;; smex settings
