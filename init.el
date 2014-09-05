@@ -295,7 +295,8 @@
 
 (global-rainbow-delimiters-mode 1)
 ;(window-numbering-mode 1)
-(global-set-key (kbd "C-x o") 'ace-window)
+;(global-set-key (kbd "C-x o") 'ace-window)
+
 
 (minibuffer-depth-indicate-mode 1)
 ;(global-annoying-arrows-mode 1)
