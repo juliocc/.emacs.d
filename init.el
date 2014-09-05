@@ -74,6 +74,7 @@
      gitconfig-mode
      gitignore-mode
      git-messenger
+     git-timemachine
      ;prodigy
      scss-mode
      yaml-mode
