@@ -797,7 +797,7 @@ is considered to be a project root."
 
 (setq js2-use-font-lock-faces t
       js2-mode-must-byte-compile nil
-      js2-basic-offset 4
+      js2-basic-offset 2
       js2-indent-on-enter-key t
       js2-auto-indent-p t
       js2-bounce-indent-p nil)
