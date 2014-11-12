@@ -123,7 +123,10 @@
      cider
      fancy-narrow
      discover-my-major
-     god-mode)))
+     god-mode
+     highlight-numbers
+     hl-sexp
+     highlight-parentheses)))
 
 (condition-case nil
     (init--install-packages)
@@ -187,6 +190,7 @@
 
 ;; just in case
 (global-font-lock-mode t)
+(highlight-numbers-mode t)
 
 
 ;;==================================================
@@ -524,8 +528,7 @@ and the point, not include the isearch word."
     (error "Mark is not active"))
   (let* ((isearch-bounds (list isearch-other-end (point)))
          (ismin (apply 'min isearch-bounds))
-         (ismax (apply 'max isearch-bounds))
-         )
+         (ismax (apply 'max isearch-bounds)))
     (if (< (mark) ismin)
         (kill-region (mark) ismin)
       (if (> (mark) ismax)
@@ -548,11 +551,19 @@ This is useful when followed by an immediate kill."
 
 
 ;;==================================================
+;; elisp
+;;==================================================
+(add-hook 'emacs-lisp-mode-hook 'highlight-quoted-mode)
+(add-hook 'emacs-lisp-mode-hook 'hl-sexp-mode)
+
+;;==================================================
 ;; clojure
 ;;==================================================
 (require 'clojure-mode)
 (require 'cider)
 (add-hook 'clojure-mode-hook 'paredit-mode)
+(add-hook 'clojure-mode-hook 'highlight-quoted-mode)
+(add-hook 'clojure-mode-hook 'hl-sexp-mode)
 (add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
 (add-hook 'cider-repl-mode-hook 'paredit-mode)
 (setq cider-repl-use-clojure-font-lock t
