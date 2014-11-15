@@ -5,7 +5,8 @@
 (set-register ?e '(file . "~/.emacs.d/init.el"))
 
 ;; Turn off mouse interface early in startup to avoid momentary display
-(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+(unless (memq window-system '(mac ns)) ; hide menu if not in Mac
+  (if (fboundp 'menu-bar-mode) (menu-bar-mode -1)))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 
@@ -75,6 +76,8 @@
      gitignore-mode
      git-messenger
      git-timemachine
+     ibuffer-git
+     ibuffer-vc
      ;prodigy
      scss-mode
      yaml-mode
@@ -126,7 +129,9 @@
      god-mode
      highlight-numbers
      hl-sexp
-     highlight-parentheses)))
+     highlight-parentheses
+     highlight-quoted
+     exec-path-from-shell)))
 
 (condition-case nil
     (init--install-packages)
@@ -139,7 +144,7 @@
 ;;==================================================
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
-(load-theme 'tangotango)
+(load-theme 'zenburn)
 
 ;; Don't defer screen updates when performing operations
 (setq redisplay-dont-pause t)
@@ -166,6 +171,15 @@
 ;; (set-face-font 'default "Source Code Pro 10")
 ;; (set-face-font 'default "MonteCarlo")
 
+
+;; Mac-specific settings
+(when (eq system-type 'darwin)
+  (setq mac-option-modifier 'alt)
+  (setq mac-command-modifier 'meta)
+  (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
+
+(when (memq window-system '(mac ns))
+  (exec-path-from-shell-initialize))
 
 ;; show line and column number in the modeline
 (line-number-mode 1)
@@ -299,7 +313,9 @@
 (winner-mode 1)                         ; stack window settings
 (fancy-narrow-mode)
 
-(global-rainbow-delimiters-mode 1)
+(rainbow-delimiters-mode t)
+(highlight-numbers-mode t)
+(global-highlight-parentheses-mode t)
 ;(window-numbering-mode 1)
 ;(global-set-key (kbd "C-x o") 'ace-window)
 
@@ -778,9 +794,9 @@ is considered to be a project root."
 (add-hook 'python-mode-hook 'jedi-setup-venv)
 (add-hook 'python-mode-hook 'jedi:setup)
 
-(require 'flymake-python-pyflakes)
-(add-hook 'python-mode-hook 'flymake-python-pyflakes-load)
-(setq flymake-python-pyflakes-executable "/home/julio/.virtualenvs/clitools/bin/flake8")
+;(require 'flymake-python-pyflakes)
+;(add-hook 'python-mode-hook 'flymake-python-pyflakes-load)
+;(setq flymake-python-pyflakes-executable "/home/julio/.virtualenvs/clitools/bin/flake8")
 
 ;;==================================================
 ;; browse-kill-ring settings
@@ -1213,6 +1229,13 @@ This is the same as using \\[set-mark-command] with the prefix argument."
 (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
 (add-to-list 'auto-mode-alist '("gitolite\\.conf\\'" . gl-conf-mode))
 (add-to-list 'auto-mode-alist '("\\.sls\\'"   . yaml-mode))
+
+(when (eq system-type 'darwin) ;; mac specific settings
+  (setq mac-option-modifier 'alt)
+  (setq mac-command-modifier 'meta)
+  (setq-default visible-bell nil)
+  (set-face-font 'default "Consolas 13")
+  (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
 
 ;; Emacs server
