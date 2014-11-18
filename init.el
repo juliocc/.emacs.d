@@ -200,12 +200,14 @@
 
 ;; FIXME: not loading
 (req-package rainbow-delimiters
-  :config (rainbow-delimiters-mode t))
+  :config (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
 (req-package highlight-parentheses
+  :diminish highlight-parentheses-mode
   :config (global-highlight-parentheses-mode t))
 
 (req-package volatile-highlights
+  :diminish volatile-highlights-mode
   :config (volatile-highlights-mode t))
 
 ;; Save a list of recent files visited.
@@ -252,6 +254,7 @@
 
 ;; guide-key setup
 (req-package guide-key
+  :diminish guide-key-mode
   :config
   (progn
     (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
@@ -672,6 +675,7 @@ This is the same as using \\[set-mark-command] with the prefix argument."
   :bind ("C-=" . er/expand-region))
 
 (req-package fic-mode
+  :diminish fic-mode
   :commands turn-on-fic-mode
   :init (add-hook 'prog-mode-hook 'turn-on-fic-mode)
   :config (set-face-attribute 'font-lock-fic-face nil
