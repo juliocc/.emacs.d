@@ -42,7 +42,7 @@
 ;; Appearance settings
 ;;==================================================
 (req-package zenburn-theme
-  :config (load-theme 'zenburn))
+  :config (load-theme 'zenburn t))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -139,7 +139,7 @@
                                          try-expand-line
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
-(global-set-key (kbd "M-/") 'hippie-expand)
+(bind-key "M-/" 'hippie-expand)
 
 ;; Delete whitespace at the end of lines when saving
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -158,12 +158,12 @@
          kill-buffer-query-functions))
 
 ;; Backup settings
-(setq
- backup-by-copying t                          ; don't clobber symlinks
- delete-old-versions t                        ; delete old backups
- kept-new-versions 6
- kept-old-versions 2
- version-control t)                     ; use versioned backups
+(req-package files
+  :init (setq backup-by-copying t            ; don't clobber symlinks
+              delete-old-versions t          ; delete old backups
+              kept-new-versions 6
+              kept-old-versions 2
+              version-control t))            ; use versioned backups
 
 (setq backup-directory-alist
       `(("." . ,(expand-file-name
@@ -200,7 +200,8 @@
 
 ;; FIXME: not loading
 (req-package rainbow-delimiters
-  :config (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+  :commands rainbow-delimiters-mode
+  :init (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
 (req-package highlight-parentheses
   :diminish highlight-parentheses-mode
@@ -213,6 +214,7 @@
 ;; Save a list of recent files visited.
 (setq recentf-max-saved-items 1000)
 (setq recentf-save-file (expand-file-name ".recentf" user-emacs-directory))
+(setq recentf-exclude '("/tmp/" "/ssh:"))
 (recentf-mode 1)
 
 ;; Save minibuffer history
@@ -229,12 +231,14 @@
 (setq large-file-warning-threshold 100000000)
 
 ;; uniquify:  provide meaningful names for buffers with the same name
-(require 'uniquify)
-;(setq uniquify-buffer-name-style 'forward)
-(setq uniquify-buffer-name-style 'reverse)
-(setq uniquify-separator "/")
-(setq uniquify-after-kill-buffer-p t)    ; rename after killing uniquified
-(setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
+(req-package uniquify
+  :init
+  (progn
+    ;(setq uniquify-buffer-name-style 'forward)
+    (setq uniquify-buffer-name-style 'reverse)
+    (setq uniquify-separator "/")
+    (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
+    (setq uniquify-ignore-buffers-re "^\\*"))) ; don't muck with special buffers
 
 ;; use shift + arrow keys to switch between visible buffers
 (require 'windmove)
@@ -275,13 +279,14 @@
     (dotimes (i 10)
       (when (= p (point)) ad-do-it))))
 
+
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
 (when (eq system-type 'darwin)
   (setq mac-option-modifier 'alt)
   (setq mac-command-modifier 'meta)
-  (set-face-font 'default "Consolas 13")
+  (set-face-font 'default "Consolas 14")
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
 (req-package exec-path-from-shell
@@ -341,7 +346,7 @@
     (when file
       (find-file file))))
 
-(global-set-key (kbd "C-x f") 'recentf-ido-find-file)
+(bind-key "C-x f" 'recentf-ido-find-file)
 
 ;;==================================================
 ;; which-func-mode settings
@@ -491,8 +496,8 @@
 (define-key dired-mode-map (vector 'remap 'beginning-of-buffer) 'dired-back-to-top)
 (define-key dired-mode-map (vector 'remap 'smart-up) 'dired-back-to-top)
 
-(global-set-key (kbd "C-x C-j") 'dired-jump)
-(global-set-key (kbd "C-x M-j") '(lambda () (interactive) (dired-jump 1)))
+(bind-key "C-x C-j" 'dired-jump)
+(bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
 
 ;;==================================================
 ;; browse-kill-ring settings
@@ -511,10 +516,8 @@
 ;;==================================================
 
 (req-package fasd
-  :config
-  (progn
-    (global-set-key (kbd "C-h C-/") 'fasd-find-file)
-    (global-fasd-mode 1)))
+  :bind ("C-h C-/" . fasd-find-file)
+  :config (global-fasd-mode 1))
 
 ;;==================================================
 ;; jump-char
@@ -550,7 +553,7 @@
 ;;==================================================
 (req-package misc
   :bind ("M-z" . zap-up-to-char)
-  :init (global-set-key "\M-Z" 'zap-to-char))
+  :init (bind-key "\M-Z" 'zap-to-char))
 
 (req-package jc-misc
   :commands (chmod+x-this find-shell-init-file)
@@ -572,7 +575,7 @@
 (global-set-key (kbd "S-C-<up>") 'enlarge-window)
 
 ; ibuffer
-(global-set-key (kbd "C-x C-b") 'ibuffer)
+(bind-key "C-x C-b" 'ibuffer)
 
 ;; move-text
 (req-package move-text
@@ -618,42 +621,24 @@
 ;; mark customizations
 ;;==================================================
 ;; TODO: Move to autoload
-(defun push-mark-no-activate ()
-  "Pushes `point' to `mark-ring' and does not activate the region
-Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
-  (interactive)
-  (push-mark (point) t nil)
-  (message "Pushed mark to ring"))
-(global-set-key (kbd "C-`") 'push-mark-no-activate)
-
-;; TODO: Move to autoload
-(defun jump-to-mark ()
-  "Jumps to the local mark, respecting the `mark-ring' order.
-This is the same as using \\[set-mark-command] with the prefix argument."
-  (interactive)
-  (set-mark-command 1))
-(global-set-key (kbd "M-`") 'jump-to-mark)
-
-;; TODO: Move to autoload
-(defun exchange-point-and-mark-no-activate ()
-  "Identical to \\[exchange-point-and-mark] but will not activate the region."
-  (interactive)
-  (exchange-point-and-mark)
-  (deactivate-mark nil))
-(define-key global-map [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
+(req-package jc-marks
+  :commands exchange-point-and-mark-no-activate
+  :bind (("C-`" . push-mark-no-activate)
+         ("M-`" . jump-to-mark)))
 
 ;;==================================================
 ;; smex settings
 ;;==================================================
 
 (req-package smex
+  :require ido
+  :bind (("M-x" . smex)
+         ("M-X" . smex-major-mode-commands)
+         ("C-c C-c M-x" . execute-extended-command))
   :config
   (progn
-    (smex-initialize)
-    (global-set-key (kbd "M-x") 'smex)
-    (global-set-key (kbd "M-X") 'smex-major-mode-commands)
-    ;; This is your old M-x.
-    (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)))
+    (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
+    (smex-initialize)))
 
 ;;==================================================
 ;; Projectile settings
@@ -664,6 +649,44 @@ This is the same as using \\[set-mark-command] with the prefix argument."
   (progn
     (projectile-global-mode)
     (setq projectile-require-project-file nil)))
+
+
+;;==================================================
+;; web
+;;==================================================
+(req-package web-mode
+  :mode "\\.html?\\'")
+
+;; (setq web-mode-engines-alist
+;;       '(("php" . "\\.phtml\\'")
+;;         ("django" . "\\.html\\'")))
+
+
+
+(req-package yaml-mode
+  :mode "\\.yaml?\\'")
+
+(req-package json-mode
+  :mode "\\.json?\\'")
+
+(req-package scss-mode
+  :mode "\\.scss?\\'"
+  :init (setq scss-compile-at-save nil))
+
+
+
+;;==================================================
+;; yasnippet
+;;==================================================
+
+(req-package yasnippet
+  :diminish yas-global-mode
+  :idle (progn
+          (setq yas/prompt-functions '(yas/dropdown-prompt
+                                       yas/ido-prompt
+                                       yas/completing-prompt))
+
+          (yas-global-mode 1)))
 
 ;;==================================================
 ;; Misc packages and utilities
@@ -729,9 +752,35 @@ comment to the line."
     (setq deactivate-mark nil)))
 
 
+(fset 'quick-switch-buffer [?\C-x ?b return])
+(bind-key "C-S-j" 'quick-switch-buffer)
+
+
+;;==================================================
+;; experiments
+;;==================================================
+;; (req-package golden-ratio
+;;   :diminish golden-ratio-mode
+;;   :init (golden-ratio-mode 1))
+
+(req-package guru-mode
+  :config (guru-global-mode 1)
+  :diminish guru-mode)
+
+;;==================================================
+;; server
+;;==================================================
+
 (req-package server
   :if window-system
   :init (add-hook 'after-init-hook 'server-start t))
+
+
+;; TODO:
+;; * Undo tree
+;; * Paredit or smart parens
+;; * ibuffer setup
+;; * python setup
 
 ;;==================================================
 ;; Now finally load everything

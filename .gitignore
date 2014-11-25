@@ -21,3 +21,4 @@ emms
 /.mc-lists.el
 /.python-environments/
 /el-get/
+/smex.items
