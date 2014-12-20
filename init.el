@@ -285,7 +285,9 @@
 ;; Mac-specific settings
 ;;==================================================
 (when (eq system-type 'darwin)
-  (setq mac-option-modifier 'alt)
+  (setq mac-option-modifier 'super)
+  (setq mac-control-modifier 'control)
+  (setq ns-function-modifier 'hyper)
   (setq mac-command-modifier 'meta)
   (set-face-font 'default "Consolas 14")
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
