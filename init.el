@@ -546,6 +546,12 @@
 ;;==================================================
 ;; change-inner/outer
 ;;==================================================
+(req-package paredit
+  :init (add-hook 'list-mode-hook 'paredit-mode))
+
+;;==================================================
+;; change-inner/outer
+;;==================================================
 
 (req-package change-inner
   :bind (("M-I" . change-inner)
