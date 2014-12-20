@@ -79,9 +79,10 @@
 (req-package highlight-numbers
    :commands highlight-numbers-mode)
 
-(setq scroll-margin 0)
+(req-package smooth-scrolling)
 (setq scroll-conservatively 100000)
-(setq scroll-preserve-screen-position 1)
+(setq scroll-preserve-screen-position 'always)
+;(setq scroll-step 0); what?
 
 ;;==================================================
 ;; General settings
