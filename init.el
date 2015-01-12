@@ -547,7 +547,7 @@
 ;; change-inner/outer
 ;;==================================================
 (req-package paredit
-  :init (add-hook 'list-mode-hook 'paredit-mode))
+  :init (add-hook 'lisp-mode-hook 'paredit-mode))
 
 ;;==================================================
 ;; change-inner/outer
@@ -776,6 +776,9 @@ comment to the line."
   :config (guru-global-mode 1)
   :diminish guru-mode)
 
+
+;(req-package indent-guide)
+
 ;;==================================================
 ;; server
 ;;==================================================
@@ -787,9 +790,7 @@ comment to the line."
 
 ;; TODO:
 ;; * Undo tree
-;; * Paredit or smart parens
 ;; * ibuffer setup
-;; * python setup
 
 ;;==================================================
 ;; Now finally load everything
