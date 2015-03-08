@@ -550,7 +550,7 @@
 ;; change-inner/outer
 ;;==================================================
 (req-package paredit
-  :init (add-hook 'lisp-mode-hook 'paredit-mode))
+  :init (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
 ;;==================================================
 ;; change-inner/outer
