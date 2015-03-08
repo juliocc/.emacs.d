@@ -772,9 +772,9 @@ comment to the line."
 ;;   :diminish golden-ratio-mode
 ;;   :init (golden-ratio-mode 1))
 
-(req-package guru-mode
-  :config (guru-global-mode 1)
-  :diminish guru-mode)
+;; (req-package guru-mode
+;;   :config (guru-global-mode 1)
+;;   :diminish guru-mode)
 
 
 ;(req-package indent-guide)
