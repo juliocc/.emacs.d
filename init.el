@@ -766,6 +766,16 @@ comment to the line."
 
 
 ;;==================================================
+;; require additional local settings (if they exist)
+;;==================================================
+
+(setq jc-local-settings
+      (expand-file-name "jc-local.el" user-emacs-directory))
+
+(if (file-exists-p jc-local-settings)
+    (load-file jc-local-settings))
+
+;;==================================================
 ;; experiments
 ;;==================================================
 ;; (req-package golden-ratio

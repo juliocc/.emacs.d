@@ -22,3 +22,4 @@ emms
 /.python-environments/
 /el-get/
 /smex.items
+/jc-local.el
