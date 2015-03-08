@@ -164,11 +164,14 @@
               delete-old-versions t          ; delete old backups
               kept-new-versions 6
               kept-old-versions 2
-              version-control t))            ; use versioned backups
+              version-control t         ; use versioned backups
+              ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
+              auto-save-file-name-transforms `((".*" ,(concat user-emacs-directory "backups/") t))
+              backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))))
 
-(setq backup-directory-alist
-      `(("." . ,(expand-file-name
-                 (concat user-emacs-directory "backups")))))
+
+;; create the autosave dir if necessary, since emacs won't.
+(make-directory "~/.emacs.d/autosaves/" t)
 
 ;; UTF-8 everything please
 (setq locale-coding-system 'utf-8)
@@ -796,7 +799,6 @@ comment to the line."
 (req-package server
   :if window-system
   :init (add-hook 'after-init-hook 'server-start t))
-
 
 ;; TODO:
 ;; * Undo tree
