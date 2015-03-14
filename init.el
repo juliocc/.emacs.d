@@ -687,6 +687,17 @@
     (projectile-global-mode)
     (setq projectile-require-project-file nil)))
 
+;;==================================================
+;; wgrep
+;;==================================================
+
+(req-package wgrep)
+
+(req-package wgrep-ag
+  :require (ag wgrep)
+  :if (executable-find "ag")
+  :config (setq-default ag-highlight-search t))
+
 
 ;;==================================================
 ;; web
