@@ -228,7 +228,7 @@
 (savehist-mode t)
 
 ;; Never ever use tabs
-(set-default indent-tabs-mode nil)
+(setq-default indent-tabs-mode nil)
 (setq-default tab-width 8)            ;; but maintain correct apeparance
 
 ;; warn when opening files bigger than 100MB
