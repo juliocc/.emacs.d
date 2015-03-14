@@ -288,11 +288,16 @@
 ;; Mac-specific settings
 ;;==================================================
 (when (eq system-type 'darwin)
-  (setq mac-option-modifier 'super)
+  (setq mac-option-modifier 'none)
   (setq mac-control-modifier 'control)
   (setq ns-function-modifier 'hyper)
   (setq mac-command-modifier 'meta)
+  (setq default-input-method "MacOSX")
   (set-face-font 'default "Consolas 14")
+  (dolist (multiple '("" "double-" "triple-"))
+    (dolist (direction '("right" "left"))
+      (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
 (req-package exec-path-from-shell
