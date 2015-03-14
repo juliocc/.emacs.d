@@ -100,6 +100,8 @@
  confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
  history-length 1000                    ; looong history
  use-dialog-box nil                     ; never show a dialog box
+ use-file-dialog nil
+
  ; browse-url-browser-function 'browse-url-generic
  ; browse-url-generic-program "firefox-trunk"
  ; browse-url-new-window-flag  t
@@ -455,13 +457,17 @@
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (req-package jc-search
-  :commands (zap-to-isearch isearch-exit-other-end)
+  :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :init (bind-keys :map isearch-mode-map
                    ("M-z" . zap-to-isearch)
+                   ("C-w" . isearch-yank-symbol)
                    ("C-RET" . isearch-exit-other-end)))
 
 (define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
+
+;; DEL during isearch should edit the search string, not jump back to the previous result
+(define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
 (req-package anzu
   :diminish anzu-mode
