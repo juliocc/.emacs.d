@@ -300,6 +300,7 @@
   (setq ns-function-modifier 'hyper)
   (setq mac-command-modifier 'meta)
   (setq default-input-method "MacOSX")
+  (setq insert-directory-program "gls")  ; dired works better with gls
   (set-face-font 'default "Consolas 14")
   (dolist (multiple '("" "double-" "triple-"))
     (dolist (direction '("right" "left"))
@@ -515,7 +516,7 @@
 
 ; dired
 (setq dired-listing-switches "-alh")
-(setq-default diredp-hide-details-if-dired nil
+(setq-default diredp-hide-details-initially-flag nil
               dired-dwim-target t) ; Move files between split pane
 
 ;; TODO: Move to autoload
