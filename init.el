@@ -343,6 +343,7 @@
           ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
                                       ".rb" ".org" ".txt"
                                       ".c" ".cpp" ".cxx" ".h" ".hpp"))
+    (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
     (setq ido-use-faces nil)
     (setq confirm-nonexistent-file-or-buffer nil)
     (add-hook 'ido-setup-hook
