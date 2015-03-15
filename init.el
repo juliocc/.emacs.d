@@ -8,7 +8,7 @@
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 
 ;; Put this file in register e for easy access
-(set-register ?e '(file . "~/.emacs.d/init.el"))
+(set-register ?e `(file . ,user-init-file))
 
 ;; No splash screen
 (setq inhibit-startup-message t)
