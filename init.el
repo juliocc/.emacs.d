@@ -617,10 +617,10 @@
          ("C-x 3" . split-window-horizontally-with-other-buffer)))
 
 ;; resize windows
-(global-set-key (kbd "S-C-<left>") 'shrink-window-horizontally)
-(global-set-key (kbd "S-C-<right>") 'enlarge-window-horizontally)
-(global-set-key (kbd "S-C-<down>") 'shrink-window)
-(global-set-key (kbd "S-C-<up>") 'enlarge-window)
+(bind-key "S-C-<left>" 'shrink-window-horizontally)
+(bind-key "S-C-<right>" 'enlarge-window-horizontally)
+(bind-key "S-C-<down>" 'shrink-window)
+(bind-key "S-C-<up>" 'enlarge-window)
 
 ; ibuffer
 (req-package ibuffer
@@ -657,14 +657,14 @@
   (flyspell-goto-next-error)
   (ispell-word))
 
-(define-prefix-command 'jc-spelling-map)
-(global-set-key (kbd "<f8>") 'jc-spelling-map)
-(define-key jc-spelling-map (kbd "<f8>") 'ispell-word)
-(define-key jc-spelling-map (kbd "m") 'flyspell-mode)
-(define-key jc-spelling-map (kbd "b") 'flyspell-buffer)
-(define-key jc-spelling-map (kbd "p") 'flyspell-check-previous-highlighted-word)
-(define-key jc-spelling-map (kbd "n") 'flyspell-check-next-highlighted-word)
-(define-key jc-spelling-map (kbd "c") 'cycle-ispell-languages)
+(bind-keys :prefix-map jc-spelling-map
+           :prefix "<f8>"
+           ("<f8>" . ispell-word)
+           ("m" . flyspell-mode)
+           ("b" . flyspell-buffer)
+           ("p" . flyspell-check-previous-highlighted-word)
+           ("n" . flyspell-check-next-highlighted-word)
+           ("c" . cycle-ispell-languages))
 
 ;;==================================================
 ;; mark customizations
