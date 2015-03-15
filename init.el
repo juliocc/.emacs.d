@@ -38,6 +38,7 @@
   :init (progn (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
                (el-get 'sync)))
 
+
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
@@ -235,6 +236,8 @@
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
+
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 
 ;; uniquify:  provide meaningful names for buffers with the same name
 (req-package uniquify
@@ -512,7 +515,8 @@
 
 ; dired
 (setq dired-listing-switches "-alh")
-(setq dired-dwim-target t) ; Move files between split pane
+(setq-default diredp-hide-details-if-dired nil
+              dired-dwim-target t) ; Move files between split pane
 
 ;; TODO: Move to autoload
 ;; M-up is nicer in dired if it moves to the fourth line - the first file
@@ -527,8 +531,10 @@
 (bind-key "C-x C-j" 'dired-jump)
 (bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
 
-(req-package dired+)
-(req-package dired-sort)
+(req-package dired+
+  :config
+  (progn
+    (global-dired-hide-details-mode -1)))
 
 ;;==================================================
 ;; browse-kill-ring settings
@@ -575,6 +581,7 @@
 ;; change-inner/outer
 ;;==================================================
 (req-package paredit
+  :diminish (paredit-mode . "Par")
   :init (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
 ;;==================================================
@@ -612,7 +619,8 @@
 (global-set-key (kbd "S-C-<up>") 'enlarge-window)
 
 ; ibuffer
-(bind-key "C-x C-b" 'ibuffer)
+(req-package ibuffer
+  :bind ("C-x C-b" . ibuffer))
 
 ;; move-text
 (req-package move-text
@@ -629,7 +637,7 @@
   (setq lang-ring (make-ring (length langs)))
   (dolist (elem langs) (ring-insert lang-ring elem)))
 
-;; TODO: Move to autoload
+;; Todo: Move to autoload
 (defun cycle-ispell-languages ()
   (interactive)
   (let ((lang (ring-ref lang-ring -1)))
@@ -722,6 +730,11 @@
   :init (setq scss-compile-at-save nil))
 
 
+;;==================================================
+;; python
+;;==================================================
+
+(req-package pip-requirements)
 
 ;;==================================================
 ;; yasnippet
@@ -839,6 +852,7 @@ comment to the line."
 ;; TODO:
 ;; * Undo tree
 ;; * ibuffer setup
+;; * Check tagedit: https://github.com/magnars/tagedit
 
 ;;==================================================
 ;; Now finally load everything
