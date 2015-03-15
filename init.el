@@ -38,6 +38,7 @@
   :init (progn (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
                (el-get 'sync)))
 
+
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
@@ -100,6 +101,8 @@
  confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
  history-length 1000                    ; looong history
  use-dialog-box nil                     ; never show a dialog box
+ use-file-dialog nil
+
  ; browse-url-browser-function 'browse-url-generic
  ; browse-url-generic-program "firefox-trunk"
  ; browse-url-new-window-flag  t
@@ -234,6 +237,8 @@
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
 
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+
 ;; uniquify:  provide meaningful names for buffers with the same name
 (req-package uniquify
   :init
@@ -268,6 +273,8 @@
     (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
                                          "C-x C-k" "<f8>" "C-c !" "M-s"
                                          "C-x n" "C-c p"))
+    (add-hook 'dired-mode-hook
+              (lambda () (guide-key/add-local-guide-key-sequence "%")))
     (guide-key-mode 1)
     (setq guide-key/recursive-key-sequence-flag t)
     (setq guide-key/popup-window-position 'bottom)))
@@ -288,16 +295,30 @@
 ;; Mac-specific settings
 ;;==================================================
 (when (eq system-type 'darwin)
-  (setq mac-option-modifier 'super)
+  (setq mac-option-modifier 'none)
   (setq mac-control-modifier 'control)
   (setq ns-function-modifier 'hyper)
   (setq mac-command-modifier 'meta)
+  (setq default-input-method "MacOSX")
   (set-face-font 'default "Consolas 14")
+  (dolist (multiple '("" "double-" "triple-"))
+    (dolist (direction '("right" "left"))
+      (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
 (req-package exec-path-from-shell
   :if (memq window-system '(mac ns))
   :config (exec-path-from-shell-initialize))
+
+
+; Stop C-z from minimizing windows under OS X
+(defun sanityinc/maybe-suspend-frame ()
+  (interactive)
+  (unless (and *is-a-mac* window-system)
+    (suspend-frame)))
+
+(global-set-key (kbd "C-z") 'sanityinc/maybe-suspend-frame)
 
 ;;==================================================
 ;; ido settings
@@ -441,13 +462,17 @@
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (req-package jc-search
-  :commands (zap-to-isearch isearch-exit-other-end)
+  :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :init (bind-keys :map isearch-mode-map
                    ("M-z" . zap-to-isearch)
+                   ("C-w" . isearch-yank-symbol)
                    ("C-RET" . isearch-exit-other-end)))
 
 (define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
+
+;; DEL during isearch should edit the search string, not jump back to the previous result
+(define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
 (req-package anzu
   :diminish anzu-mode
@@ -490,7 +515,8 @@
 
 ; dired
 (setq dired-listing-switches "-alh")
-(setq dired-dwim-target t) ; Move files between split pane
+(setq-default diredp-hide-details-if-dired nil
+              dired-dwim-target t) ; Move files between split pane
 
 ;; TODO: Move to autoload
 ;; M-up is nicer in dired if it moves to the fourth line - the first file
@@ -504,6 +530,11 @@
 
 (bind-key "C-x C-j" 'dired-jump)
 (bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
+
+(req-package dired+
+  :config
+  (progn
+    (global-dired-hide-details-mode -1)))
 
 ;;==================================================
 ;; browse-kill-ring settings
@@ -550,7 +581,8 @@
 ;; change-inner/outer
 ;;==================================================
 (req-package paredit
-  :init (add-hook 'lisp-mode-hook 'paredit-mode))
+  :diminish (paredit-mode . "Par")
+  :init (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
 ;;==================================================
 ;; change-inner/outer
@@ -587,7 +619,8 @@
 (global-set-key (kbd "S-C-<up>") 'enlarge-window)
 
 ; ibuffer
-(bind-key "C-x C-b" 'ibuffer)
+(req-package ibuffer
+  :bind ("C-x C-b" . ibuffer))
 
 ;; move-text
 (req-package move-text
@@ -604,7 +637,7 @@
   (setq lang-ring (make-ring (length langs)))
   (dolist (elem langs) (ring-insert lang-ring elem)))
 
-;; TODO: Move to autoload
+;; Todo: Move to autoload
 (defun cycle-ispell-languages ()
   (interactive)
   (let ((lang (ring-ref lang-ring -1)))
@@ -662,6 +695,17 @@
     (projectile-global-mode)
     (setq projectile-require-project-file nil)))
 
+;;==================================================
+;; wgrep
+;;==================================================
+
+(req-package wgrep)
+
+(req-package wgrep-ag
+  :require (ag wgrep)
+  :if (executable-find "ag")
+  :config (setq-default ag-highlight-search t))
+
 
 ;;==================================================
 ;; web
@@ -686,6 +730,11 @@
   :init (setq scss-compile-at-save nil))
 
 
+;;==================================================
+;; python
+;;==================================================
+
+(req-package pip-requirements)
 
 ;;==================================================
 ;; yasnippet
@@ -703,6 +752,8 @@
 ;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
+(req-package "paradox")
+
 (req-package ace-jump-mode
   :bind ("C-'" . ace-jump-mode))
 
@@ -803,6 +854,7 @@ comment to the line."
 ;; TODO:
 ;; * Undo tree
 ;; * ibuffer setup
+;; * Check tagedit: https://github.com/magnars/tagedit
 
 ;;==================================================
 ;; Now finally load everything
