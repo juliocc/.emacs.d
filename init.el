@@ -1,8 +1,11 @@
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
 
+(defconst *is-a-mac* (eq system-type 'darwin))
+(defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
+
 ;; Turn off mouse interface early in startup to avoid momentary display
-(unless (memq window-system '(mac ns)) ; hide menu if not in Mac
+(unless *is-a-windowed-mac* ; hide menu if not in Mac
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1)))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
@@ -294,7 +297,7 @@
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
-(when (eq system-type 'darwin)
+(when *is-a-mac*
   (setq mac-option-modifier 'none)
   (setq mac-control-modifier 'control)
   (setq ns-function-modifier 'hyper)
@@ -305,21 +308,20 @@
   (dolist (multiple '("" "double-" "triple-"))
     (dolist (direction '("right" "left"))
       (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
 (req-package exec-path-from-shell
-  :if (memq window-system '(mac ns))
+  :if *is-a-mac*
   :config (exec-path-from-shell-initialize))
 
 
 ; Stop C-z from minimizing windows under OS X
 (defun sanityinc/maybe-suspend-frame ()
   (interactive)
-  (unless (and *is-a-mac* window-system)
+  (unless *is-a-windowed-mac*
     (suspend-frame)))
 
-(global-set-key (kbd "C-z") 'sanityinc/maybe-suspend-frame)
+(bind-key "C-z" 'sanityinc/maybe-suspend-frame)
 
 ;;==================================================
 ;; ido settings
