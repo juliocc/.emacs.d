@@ -149,15 +149,24 @@
 (bind-key "M-/" 'hippie-expand)
 
 ;; Delete whitespace at the end of lines when saving
+;; TODO: consider whitespace-clenup-mode
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; But don't show trailing whitespace in these modes
-(dolist (hook '(term-mode-hook
-                comint-mode-hook
+(defun sanityinc/no-trailing-whitespace ()
+  "Turn off display of trailing whitespace in this buffer."
+  (setq show-trailing-whitespace nil))
+
+;; But don't show trailing whitespace in SQLi, inf-ruby etc.
+(dolist (hook '(special-mode-hook
+                Info-mode-hook
+                term-mode-hook
                 ido-minibuffer-setup-hook
-                compilation-mode-hook))
-  (add-hook hook
-            (lambda () (setq show-trailing-whitespace nil))))
+                comint-mode-hook
+                compilation-mode-hook
+                isearch-mode-hook
+                minibuffer-setup-hook))
+  (add-hook hook #'sanityinc/no-trailing-whitespace))
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
