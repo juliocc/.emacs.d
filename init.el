@@ -647,6 +647,11 @@
   :bind (("<M-up>" . move-text-up)
          ("<M-down>" . move-text-down)))
 
+;; Cut/copy the current line if no region is active
+(req-package whole-line-or-region
+  :diminish whole-line-or-region
+  :config (whole-line-or-region-mode t))
+
 ;;==================================================
 ;; ispell
 ;;==================================================
