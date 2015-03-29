@@ -518,7 +518,7 @@
 (require 'dired)
 
 ; dired
-(setq dired-listing-switches "-alh")
+(setq dired-listing-switches "-alhF")
 (setq-default diredp-hide-details-initially-flag nil
               dired-dwim-target t) ; Move files between split pane
 
@@ -606,8 +606,13 @@
 (req-package jc-misc
   :commands (chmod+x-this find-shell-init-file)
   :bind (("M-p" . goto-match-paren)
-         ("C-x F" . djcb-find-file-as-root)
          ("C-a" . beginning-of-line-or-indentation)))
+
+(defadvice ido-find-file (after find-file-sudo activate)
+  "Find file as root if necessary."
+  (unless (and buffer-file-name
+               (file-writable-p buffer-file-name))
+    (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
 
 (req-package jc-windows
   :load-path "site-lisp"
