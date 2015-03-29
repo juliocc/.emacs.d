@@ -583,12 +583,14 @@
 
 (req-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
-         ("C-S-c C-S-c" . mc/edit-lines)
          ("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
          ("C-c C-<" . mc/mark-all-like-this)
-         ("C-S-c C-e" . mc/edit-ends-of-lines)
-         ("C-S-c C-a" . mc/edit-beginnings-of-lines)))
+         ("C-c c r" . set-rectangular-region-anchor)
+         ("C-c c t" . mc/mark-sgml-tag-pair)
+         ("C-c c c" . mc/edit-lines)
+         ("C-c c e" . mc/edit-ends-of-lines)
+         ("C-c c a" . mc/edit-beginnings-of-lines)))
 
 ;;==================================================
 ;; change-inner/outer
