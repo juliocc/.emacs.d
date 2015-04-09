@@ -332,6 +332,15 @@
 
 (bind-key "C-z" 'sanityinc/maybe-suspend-frame)
 
+;; enable electric pairs and indent
+(when (fboundp 'electric-pair-mode)
+  (electric-pair-mode))
+
+(when (eval-when-compile (version< "24.4" emacs-version))
+  (electric-indent-mode 1))
+
+(global-set-key (kbd "RET") 'newline-and-indent)
+
 ;;==================================================
 ;; ido settings
 ;;==================================================
