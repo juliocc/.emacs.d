@@ -656,6 +656,14 @@
   :bind (("<M-up>" . move-text-up)
          ("<M-down>" . move-text-down)))
 
+(defun sanityinc/newline-at-end-of-line ()
+  "Move to end of line, enter a newline, and reindent."
+  (interactive)
+  (move-end-of-line 1)
+  (newline-and-indent))
+
+(global-set-key (kbd "S-<return>") 'sanityinc/newline-at-end-of-line)
+
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
   :diminish whole-line-or-region
