@@ -37,9 +37,9 @@
 
 (require 'req-package)
 
-(req-package-force el-get
-  :init (progn (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
-               (el-get 'sync)))
+;; (req-package-force el-get
+;;   :init (progn (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
+;;                (el-get 'sync)))
 
 
 ;;==================================================
