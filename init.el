@@ -221,7 +221,6 @@
 (setq minibuffer-prompt-properties
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 
-;; FIXME: not loading
 (req-package rainbow-delimiters
   :commands rainbow-delimiters-mode
   :init (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
@@ -670,7 +669,6 @@
 
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
-  :diminish whole-line-or-region
   :config (whole-line-or-region-mode t))
 
 ;;==================================================
@@ -711,7 +709,6 @@
 ;;==================================================
 ;; mark customizations
 ;;==================================================
-;; TODO: Move to autoload
 (req-package jc-marks
   :commands exchange-point-and-mark-no-activate
   :bind (("C-`" . push-mark-no-activate)
