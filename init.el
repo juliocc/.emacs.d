@@ -783,14 +783,14 @@
 ;; yasnippet
 ;;==================================================
 
-(req-package yasnippet
-  :diminish yas-global-mode
-  :idle (progn
-          (setq yas/prompt-functions '(yas/dropdown-prompt
-                                       yas/ido-prompt
-                                       yas/completing-prompt))
+;; (req-package yasnippet
+;;   :diminish yas-global-mode
+;;   :config (progn
+;;           (setq yas/prompt-functions '(yas/dropdown-prompt
+;;                                        yas/ido-prompt
+;;                                        yas/completing-prompt))
 
-          (yas-global-mode 1)))
+;;           (yas-global-mode 1)))
 
 ;;==================================================
 ;; Misc packages and utilities
