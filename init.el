@@ -217,6 +217,10 @@
 
 ;(fancy-narrow-mode)
 
+;; don't let the cursor go into minibuffer prompt
+(setq minibuffer-prompt-properties
+      '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
+
 ;; FIXME: not loading
 (req-package rainbow-delimiters
   :commands rainbow-delimiters-mode
