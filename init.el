@@ -46,7 +46,8 @@
 ;; Appearance settings
 ;;==================================================
 (req-package zenburn-theme
-  :config (load-theme 'zenburn t))
+  :config
+  (load-theme 'zenburn t))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -175,14 +176,15 @@
 
 ;; Backup settings
 (req-package files
-  :init (setq backup-by-copying t            ; don't clobber symlinks
-              delete-old-versions t          ; delete old backups
-              kept-new-versions 6
-              kept-old-versions 2
-              version-control t         ; use versioned backups
-              ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
-              auto-save-file-name-transforms `((".*" ,(concat user-emacs-directory "backups/") t))
-              backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))))
+  :init
+  (setq backup-by-copying t            ; don't clobber symlinks
+        delete-old-versions t          ; delete old backups
+        kept-new-versions 6
+        kept-old-versions 2
+        version-control t         ; use versioned backups
+        ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
+        auto-save-file-name-transforms `((".*" ,(concat user-emacs-directory "backups/") t))
+        backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))))
 
 
 ;; create the autosave dir if necessary, since emacs won't.
@@ -223,15 +225,18 @@
 
 (req-package rainbow-delimiters
   :commands rainbow-delimiters-mode
-  :init (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+  :init
+  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
 (req-package highlight-parentheses
   :diminish highlight-parentheses-mode
-  :config (global-highlight-parentheses-mode t))
+  :config
+  (global-highlight-parentheses-mode t))
 
 (req-package volatile-highlights
   :diminish volatile-highlights-mode
-  :config (volatile-highlights-mode t))
+  :config
+  (volatile-highlights-mode t))
 
 ;; Save a list of recent files visited.
 (setq recentf-max-saved-items 1000)
@@ -257,12 +262,11 @@
 ;; uniquify:  provide meaningful names for buffers with the same name
 (req-package uniquify
   :init
-  (progn
-    ;(setq uniquify-buffer-name-style 'forward)
-    (setq uniquify-buffer-name-style 'reverse)
-    (setq uniquify-separator "/")
-    (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
-    (setq uniquify-ignore-buffers-re "^\\*"))) ; don't muck with special buffers
+  ;(setq uniquify-buffer-name-style 'forward)
+  (setq uniquify-buffer-name-style 'reverse)
+  (setq uniquify-separator "/")
+  (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
+  (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
 
 ;; use shift + arrow keys to switch between visible buffers
 (require 'windmove)
@@ -284,15 +288,14 @@
 (req-package guide-key
   :diminish guide-key-mode
   :config
-  (progn
-    (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
-                                         "C-x C-k" "<f8>" "C-c !" "M-s"
-                                         "C-x n" "C-c p"))
-    (add-hook 'dired-mode-hook
-              (lambda () (guide-key/add-local-guide-key-sequence "%")))
-    (guide-key-mode 1)
-    (setq guide-key/recursive-key-sequence-flag t)
-    (setq guide-key/popup-window-position 'bottom)))
+  (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
+                                       "C-x C-k" "<f8>" "C-c !" "M-s"
+                                       "C-x n" "C-c p"))
+  (add-hook 'dired-mode-hook
+            (lambda () (guide-key/add-local-guide-key-sequence "%")))
+  (guide-key-mode 1)
+  (setq guide-key/recursive-key-sequence-flag t)
+  (setq guide-key/popup-window-position 'bottom))
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
@@ -324,7 +327,8 @@
 
 (req-package exec-path-from-shell
   :if *is-a-mac*
-  :config (exec-path-from-shell-initialize))
+  :config
+  (exec-path-from-shell-initialize))
 
 
 ; Stop C-z from minimizing windows under OS X
@@ -350,45 +354,43 @@
 (req-package flx-ido
   :require (ido flx ido-vertical-mode ido-ubiquitous)
   :init
-  (progn
-    (setq ido-enable-prefix nil
-          ido-enable-flex-matching t
-          ido-create-new-buffer 'always
-          ido-use-filename-at-point nil
+  (setq ido-enable-prefix nil
+        ido-enable-flex-matching t
+        ido-create-new-buffer 'always
+        ido-use-filename-at-point nil
                                         ;ido-max-prospects 10
-          ido-max-window-height 10
-          ido-save-directory-list-file (expand-file-name ".ido.last" user-emacs-directory)
-          ido-auto-merge-work-directories-length -1
-          ido-default-file-method 'selected-window
-          ido-ignore-extensions t
-          ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
-                                      ".rb" ".org" ".txt"
-                                      ".c" ".cpp" ".cxx" ".h" ".hpp"))
-    (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-    (setq ido-use-faces nil)
-    (setq confirm-nonexistent-file-or-buffer nil)
-    (add-hook 'ido-setup-hook
-              (lambda ()
-                ;; Go straight home
-                (define-key ido-file-completion-map
-                  (kbd "~")
-                  (lambda ()
-                    (interactive)
-                    (cond
-                     ((looking-back "~/") (insert "code/"))
-                     ((looking-back "/") (insert "~/"))
-                     (:else (call-interactively 'self-insert-command)))))
+        ido-max-window-height 10
+        ido-save-directory-list-file (expand-file-name ".ido.last" user-emacs-directory)
+        ido-auto-merge-work-directories-length -1
+        ido-default-file-method 'selected-window
+        ido-ignore-extensions t
+        ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
+                                    ".rb" ".org" ".txt"
+                                    ".c" ".cpp" ".cxx" ".h" ".hpp"))
+  (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+  (setq ido-use-faces nil)
+  (setq confirm-nonexistent-file-or-buffer nil)
+  (add-hook 'ido-setup-hook
+            (lambda ()
+              ;; Go straight home
+              (define-key ido-file-completion-map
+                (kbd "~")
+                (lambda ()
+                  (interactive)
+                  (cond
+                   ((looking-back "~/") (insert "code/"))
+                   ((looking-back "/") (insert "~/"))
+                   (:else (call-interactively 'self-insert-command)))))
 
-                ;; Use C-w to go back up a dir to better match normal usage of C-w
-                ;; - insert current file name with C-x C-w instead.
-                (define-key ido-file-completion-map (kbd "C-w") 'ido-delete-backward-updir)
-                (define-key ido-file-completion-map (kbd "C-x C-w") 'ido-copy-current-file-name))))
+              ;; Use C-w to go back up a dir to better match normal usage of C-w
+              ;; - insert current file name with C-x C-w instead.
+              (define-key ido-file-completion-map (kbd "C-w") 'ido-delete-backward-updir)
+              (define-key ido-file-completion-map (kbd "C-x C-w") 'ido-copy-current-file-name)))
   :config
-  (progn
-    (ido-mode t)
-    (flx-ido-mode 1)
-    (ido-vertical-mode)
-    (ido-ubiquitous-mode 1)))
+  (ido-mode t)
+  (flx-ido-mode 1)
+  (ido-vertical-mode)
+  (ido-ubiquitous-mode 1))
 
 ;; TODO: move to autoloaded file
 (defun recentf-ido-find-file ()
@@ -431,47 +433,45 @@
 (req-package magit
   :bind ("C-x C-z" . magit-status)
   :init
-  (progn
-    (setq magit-repo-dirs '("~/code/"))
-    (setq-default
-     magit-stage-all-confirm nil
-     magit-unstage-all-confirm nil
-     magit-save-some-buffers nil
-     magit-process-popup-time 5
-     magit-diff-refine-hunk t
-     magit-completing-read-function 'magit-ido-completing-read))
+  (setq magit-repo-dirs '("~/code/"))
+  (setq-default
+   magit-stage-all-confirm nil
+   magit-unstage-all-confirm nil
+   magit-save-some-buffers nil
+   magit-process-popup-time 5
+   magit-diff-refine-hunk t
+   magit-completing-read-function 'magit-ido-completing-read)
   :config
-  (progn
-    (defadvice magit-status (around magit-fullscreen activate)
-      (window-configuration-to-register :magit-fullscreen)
-      ad-do-it
-      (delete-other-windows))
+  (defadvice magit-status (around magit-fullscreen activate)
+    (window-configuration-to-register :magit-fullscreen)
+    ad-do-it
+    (delete-other-windows))
 
-    (defun magit-quit-session ()
-      "Restores the previous window configuration and kills the magit buffer"
-      (interactive)
-      (kill-buffer)
-      (jump-to-register :magit-fullscreen))
+  (defun magit-quit-session ()
+    "Restores the previous window configuration and kills the magit buffer"
+    (interactive)
+    (kill-buffer)
+    (jump-to-register :magit-fullscreen))
 
-    (define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
+  (define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
 
-    (defun magit-toggle-whitespace ()
-      (interactive)
-      (if (member "-w" magit-diff-options)
-          (magit-dont-ignore-whitespace)
-        (magit-ignore-whitespace)))
+  (defun magit-toggle-whitespace ()
+    (interactive)
+    (if (member "-w" magit-diff-options)
+        (magit-dont-ignore-whitespace)
+      (magit-ignore-whitespace)))
 
-    (defun magit-ignore-whitespace ()
-      (interactive)
-      (add-to-list 'magit-diff-options "-w")
-      (magit-refresh))
+  (defun magit-ignore-whitespace ()
+    (interactive)
+    (add-to-list 'magit-diff-options "-w")
+    (magit-refresh))
 
-    (defun magit-dont-ignore-whitespace ()
-      (interactive)
-      (setq magit-diff-options (remove "-w" magit-diff-options))
-      (magit-refresh))
+  (defun magit-dont-ignore-whitespace ()
+    (interactive)
+    (setq magit-diff-options (remove "-w" magit-diff-options))
+    (magit-refresh))
 
-    (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace)))
+  (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace))
 
 (req-package git-messenger
   :bind ("C-x v p" . git-messenger:popup-message))
@@ -502,18 +502,18 @@
 (req-package anzu
   :diminish anzu-mode
   :config
-  (progn
-    ;; show number of matches while searching
-    (global-anzu-mode 1)
-    ;; use anzu for query for query-replace
-    (global-set-key [remap query-replace] 'anzu-query-replace-regexp)))
+  ;; show number of matches while searching
+  (global-anzu-mode 1)
+  ;; use anzu for query for query-replace
+  (global-set-key [remap query-replace] 'anzu-query-replace-regexp))
 
 ;;==================================================
 ;; elisp
 ;;==================================================
 (req-package highlight-quoted
   :commands highlight-quoted-mode
-  :init (add-hook 'emacs-lisp-mode-hook 'highlight-quoted-mode))
+  :init
+  (add-hook 'emacs-lisp-mode-hook (lambda () (highlight-quoted-mode 1))))
 
 ;(add-hook 'emacs-lisp-mode-hook 'hl-sexp-mode)
 
@@ -530,7 +530,8 @@
 
 ; TODO: add mode
 (req-package scss-mode
-  :config (setq scss-compile-at-save nil))
+  :config
+  (setq scss-compile-at-save nil))
 
 ;;==================================================
 ;; Dired settings
@@ -558,8 +559,7 @@
 
 (req-package dired+
   :config
-  (progn
-    (global-dired-hide-details-mode -1)))
+  (global-dired-hide-details-mode -1))
 
 ;;==================================================
 ;; browse-kill-ring settings
@@ -567,11 +567,10 @@
 (req-package browse-kill-ring+
   :require (browse-kill-ring)
   :config
-  (progn
-    (browse-kill-ring-default-keybindings)
-    (setq browse-kill-ring-highlight-current-entry t)
-    (setq browse-kill-ring-highlight-inserted-item t)
-    (setq browse-kill-ring-quit-action 'save-and-restore)))
+  (browse-kill-ring-default-keybindings)
+  (setq browse-kill-ring-highlight-current-entry t)
+  (setq browse-kill-ring-highlight-inserted-item t)
+  (setq browse-kill-ring-quit-action 'save-and-restore))
 
 ;;==================================================
 ;; fasd settings
@@ -579,7 +578,8 @@
 
 (req-package fasd
   :bind ("C-h C-/" . fasd-find-file)
-  :config (global-fasd-mode 1))
+  :config
+  (global-fasd-mode 1))
 
 ;;==================================================
 ;; jump-char
@@ -609,7 +609,8 @@
 ;;==================================================
 (req-package paredit
   :diminish (paredit-mode . "Par")
-  :init (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
+  :init
+  (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
 ;;==================================================
 ;; change-inner/outer
@@ -669,7 +670,8 @@
 
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
-  :config (whole-line-or-region-mode t))
+  :config
+  (whole-line-or-region-mode t))
 
 ;;==================================================
 ;; ispell
@@ -724,9 +726,8 @@
          ("M-X" . smex-major-mode-commands)
          ("C-c C-c M-x" . execute-extended-command))
   :config
-  (progn
-    (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
-    (smex-initialize)))
+  (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
+  (smex-initialize))
 
 ;;==================================================
 ;; Projectile settings
@@ -734,9 +735,8 @@
 
 (req-package projectile
   :config
-  (progn
-    (projectile-global-mode)
-    (setq projectile-require-project-file nil)))
+  (projectile-global-mode)
+  (setq projectile-require-project-file nil))
 
 ;;==================================================
 ;; wgrep
@@ -747,14 +747,17 @@
 (req-package wgrep-ag
   :require (ag wgrep)
   :if (executable-find "ag")
-  :config (setq-default ag-highlight-search t))
+  :config
+  (setq-default ag-highlight-search t))
 
 
 ;;==================================================
 ;; web
 ;;==================================================
 (req-package web-mode
-  :mode "\\.html?\\'")
+  :mode "\\.html?\\'"
+  :config
+  (setq web-mode-markup-indent-offset 2))
 
 ;; (setq web-mode-engines-alist
 ;;       '(("php" . "\\.phtml\\'")
@@ -770,7 +773,8 @@
 
 (req-package scss-mode
   :mode "\\.scss?\\'"
-  :init (setq scss-compile-at-save nil))
+  :init
+  (setq scss-compile-at-save nil))
 
 
 ;;==================================================
@@ -806,19 +810,20 @@
 (req-package fic-mode
   :diminish fic-mode
   :commands turn-on-fic-mode
-  :init (add-hook 'prog-mode-hook 'turn-on-fic-mode)
-  :config (set-face-attribute 'font-lock-fic-face nil
-                              :inherit font-lock-warning-face
-                              :foreground nil
-                              :background nil
-                              :underline nil))
+  :init
+  (add-hook 'prog-mode-hook 'turn-on-fic-mode)
+  :config
+  (set-face-attribute 'font-lock-fic-face nil
+                      :inherit font-lock-warning-face
+                      :foreground nil
+                      :background nil
+                      :underline nil))
 
 (req-package rainbow-mode
   :commands rainbow-mode
   :init
-  (progn
-    (add-hook 'css-mode-hook 'rainbow-mode)
-    (add-hook 'html-mode-hook 'rainbow-mode)))
+  (add-hook 'css-mode-hook 'rainbow-mode)
+  (add-hook 'html-mode-hook 'rainbow-mode))
 
 ;; keep scratch around
 (save-excursion
@@ -892,7 +897,8 @@ comment to the line."
 
 (req-package server
   :if window-system
-  :init (add-hook 'after-init-hook 'server-start t))
+  :init
+  (add-hook 'after-init-hook 'server-start t))
 
 ;; TODO:
 ;; * Undo tree
