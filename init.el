@@ -1,5 +1,6 @@
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
+;(setq use-package-verbose t)
 
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
