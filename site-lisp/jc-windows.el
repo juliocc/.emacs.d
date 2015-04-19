@@ -29,11 +29,10 @@ Call a second time to restore the original window configuration."
 
 ; When splitting window, show (other-buffer) in the new window
 (defun split-window-func-with-other-buffer (split-function)
-  (lexical-let ((s-f split-function))
-    (lambda ()
-      (interactive)
-      (funcall s-f)
-      (set-window-buffer (next-window) (other-buffer)))))
+  `(lambda ()
+     (interactive)
+     (,split-function)
+     (set-window-buffer (next-window) (other-buffer))))
 
 (defun split-window-horizontally-with-other-buffer ()
   (interactive)
