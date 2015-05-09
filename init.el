@@ -804,7 +804,7 @@
 (req-package "paradox")
 (req-package "cypher-mode")
 (req-package "jade-mode")
-
+(req-package "highlight-symbol")
 
 (req-package ace-jump-mode
   :bind ("C-'" . ace-jump-mode))
