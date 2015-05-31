@@ -94,8 +94,8 @@
 ;; General settings
 ;;=================================================
 
-(setq mouse-wheel-scroll-amount
-      '(1 ((shift) . 1)))               ; ??
+(setq mouse-wheel-scroll-amount '(0.01))
+
 (setq
  mouse-yank-at-point t                  ; mouse pastes at point
  x-select-enable-clipboard t            ; Allow pasting selection outside of Emacs
@@ -330,6 +330,9 @@
   :if *is-a-mac*
   :config
   (exec-path-from-shell-initialize))
+
+(req-package reveal-in-finder
+  :if *is-a-mac*)
 
 
 ; Stop C-z from minimizing windows under OS X
