@@ -62,7 +62,9 @@
   (blink-cursor-mode nil))
 
 ;; Set default font
-(set-face-font 'default "Inconsolata 11")
+(if (find-font (font-spec :name "Inconsolata"))
+    (set-face-font 'default "Inconsolata 11"))
+
 ;; Other good fonts. Test text: ()[]l1t  O0o Ilegal1 = O0
 ;; (set-face-font 'default "Envy Code R 10")
 ;; (set-face-font 'default "ProggyCleanTT 12")
