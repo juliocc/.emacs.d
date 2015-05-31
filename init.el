@@ -765,6 +765,7 @@
 ;;         ("django" . "\\.html\\'")))
 
 
+(setq js-indent-level 2)
 
 (req-package yaml-mode
   :mode "\\.yaml?\\'")
@@ -801,6 +802,9 @@
 ;; Misc packages and utilities
 ;;==================================================
 (req-package "paradox")
+(req-package "cypher-mode")
+(req-package "jade-mode")
+
 
 (req-package ace-jump-mode
   :bind ("C-'" . ace-jump-mode))
