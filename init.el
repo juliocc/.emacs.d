@@ -574,6 +574,16 @@
   (setq browse-kill-ring-quit-action 'save-and-restore))
 
 ;;==================================================
+;; deft
+;;==================================================
+
+(req-package deft
+  :require markdown-mode
+  :config
+  (setq deft-extension "md")
+  (setq deft-text-mode 'markdown-mode))
+
+;;==================================================
 ;; fasd settings
 ;;==================================================
 
