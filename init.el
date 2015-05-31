@@ -831,8 +831,18 @@
 (req-package "highlight-symbol")
 (req-package "markdown-mode")
 
-(req-package ace-jump-mode
-  :bind ("C-'" . ace-jump-mode))
+(req-package avy-mode
+  :bind (("M-g M-g" . avy-goto-line)
+         ("C-'" . avy-goto-char)
+         ("C-\"" . avy-goto-char))
+  :config
+  (avy-setup-default))
+
+(req-package ace-window
+  :bind
+  ("M-o" . ace-window)
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
 (req-package expand-region
   :bind ("C-=" . er/expand-region))
