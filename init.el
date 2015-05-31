@@ -758,6 +758,7 @@
 (req-package web-mode
   :mode "\\.html?\\'"
   :config
+  (setq web-mode-code-indent-offset 2)
   (setq web-mode-markup-indent-offset 2))
 
 ;; (setq web-mode-engines-alist
@@ -805,6 +806,7 @@
 (req-package "cypher-mode")
 (req-package "jade-mode")
 (req-package "highlight-symbol")
+(req-package "markdown-mode")
 
 (req-package ace-jump-mode
   :bind ("C-'" . ace-jump-mode))
