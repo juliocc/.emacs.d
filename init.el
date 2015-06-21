@@ -702,6 +702,7 @@
 
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
+  :diminish whole-line-or-region-mode
   :config
   (whole-line-or-region-mode t))
 
