@@ -241,6 +241,14 @@
   :config
   (volatile-highlights-mode t))
 
+(req-package undo-tree
+  :diminish undo-tree-mode
+  :config
+  (global-undo-tree-mode)
+  (setq undo-tree-auto-save-history t)
+  (setq undo-tree-history-directory-alist
+        `((".*" . ,(concat user-emacs-directory "undo-list")))))
+
 ;; Save a list of recent files visited.
 (setq recentf-max-saved-items 1000)
 (setq recentf-save-file (expand-file-name ".recentf" user-emacs-directory))
