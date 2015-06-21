@@ -85,7 +85,8 @@
 (column-number-mode 1)
 
 (req-package highlight-numbers
-   :commands highlight-numbers-mode)
+  :config
+  (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
 (req-package smooth-scrolling)
 (setq scroll-conservatively 100000)
