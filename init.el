@@ -446,8 +446,10 @@
   :mode "gitolite\\.conf\\'")
 
 (req-package magit
+  :diminish magit-auto-revert-mode
   :bind ("C-x C-z" . magit-status)
   :init
+  (setq magit-last-seen-setup-instructions "1.4.0")
   (setq magit-repo-dirs '("~/code/"))
   (setq-default
    magit-stage-all-confirm nil
@@ -951,7 +953,6 @@ comment to the line."
   (add-hook 'after-init-hook 'server-start t))
 
 ;; TODO:
-;; * Undo tree
 ;; * ibuffer setup
 ;; * Check tagedit: https://github.com/magnars/tagedit
 
