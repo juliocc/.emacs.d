@@ -701,7 +701,7 @@
   (move-end-of-line 1)
   (newline-and-indent))
 
-(global-set-key (kbd "S-<return>") 'sanityinc/newline-at-end-of-line)
+(bind-key "S-<return>" 'sanityinc/newline-at-end-of-line)
 
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
