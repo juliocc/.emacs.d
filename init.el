@@ -617,14 +617,6 @@
   (global-fasd-mode 1))
 
 ;;==================================================
-;; jump-char
-;;==================================================
-
-(req-package jump-char
-  :bind (("M-m" . jump-char-forward)
-         ("M-M" . jump-char-backward)))
-
-;;==================================================
 ;; multiple cursors
 ;;==================================================
 
@@ -814,6 +806,15 @@
   :init
   (setq scss-compile-at-save nil))
 
+;;==================================================
+;; jump-char
+;;==================================================
+
+;; NOTE: keep this after loading ido, otherwise M-m won't work inside
+;; ido
+(req-package jump-char
+  :bind (("M-m" . jump-char-forward)
+         ("M-M" . jump-char-backward)))
 
 ;;==================================================
 ;; python
