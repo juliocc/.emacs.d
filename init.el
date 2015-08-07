@@ -154,8 +154,12 @@
 (bind-key "M-/" 'hippie-expand)
 
 ;; Delete whitespace at the end of lines when saving
-;; TODO: consider whitespace-clenup-mode
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(req-package whitespace-cleanup-mode
+  :config
+  ;(add-to-list 'whitespace-cleanup-mode-ignore-modes 'deft-mode)
+  (global-whitespace-cleanup-mode))
 
 ;; But don't show trailing whitespace in these modes
 (defun sanityinc/no-trailing-whitespace ()
@@ -605,6 +609,7 @@
   :require markdown-mode
   :config
   (setq deft-extension "md")
+  (setq deft-auto-save-interval 15.0)
   (setq deft-text-mode 'markdown-mode))
 
 ;;==================================================
