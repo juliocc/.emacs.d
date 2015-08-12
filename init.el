@@ -289,8 +289,8 @@
 (windmove-default-keybindings)
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
-(show-paren-mode +1)
-(setq show-paren-style 'parenthesis)
+;; (show-paren-mode +1)
+;; (setq show-paren-style 'parenthesis)
 
 ;; Save point position between sessions
 (require 'saveplace)
@@ -359,8 +359,8 @@
 (bind-key "C-z" 'sanityinc/maybe-suspend-frame)
 
 ;; enable electric pairs and indent
-(when (fboundp 'electric-pair-mode)
-  (electric-pair-mode))
+;; (when (fboundp 'electric-pair-mode)
+;;   (electric-pair-mode))
 
 (when (eval-when-compile (version< "24.4" emacs-version))
   (electric-indent-mode 1))
@@ -545,6 +545,15 @@
   :config
   (sml/setup))
 
+;;==================================================
+;; smartparens
+;;==================================================
+(req-package smartparens
+  :config
+  (require 'smartparens-config)
+  (smartparens-global-mode)
+  (sp-use-smartparens-bindings)
+  (show-smartparens-global-mode))
 
 ;;==================================================
 ;; ediff
@@ -639,10 +648,10 @@
 ;;==================================================
 ;; change-inner/outer
 ;;==================================================
-(req-package paredit
-  :diminish (paredit-mode . "Par")
-  :init
-  (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
+;; (req-package paredit
+;;   :diminish (paredit-mode . "Par")
+;;   :init
+;;   (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
 ;;==================================================
 ;; change-inner/outer
