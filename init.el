@@ -544,12 +544,13 @@
 ;;==================================================
 ;; smartparens
 ;;==================================================
-(req-package smartparens
-  :config
-  (require 'smartparens-config)
-  (smartparens-global-mode)
+(req-package smartparens-config
+  :ensure smartparens
+  :diminish (smartparens-mode . "()")
+  :init
   (sp-use-smartparens-bindings)
-  (show-smartparens-global-mode))
+  (show-smartparens-global-mode)
+  (smartparens-global-mode t))
 
 ;;==================================================
 ;; ediff
