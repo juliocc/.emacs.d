@@ -440,8 +440,6 @@
 
 ;; TODO: load as needed
 (req-package git-blame)
-(req-package git-commit-mode)
-(req-package git-rebase-mode)
 (req-package gitconfig-mode)
 (req-package gitignore-mode)
 (req-package git-timemachine)
@@ -450,11 +448,9 @@
   :mode "gitolite\\.conf\\'")
 
 (req-package magit
-  :diminish magit-auto-revert-mode
   :bind ("C-x C-z" . magit-status)
   :init
-  (setq magit-last-seen-setup-instructions "1.4.0")
-  (setq magit-repo-dirs '("~/code/"))
+  (setq magit-repository-directories '("~/code/"))
   (setq-default
    magit-stage-all-confirm nil
    magit-unstage-all-confirm nil
