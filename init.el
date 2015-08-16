@@ -157,6 +157,7 @@
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (req-package whitespace-cleanup-mode
+  :diminish (whitespace-cleanup-mode . "_")
   :config
   ;(add-to-list 'whitespace-cleanup-mode-ignore-modes 'deft-mode)
   (global-whitespace-cleanup-mode))
@@ -249,10 +250,10 @@
 (req-package undo-tree
   :diminish undo-tree-mode
   :config
-  (global-undo-tree-mode)
   (setq undo-tree-auto-save-history t)
   (setq undo-tree-history-directory-alist
-        `((".*" . ,(concat user-emacs-directory "undo-list")))))
+        `((".*" . ,(concat user-emacs-directory "undo-list"))))
+  (global-undo-tree-mode))
 
 ;; Save a list of recent files visited.
 (setq recentf-max-saved-items 1000)
