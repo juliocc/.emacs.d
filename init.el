@@ -965,9 +965,6 @@ comment to the line."
   :init
   (add-hook 'after-init-hook 'server-start t))
 
-;; TODO:
-;; * ibuffer setup
-;; * Check tagedit: https://github.com/magnars/tagedit
 
 ;;==================================================
 ;; Now finally load everything
