@@ -681,8 +681,13 @@
   :load-path "site-lisp"
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
-         ("C-x 2" . split-window-vertically-with-other-buffer)
-         ("C-x 3" . split-window-horizontally-with-other-buffer)))
+         ("C-2" . split-window-vertically-with-other-buffer)
+         ("C-3" . split-window-horizontally-with-other-buffer)))
+
+(bind-key "C-1" 'delete-other-windows)
+;; (global-set-key (kbd "C-2") 'split-window-below)
+;; (global-set-key (kbd "C-3") 'split-window-right)
+(bind-key "C-0" 'delete-window)
 
 ;; resize windows
 (bind-key "S-C-<left>" 'shrink-window-horizontally)
