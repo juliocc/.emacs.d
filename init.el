@@ -576,7 +576,8 @@
 (require 'dired)
 
 ; dired
-(setq dired-listing-switches "-alhF")
+;(setq dired-listing-switches "--time-style long-iso --group-directories-first -alhF")
+(setq dired-listing-switches "--time-style long-iso -alhF")
 (setq-default diredp-hide-details-initially-flag nil
               dired-dwim-target t) ; Move files between split pane
 
