@@ -129,7 +129,7 @@
  ) ; don't add new lines when scrolling down
 
 (setq-default visible-bell t)
-(setq-default show-trailing-whitespace t)
+;(setq-default show-trailing-whitespace t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
 (setq-default truncate-lines t)         ; don't word-wrap
@@ -302,17 +302,23 @@
 (setq gc-cons-threshold 20000000)
 
 ;; guide-key setup
-(req-package guide-key
-  :diminish guide-key-mode
+;; (req-package guide-key
+;;   :diminish guide-key-mode
+;;   :config
+;;   (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
+;;                                        "C-x C-k" "<f8>" "C-c !" "M-s"
+;;                                        "C-x n" "C-c p"))
+;;   (add-hook 'dired-mode-hook
+;;             (lambda () (guide-key/add-local-guide-key-sequence "%")))
+;;   (guide-key-mode 1)
+;;   (setq guide-key/recursive-key-sequence-flag t)
+;;   (setq guide-key/popup-window-position 'bottom))
+
+(req-package which-key
+  :diminish which-key-mode
   :config
-  (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
-                                       "C-x C-k" "<f8>" "C-c !" "M-s"
-                                       "C-x n" "C-c p"))
-  (add-hook 'dired-mode-hook
-            (lambda () (guide-key/add-local-guide-key-sequence "%")))
-  (guide-key-mode 1)
-  (setq guide-key/recursive-key-sequence-flag t)
-  (setq guide-key/popup-window-position 'bottom))
+  (setq which-key-max-description-length 45)
+  (which-key-mode t))
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
