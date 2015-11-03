@@ -622,7 +622,7 @@
 (req-package deft
   :require markdown-mode
   :config
-  (setq deft-extension "md")
+  (setq deft-extensions '("md" "txt"))
   (setq deft-auto-save-interval 15.0)
   (setq deft-text-mode 'markdown-mode))
 
