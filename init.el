@@ -710,10 +710,21 @@
 (req-package ibuffer
   :bind ("C-x C-b" . ibuffer))
 
-; ibuffer
+; shrink-whitespace
 (req-package shrink-whitespace
   :commands shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
+
+; beacon
+(req-package beacon
+  :config
+  (setq beacon-color "#6F6F6F"
+        beacon-blink-when-focused  t)
+  (beacon-mode t) 
+
+  :bind ("M-SPC" . shrink-whitespace))
+
+
 
 ;; move-text
 (req-package move-text
