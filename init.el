@@ -692,7 +692,8 @@
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
          ("C-2" . split-window-vertically-with-other-buffer)
-         ("C-3" . split-window-horizontally-with-other-buffer)))
+         ("C-3" . split-window-horizontally-with-other-buffer)
+         ("C-S-j" . quick-switch-buffer)))
 
 (bind-key "C-1" 'delete-other-windows)
 ;; (global-set-key (kbd "C-2") 'split-window-below)
@@ -941,10 +942,6 @@ comment to the line."
                                    (line-end-position))
     ad-do-it
     (setq deactivate-mark nil)))
-
-
-(fset 'quick-switch-buffer [?\C-x ?b return])
-(bind-key "C-S-j" 'quick-switch-buffer)
 
 
 ;;==================================================
