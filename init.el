@@ -882,11 +882,11 @@
 ;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
-(req-package "paradox")
-(req-package "cypher-mode")
-(req-package "jade-mode")
-(req-package "highlight-symbol")
-(req-package "markdown-mode")
+(req-package paradox)
+(req-package cypher-mode)
+(req-package jade-mode)
+(req-package highlight-symbol)
+(req-package markdown-mode)
 
 (req-package avy-mode
   :bind (("M-g M-g" . avy-goto-line)
