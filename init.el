@@ -25,10 +25,13 @@
 ;; Setup package management tools
 ;;==================================================
 
+(unless (fboundp 'url-insert-buffer-contents)
+  (require 'url-handlers))
+
 (require 'package)
 
 ;; Add melpa to package repos
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (package-initialize)
 
