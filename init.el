@@ -710,6 +710,11 @@
 (req-package ibuffer
   :bind ("C-x C-b" . ibuffer))
 
+; ibuffer
+(req-package shrink-whitespace
+  :commands shrink-whitespace
+  :bind ("M-SPC" . shrink-whitespace))
+
 ;; move-text
 (req-package move-text
   :bind (("<M-up>" . move-text-up)
