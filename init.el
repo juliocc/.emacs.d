@@ -720,9 +720,7 @@
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
-  (beacon-mode t) 
-
-  :bind ("M-SPC" . shrink-whitespace))
+  (beacon-mode))
 
 
 
