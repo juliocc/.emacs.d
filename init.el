@@ -381,7 +381,7 @@
 ;; ido settings
 ;;==================================================
 (req-package flx-ido
-  :require (ido flx ido-vertical-mode ido-ubiquitous)
+  :require (ido flx ido-grid-mode ido-ubiquitous)
   :init
   (setq ido-enable-prefix nil
         ido-enable-flex-matching t
@@ -396,7 +396,7 @@
         ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
                                     ".rb" ".org" ".txt"
                                     ".c" ".cpp" ".cxx" ".h" ".hpp"))
-  (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+  ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   (setq ido-use-faces nil)
   (setq confirm-nonexistent-file-or-buffer nil)
   (add-hook 'ido-setup-hook
@@ -418,7 +418,7 @@
   :config
   (ido-mode t)
   (flx-ido-mode 1)
-  (ido-vertical-mode)
+  (ido-grid-mode)
   (ido-ubiquitous-mode 1))
 
 ;; TODO: move to autoloaded file
