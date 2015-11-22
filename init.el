@@ -339,7 +339,7 @@
 ;; Mac-specific settings
 ;;==================================================
 (when *is-a-mac*
-  (setq mac-option-modifier 'none)
+  (setq mac-option-modifier 'super) ; make opt key do Super
   (setq mac-control-modifier 'control)
   (setq ns-function-modifier 'hyper)
   (setq mac-command-modifier 'meta)
