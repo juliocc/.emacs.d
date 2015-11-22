@@ -888,9 +888,11 @@
 
 (req-package avy-mode
   :bind (("M-g M-g" . avy-goto-line)
-         ("C-'" . avy-goto-char)
+         ;("C-'" . avy-goto-char)
          ("C-\"" . avy-goto-char))
   :config
+  (setq avy-keys
+        '(?c ?a ?s ?d ?e ?f ?h ?w ?y ?j ?k ?l ?n ?m ?v ?r ?u ?p))
   (avy-setup-default))
 
 (req-package ace-window
