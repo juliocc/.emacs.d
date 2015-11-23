@@ -654,7 +654,7 @@
          ("C-c c a" . mc/edit-beginnings-of-lines)))
 
 ;;==================================================
-;; change-inner/outer
+;; paredit
 ;;==================================================
 ;; (req-package paredit
 ;;   :diminish (paredit-mode . "Par")
@@ -696,8 +696,6 @@
          ("C-S-j" . quick-switch-buffer)))
 
 (bind-key "C-1" 'delete-other-windows)
-;; (global-set-key (kbd "C-2") 'split-window-below)
-;; (global-set-key (kbd "C-3") 'split-window-right)
 (bind-key "C-0" 'delete-window)
 
 ;; resize windows
