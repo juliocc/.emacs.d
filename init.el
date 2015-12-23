@@ -720,12 +720,11 @@
         beacon-blink-when-focused  t)
   (beacon-mode))
 
-
-
 ;; move-text
-(req-package move-text
-  :bind (("<M-up>" . move-text-up)
-         ("<M-down>" . move-text-down)))
+(req-package drag-stuff
+  :config
+  (setq drag-stuff-modifier '(meta super))
+  (drag-stuff-global-mode t))
 
 (defun sanityinc/newline-at-end-of-line ()
   "Move to end of line, enter a newline, and reindent."
