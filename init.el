@@ -154,7 +154,7 @@
                                          try-expand-line
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
-(bind-key "M-/" 'hippie-expand)
+(bind-key "M-s-/" 'hippie-expand)
 
 ;; Delete whitespace at the end of lines when saving
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -811,6 +811,19 @@
 
 (req-package popup-imenu
   :bind ("M-i" . popup-imenu))
+
+;;==================================================
+;; auto-complete settings
+;;==================================================
+
+(req-package auto-complete
+  :require fuzzy
+  :bind ("M-/" . auto-complete)
+  :config
+  (setq ac-auto-show-menu nil)
+  (setq ac-auto-start nil)
+  (setq ac-menu-height 15)
+  (ac-config-default))
 
 ;;==================================================
 ;; wgrep
