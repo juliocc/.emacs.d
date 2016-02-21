@@ -715,6 +715,7 @@
 
 ; beacon
 (req-package beacon
+  :diminish beacon-mode
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
@@ -722,6 +723,7 @@
 
 ;; move-text
 (req-package drag-stuff
+  :diminish drag-stuff-mode
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-global-mode t))
