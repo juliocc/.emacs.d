@@ -677,9 +677,18 @@
   :init (bind-key "\M-Z" 'zap-to-char))
 
 (req-package jc-misc
-  :commands (chmod+x-this find-shell-init-file)
-  :bind (("M-p" . goto-match-paren)
-         ("C-a" . beginning-of-line-or-indentation)))
+  :commands (chmod+x-this)
+  :bind ("M-p" . goto-match-paren))
+
+(req-package crux
+  :bind (("C-a" . crux-move-beginning-of-line)
+         ("S-<return>" . crux-smart-open-line)
+         ("C-S-k" . crux-kill-whole-line)
+         ("C-S-<return>" . crux-smart-open-line-above))
+  :config
+  (crux-with-region-or-buffer indent-region)
+  (crux-with-region-or-buffer untabify)
+  (crux-reopen-as-root-mode t))
 
 ;; (defadvice ido-find-file (after find-file-sudo activate)
 ;;   "Find file as root if necessary."
@@ -697,6 +706,11 @@
 
 (bind-key "C-1" 'delete-other-windows)
 (bind-key "C-0" 'delete-window)
+
+(req-package bm
+  :bind (("<C-f2>" . bm-toggle)
+         ("<f2>" . bm-next)
+         ("<S-f2>" . bm-previous)))
 
 ;; resize windows
 (bind-key "S-C-<left>" 'shrink-window-horizontally)
@@ -726,13 +740,13 @@
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-global-mode t))
 
-(defun sanityinc/newline-at-end-of-line ()
-  "Move to end of line, enter a newline, and reindent."
-  (interactive)
-  (move-end-of-line 1)
-  (newline-and-indent))
+;; (defun sanityinc/newline-at-end-of-line ()
+;;   "Move to end of line, enter a newline, and reindent."
+;;   (interactive)
+;;   (move-end-of-line 1)
+;;   (newline-and-indent))
 
-(bind-key "S-<return>" 'sanityinc/newline-at-end-of-line)
+;; (bind-key "S-<return>" 'sanityinc/newline-at-end-of-line)
 
 ;; Cut/copy the current line if no region is active
 (req-package whole-line-or-region
@@ -820,10 +834,18 @@
   :require fuzzy
   :bind ("M-/" . auto-complete)
   :config
+  (ac-config-default)
   (setq ac-auto-show-menu nil)
   (setq ac-auto-start nil)
   (setq ac-menu-height 15)
-  (ac-config-default))
+  (setq ac-fuzzy-enable t)
+  (setq ac-dwim-enable t)
+  (setq ac-use-menu-map t)
+  (setq-default ac-sources '(ac-source-abbrev
+                             ac-source-words-in-same-mode-buffers
+                             ac-source-files-in-current-dir
+                             ac-source-filename
+                             ac-source-dictionary)))
 
 ;;==================================================
 ;; wgrep

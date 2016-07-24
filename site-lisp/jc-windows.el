@@ -25,7 +25,6 @@ Call a second time to restore the original window configuration."
     (window-configuration-to-register :sanityinc/split-window)
     (switch-to-buffer-other-window nil)))
 
-;; (global-set-key (kbd "<f7>") 'sanityinc/split-window)
 
 ; When splitting window, show (other-buffer) in the new window
 (defun split-window-func-with-other-buffer (split-function)
