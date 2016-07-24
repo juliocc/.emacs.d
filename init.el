@@ -351,6 +351,11 @@
       (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
   (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
 
+;; disable visible bell in windowed OSX (doesn't work in El Capitan)
+(when *is-a-windowed-mac*
+  (setq visible-bell nil) ;; The default
+  (setq ring-bell-function 'ignore))
+
 (req-package exec-path-from-shell
   :if *is-a-mac*
   :config
@@ -607,6 +612,10 @@
   :config
   (global-dired-hide-details-mode -1))
 
+(req-package peep-dired
+  :bind (:map dired-mode-map
+              ("P" . peep-dired)))
+
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
@@ -729,6 +738,7 @@
 
 ; beacon
 (req-package beacon
+  :diminish beacon-mode
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
@@ -736,6 +746,7 @@
 
 ;; move-text
 (req-package drag-stuff
+  :diminish drag-stuff-mode
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-global-mode t))
@@ -947,7 +958,7 @@
   :diminish fic-mode
   :commands turn-on-fic-mode
   :init
-  (add-hook 'prog-mode-hook 'turn-on-fic-mode)
+  (add-hook 'prog-mode-hook 'fic-mode)
   :config
   (set-face-attribute 'font-lock-fic-face nil
                       :inherit font-lock-warning-face
