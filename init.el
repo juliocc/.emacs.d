@@ -349,7 +349,18 @@
   (dolist (multiple '("" "double-" "triple-"))
     (dolist (direction '("right" "left"))
       (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-  (global-set-key [kp-delete] 'delete-char)) ;; sets fn-delete to be right-delete
+  (global-set-key [kp-delete] 'delete-char);; sets fn-delete to be right-delete
+  (defun jc/toggle-mac-option-modifier ()
+    "Toggle between passing option modifier either to Emacs or OS X."
+    (interactive)
+    (let ((old-opt mac-option-modifier))
+      (setq mac-option-modifier
+            (if (eq mac-option-modifier 'super)
+                'none
+              'super))
+      (message "Toggled `mac-option-modifier' from %s to %s."
+               old-opt
+               mac-option-modifier))))
 
 ;; disable visible bell in windowed OSX (doesn't work in El Capitan)
 (when *is-a-windowed-mac*
