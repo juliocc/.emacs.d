@@ -573,8 +573,46 @@
 (req-package smartparens-config
   :ensure smartparens
   :diminish (smartparens-mode . "()")
+  :bind (:map smartparens-mode-map
+              ("C-M-a" . sp-beginning-of-sexp)
+              ("C-M-e" . sp-end-of-sexp)
+
+              ("C-<down>" . sp-down-sexp)
+              ("C-<up>"   . sp-up-sexp)
+              ("M-<down>" . sp-backward-down-sexp)
+              ("M-<up>"   . sp-backward-up-sexp)
+
+              ("C-M-f" . sp-forward-sexp)
+              ("C-M-b" . sp-backward-sexp)
+
+              ("C-M-n" . sp-next-sexp)
+              ("C-M-p" . sp-previous-sexp)
+
+              ("C-S-f" . sp-forward-symbol)
+              ("C-S-b" . sp-backward-symbol)
+
+              ("C-<right>" . sp-forward-slurp-sexp)
+              ("M-<right>" . sp-backward-barf-sexp)
+              ("C-<left>"  . sp-forward-barf-sexp)
+              ("M-<left>"  . sp-backward-slurp-sexp)
+
+              ("C-M-t" . sp-transpose-sexp)
+              ("C-M-k" . sp-kill-sexpa)
+              ("C-k"   . sp-kill-hybrid-sexp)
+              ("M-k"   . sp-backward-kill-sexp)
+              ("C-M-w" . sp-copy-sexp)
+
+              ("C-M-d" . delete-sexp)
+
+              ("M-<backspace>" . backward-kill-word)
+              ("C-<backspace>" . sp-backward-kill-word)
+              ([remap sp-backward-kill-word] . backward-kill-word)
+
+              ("M-[" . sp-backward-unwrap-sexp)
+              ("M-]" . sp-unwrap-sexp)
+
+              ("C-x C-t" . sp-transpose-hybrid-sexp))
   :init
-  (sp-use-smartparens-bindings)
   (show-smartparens-global-mode)
   (smartparens-global-mode t))
 
