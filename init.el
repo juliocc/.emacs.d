@@ -81,7 +81,7 @@
 ;; (set-face-font 'default "MonteCarlo")
 
 ;; Put fringe on the side
-(if (fboundp 'fringe-mode) (fringe-mode 5))
+(if (fboundp 'fringe-mode) (fringe-mode))
 
 (global-font-lock-mode t)               ; just in case
 (line-number-mode 1)
@@ -372,7 +372,7 @@
   :config
   (exec-path-from-shell-initialize))
 
-(req-package reveal-in-finder
+(req-package reveal-in-osx-finder
   :if *is-a-mac*)
 
 
@@ -644,8 +644,9 @@
 
 (req-package deft
   :require markdown-mode
-  :config
+  :init
   (setq deft-extensions '("md" "txt"))
+  :config
   (setq deft-auto-save-interval 15.0)
   (setq deft-text-mode 'markdown-mode))
 
@@ -909,6 +910,8 @@
   :init
   (setq scss-compile-at-save nil))
 
+(req-package js2-mode)
+
 ;;==================================================
 ;; jump-char
 ;;==================================================
@@ -946,6 +949,7 @@
 (req-package jade-mode)
 (req-package highlight-symbol)
 (req-package markdown-mode)
+(req-package ssh-config-mode)
 
 (req-package avy-mode
   :bind (("M-g M-g" . avy-goto-line)
