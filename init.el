@@ -32,7 +32,7 @@
 
 ;; Add melpa to package repos
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
 (unless (package-installed-p 'req-package)
@@ -608,8 +608,9 @@
               ("C-<backspace>" . sp-backward-kill-word)
               ([remap sp-backward-kill-word] . backward-kill-word)
 
-              ("M-[" . sp-backward-unwrap-sexp)
-              ("M-]" . sp-unwrap-sexp)
+              ;; breaks bracketed paste mode
+              ;("M-[" . sp-backward-unwrap-sexp)
+              ;("M-]" . sp-unwrap-sexp)
 
               ("C-x C-t" . sp-transpose-hybrid-sexp))
   :init
