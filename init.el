@@ -32,7 +32,7 @@
 
 ;; Add melpa to package repos
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (package-initialize)
 
 (unless (package-installed-p 'req-package)
@@ -49,9 +49,33 @@
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
-(req-package zenburn-theme
+;; (req-package zenburn-theme
+;;   :config
+;;   (load-theme 'zenburn t))
+;; (req-package sunburn-theme
+;;   :config
+;;   (load-theme 'sunburn t))
+
+(req-package spacemacs-theme
+  :init
+  (load-theme 'spacemacs-dark t))
+
+(req-package window-numbering
+  ;; :diminish anzu-mode
   :config
-  (load-theme 'zenburn t))
+  ;; show number of matches while searching
+  (window-numbering-mode t))
+
+
+(req-package spaceline
+  :demand t
+  :init
+  (setq powerline-default-separator 'arrow-fade)
+  (setq ns-use-srgb-colorspace nil)
+  (setq anzu-cons-mode-line-p nil)
+  :config
+  (require 'spaceline-config)
+  (spaceline-spacemacs-theme))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -370,6 +394,7 @@
 (req-package exec-path-from-shell
   :if *is-a-mac*
   :config
+  (setq exec-path-from-shell-check-startup-files nil)
   (exec-path-from-shell-initialize))
 
 (req-package reveal-in-osx-finder
@@ -397,7 +422,7 @@
 ;; ido settings
 ;;==================================================
 (req-package flx-ido
-  :require (ido flx ido-grid-mode ido-ubiquitous)
+  :require (ido flx ido-grid-mode ido-completing-read+)
   :init
   (setq ido-enable-prefix nil
         ido-enable-flex-matching t
@@ -433,6 +458,7 @@
               (define-key ido-file-completion-map (kbd "C-x C-w") 'ido-copy-current-file-name)))
   :config
   (ido-mode t)
+  (ido-everywhere t)
   (flx-ido-mode 1)
   (ido-grid-mode)
   (ido-ubiquitous-mode 1))
@@ -666,6 +692,12 @@
   :bind (:map dired-mode-map
               ("P" . peep-dired)))
 
+(defun make-parent-directory ()
+  "Make sure the directory of `buffer-file-name' exists."
+  (make-directory (file-name-directory buffer-file-name) t))
+
+(add-hook 'find-file-not-found-functions #'make-parent-directory)
+
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
@@ -860,6 +892,32 @@
          ("M-`" . jump-to-mark)))
 
 ;;==================================================
+;; swier settings
+;;==================================================
+
+;; (req-package ivy
+;;   :require counsel
+;;   :init
+;;   (ivy-mode 1)
+;;   (setq ivy-use-virtual-buffers t)
+;;   (global-set-key "\C-s" 'swiper)
+;;   (global-set-key (kbd "C-c C-r") 'ivy-resume)
+;;   (global-set-key (kbd "<f6>") 'ivy-resume)
+;;   (global-set-key (kbd "M-x") 'counsel-M-x)
+;;   (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+;;   (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+;;   (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+;;   (global-set-key (kbd "<f1> l") 'counsel-load-library)
+;;   (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+;;   (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+;;   (global-set-key (kbd "C-c g") 'counsel-git)
+;;   (global-set-key (kbd "C-c j") 'counsel-git-grep)
+;;   (global-set-key (kbd "C-c k") 'counsel-ag)
+;;   (global-set-key (kbd "C-x l") 'counsel-locate)
+;;   (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+;;   (define-key read-expression-map (kbd "C-r") 'counsel-expression-history))
+
+;;==================================================
 ;; smex settings
 ;;==================================================
 
@@ -878,6 +936,11 @@
 
 (req-package projectile
   :config
+  (setq projectile-mode-line
+        '(:eval
+          (format " Prj:%s"
+                  (projectile-project-name))))
+
   (projectile-global-mode)
   (setq projectile-require-project-file nil))
 
