@@ -61,9 +61,7 @@
   (load-theme 'spacemacs-dark t))
 
 (req-package window-numbering
-  ;; :diminish anzu-mode
   :config
-  ;; show number of matches while searching
   (window-numbering-mode t))
 
 
@@ -832,6 +830,7 @@
   :diminish drag-stuff-mode
   :config
   (setq drag-stuff-modifier '(meta super))
+  (drag-stuff-define-keys)
   (drag-stuff-global-mode t))
 
 ;; (defun sanityinc/newline-at-end-of-line ()
@@ -944,6 +943,10 @@
   (projectile-global-mode)
   (setq projectile-require-project-file nil))
 
+(req-package dumb-jump
+  :config
+  (dumb-jump-mode t))
+
 ;;==================================================
 ;; popup-imenu settings
 ;;==================================================
@@ -1020,9 +1023,10 @@
 
 ;; NOTE: keep this after loading ido, otherwise M-m won't work inside
 ;; ido
-(req-package jump-char
-  :bind (("M-m" . jump-char-forward)
-         ("M-M" . jump-char-backward)))
+;; (req-package jump-char
+;;   :config
+;;   :bind (("M-m" . jump-char-forward)
+;;          ("M-M" . jump-char-backward)))
 
 ;;==================================================
 ;; python
@@ -1054,9 +1058,9 @@
 (req-package ssh-config-mode)
 
 (req-package avy-mode
-  :bind (("M-g M-g" . avy-goto-line)
+  :bind (("M-g g" . avy-goto-line)
          ;("C-'" . avy-goto-char)
-         ("C-\"" . avy-goto-char))
+         ("C-\"" . avy-goto-char-timer))
   :config
   (setq avy-keys
         '(?c ?a ?s ?d ?e ?f ?h ?w ?y ?j ?k ?l ?n ?m ?v ?r ?u ?p))
