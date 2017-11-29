@@ -2,6 +2,31 @@
 (add-hook 'after-init-hook 'emacs-init-time)
 ;(setq use-package-verbose t)
 
+;; Put this file in register e for easy access
+(set-register ?e `(file . ,user-init-file))
+
+;;==================================================
+;; Harden emacs TLS config b ased on
+;; https://glyph.twistedmatrix.com/2015/11/editor-malware.html but
+;; using a local cacert.pem instead of relying on certify.
+;; ==================================================
+
+;;(unless (executable-find "gnutls-cli")
+;;  (error "make sure gnutls-cli is in your $PATH"))
+
+(let ((trustfile (expand-file-name "cacert.pem" user-emacs-directory)))
+  (setq tls-program
+        (list
+         (format "gnutls-cli%s --x509cafile %s -p %%p %%h"
+                 (if (eq window-system 'w32) ".exe" "") trustfile)))
+  (setf tls-checktrust t)
+  (setq gnutls-verify-error t)
+  (setq gnutls-trustfiles (list trustfile)))
+
+;;==================================================
+;; Setup basic stuff
+;;==================================================
+
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
 
@@ -10,9 +35,6 @@
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1)))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-
-;; Put this file in register e for easy access
-(set-register ?e `(file . ,user-init-file))
 
 ;; No splash screen
 (setq inhibit-startup-message t)
@@ -32,7 +54,11 @@
 
 ;; Add melpa to package repos
 ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+
+(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+                         ("melpa" . "https://melpa.org/packages/")))
+
 (package-initialize)
 
 (unless (package-installed-p 'req-package)
