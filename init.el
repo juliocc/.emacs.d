@@ -515,7 +515,6 @@
 ;;==================================================
 
 ;; TODO: load as needed
-(req-package git-blame)
 (req-package gitconfig-mode)
 (req-package gitignore-mode)
 (req-package git-timemachine)
