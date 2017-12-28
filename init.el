@@ -83,6 +83,7 @@
 ;;   (load-theme 'sunburn t))
 
 (req-package spacemacs-theme
+  :defer t
   :init
   (load-theme 'spacemacs-dark t))
 
@@ -91,15 +92,15 @@
   (window-numbering-mode t))
 
 
-(req-package spaceline
-  :demand t
-  :init
-  (setq powerline-default-separator 'arrow-fade)
-  (setq ns-use-srgb-colorspace nil)
-  (setq anzu-cons-mode-line-p nil)
-  :config
-  (require 'spaceline-config)
-  (spaceline-spacemacs-theme))
+;; (req-package spaceline
+;;   :demand t
+;;   :init
+;;   (setq powerline-default-separator 'arrow-fade)
+;;   (setq ns-use-srgb-colorspace nil)
+;;   (setq anzu-cons-mode-line-p nil)
+;;   :config
+;;   (require 'spaceline-config)
+;;   (spaceline-spacemacs-theme))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -203,6 +204,8 @@
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
 (bind-key "M-s-/" 'hippie-expand)
+
+(req-package diminish)
 
 ;; Delete whitespace at the end of lines when saving
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -621,7 +624,7 @@
 ;;==================================================
 (req-package smartparens-config
   :ensure smartparens
-  :diminish (smartparens-mode . "()")
+  :diminish (smartparens-mode . "SP")
   :bind (:map smartparens-mode-map
               ("C-M-a" . sp-beginning-of-sexp)
               ("C-M-e" . sp-end-of-sexp)
@@ -945,14 +948,18 @@
 ;; smex settings
 ;;==================================================
 
-(req-package smex
-  :require ido
-  :bind (("M-x" . smex)
-         ("M-X" . smex-major-mode-commands)
-         ("C-c C-c M-x" . execute-extended-command))
+;; (req-package smex
+;;   :require ido
+;;   :bind (("M-x" . smex)
+;;          ("M-X" . smex-major-mode-commands)
+;;          ("C-c C-c M-x" . execute-extended-command))
+;;   :config
+;;   (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
+;;   (smex-initialize))
+
+(req-package amx
   :config
-  (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
-  (smex-initialize))
+  (amx-mode t))
 
 ;;==================================================
 ;; Projectile settings
