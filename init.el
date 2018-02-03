@@ -91,16 +91,15 @@
   :config
   (window-numbering-mode t))
 
-
-;; (req-package spaceline
-;;   :demand t
-;;   :init
-;;   (setq powerline-default-separator 'arrow-fade)
-;;   (setq ns-use-srgb-colorspace nil)
-;;   (setq anzu-cons-mode-line-p nil)
-;;   :config
-;;   (require 'spaceline-config)
-;;   (spaceline-spacemacs-theme))
+(req-package spaceline
+  :demand t
+  :init
+  (setq powerline-default-separator 'arrow-fade)
+  (setq ns-use-srgb-colorspace nil)
+  (setq anzu-cons-mode-line-p nil)
+  :config
+  (require 'spaceline-config)
+  (spaceline-spacemacs-theme))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -114,8 +113,9 @@
   (blink-cursor-mode nil))
 
 ;; Set default font
-(if (find-font (font-spec :name "Inconsolata"))
-    (set-face-font 'default "Inconsolata 11"))
+;(if (find-font (font-spec :name "Fira Code"))
+;;    (set-default-font "Fira Code 13")
+; (message "Can't find font"))
 
 ;; Other good fonts. Test text: ()[]l1t  O0o Ilegal1 = O0
 ;; (set-face-font 'default "Envy Code R 10")
@@ -128,6 +128,7 @@
 ;; (set-face-font 'default "Ubuntu Mono 11")
 ;; (set-face-font 'default "Source Code Pro 10")
 ;; (set-face-font 'default "MonteCarlo")
+;; (set-face-font 'default "Inconsolata 11")
 
 ;; Put fringe on the side
 (if (fboundp 'fringe-mode) (fringe-mode))
@@ -206,6 +207,11 @@
 (bind-key "M-s-/" 'hippie-expand)
 
 (req-package diminish)
+(req-package try)
+(req-package helpful
+  :bind (("C-h f" . helpful-callable)
+         ("C-h v" . helpful-variable)
+         ("C-h k" . helpful-key)))
 
 ;; Delete whitespace at the end of lines when saving
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -615,9 +621,9 @@
 ;;==================================================
 ;; smart-mode-line
 ;;==================================================
-(req-package smart-mode-line
-  :config
-  (sml/setup))
+;; (req-package smart-mode-line
+;;   :config
+;;   (sml/setup))
 
 ;;==================================================
 ;; smartparens
