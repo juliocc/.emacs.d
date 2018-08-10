@@ -59,7 +59,7 @@
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 
-(package-initialize)
+(unless package--initialized (package-initialize t))
 
 (unless (package-installed-p 'req-package)
   (package-refresh-contents)
