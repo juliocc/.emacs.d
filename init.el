@@ -1,6 +1,6 @@
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
-;(setq use-package-verbose t)
+(setq use-package-verbose t)
 
 ;; Put this file in register e for easy access
 (set-register ?e `(file . ,user-init-file))
@@ -53,45 +53,48 @@
 (require 'package)
 
 ;; Add melpa to package repos
-;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                         ("melpa" . "https://melpa.org/packages/")))
+			 ("melpa" . "https://melpa.org/packages/")))
 
-(unless package--initialized (package-initialize t))
+;;(package-initialize)
 
-(unless (package-installed-p 'req-package)
+(unless (package-installed-p 'use-package)
   (package-refresh-contents)
-  (package-install 'req-package))
+  (package-install 'use-package))
 
-(require 'req-package)
+(setq use-package-always-ensure t)
+(require 'use-package)
 
-;; (req-package-force el-get
-;;   :init (progn (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
-;;                (el-get 'sync)))
-
+;;(require 'req-package)
+;; (req-package el-get ;; prepare el-get (optional)
+;;   :force t ;; load package immediately, no dependency resolution
+;;   :config
+;;   (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
+;;   (el-get 'sync))
 
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
-;; (req-package zenburn-theme
+;; (use-package zenburn-theme
 ;;   :config
 ;;   (load-theme 'zenburn t))
-;; (req-package sunburn-theme
+;; (use-package sunburn-theme
 ;;   :config
 ;;   (load-theme 'sunburn t))
 
-(req-package spacemacs-theme
+(use-package spacemacs-theme
   :defer t
   :init
   (load-theme 'spacemacs-dark t))
 
-(req-package window-numbering
+(use-package window-numbering
   :config
   (window-numbering-mode t))
 
-(req-package spaceline
+(use-package spaceline
   :demand t
   :init
   (setq powerline-default-separator 'arrow-fade)
@@ -137,11 +140,11 @@
 (line-number-mode 1)
 (column-number-mode 1)
 
-(req-package highlight-numbers
+(use-package highlight-numbers
   :config
   (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
-(req-package smooth-scrolling)
+(use-package smooth-scrolling)
 (setq scroll-conservatively 100000)
 (setq scroll-preserve-screen-position 'always)
 ;(setq scroll-step 0); what?
@@ -206,9 +209,9 @@
                                          try-complete-lisp-symbol))
 (bind-key "M-s-/" 'hippie-expand)
 
-(req-package diminish)
-(req-package try)
-(req-package helpful
+(use-package diminish)
+(use-package try)
+(use-package helpful
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
          ("C-h k" . helpful-key)))
@@ -216,7 +219,7 @@
 ;; Delete whitespace at the end of lines when saving
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-(req-package whitespace-cleanup-mode
+(use-package whitespace-cleanup-mode
   :diminish (whitespace-cleanup-mode . "_")
   :config
   ;(add-to-list 'whitespace-cleanup-mode-ignore-modes 'deft-mode)
@@ -244,7 +247,8 @@
          kill-buffer-query-functions))
 
 ;; Backup settings
-(req-package files
+(use-package files
+  :ensure nil
   :init
   (setq backup-by-copying t            ; don't clobber symlinks
         delete-old-versions t          ; delete old backups
@@ -292,22 +296,22 @@
 (setq minibuffer-prompt-properties
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 
-(req-package rainbow-delimiters
+(use-package rainbow-delimiters
   :commands rainbow-delimiters-mode
   :init
   (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
-(req-package highlight-parentheses
+(use-package highlight-parentheses
   :diminish highlight-parentheses-mode
   :config
   (global-highlight-parentheses-mode t))
 
-(req-package volatile-highlights
+(use-package volatile-highlights
   :diminish volatile-highlights-mode
   :config
   (volatile-highlights-mode t))
 
-(req-package undo-tree
+(use-package undo-tree
   :diminish undo-tree-mode
   :config
   (setq undo-tree-auto-save-history t)
@@ -337,7 +341,8 @@
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 
 ;; uniquify:  provide meaningful names for buffers with the same name
-(req-package uniquify
+(use-package uniquify
+  :ensure nil
   :init
   ;(setq uniquify-buffer-name-style 'forward)
   (setq uniquify-buffer-name-style 'reverse)
@@ -362,7 +367,7 @@
 (setq gc-cons-threshold 20000000)
 
 ;; guide-key setup
-;; (req-package guide-key
+;; (use-package guide-key
 ;;   :diminish guide-key-mode
 ;;   :config
 ;;   (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
@@ -374,7 +379,7 @@
 ;;   (setq guide-key/recursive-key-sequence-flag t)
 ;;   (setq guide-key/popup-window-position 'bottom))
 
-(req-package which-key
+(use-package which-key
   :diminish which-key-mode
   :config
   (setq which-key-max-description-length 45)
@@ -424,13 +429,13 @@
   (setq visible-bell nil) ;; The default
   (setq ring-bell-function 'ignore))
 
-(req-package exec-path-from-shell
+(use-package exec-path-from-shell
   :if *is-a-mac*
   :config
   (setq exec-path-from-shell-check-startup-files nil)
   (exec-path-from-shell-initialize))
 
-(req-package reveal-in-osx-finder
+(use-package reveal-in-osx-finder
   :if *is-a-mac*)
 
 
@@ -454,8 +459,11 @@
 ;;==================================================
 ;; ido settings
 ;;==================================================
-(req-package flx-ido
-  :require (ido flx ido-grid-mode ido-completing-read+)
+(use-package ido)
+(use-package flx)
+(use-package ido-grid-mode)
+(use-package ido-completing-read+)
+(use-package flx-ido
   :init
   (setq ido-enable-prefix nil
         ido-enable-flex-matching t
@@ -524,14 +532,14 @@
 ;;==================================================
 
 ;; TODO: load as needed
-(req-package gitconfig-mode)
-(req-package gitignore-mode)
-(req-package git-timemachine)
-(req-package gl-conf-mode
+(use-package gitconfig-mode)
+(use-package gitignore-mode)
+(use-package git-timemachine)
+(use-package gl-conf-mode
   :load-path "site-lisp/gl-conf-mode"
   :mode "gitolite\\.conf\\'")
 
-(req-package magit
+(use-package magit
   :bind ("C-x C-z" . magit-status)
   :init
   (setq magit-repository-directories '("~/code/"))
@@ -574,7 +582,7 @@
 
   (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace))
 
-(req-package git-messenger
+(use-package git-messenger
   :bind ("C-x v p" . git-messenger:popup-message))
 
 ;;==================================================
@@ -587,7 +595,8 @@
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
-(req-package jc-search
+(use-package jc-search
+  :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :init (bind-keys :map isearch-mode-map
                    ("M-z" . zap-to-isearch)
@@ -600,7 +609,7 @@
 ;; DEL during isearch should edit the search string, not jump back to the previous result
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
-(req-package anzu
+(use-package anzu
   :diminish anzu-mode
   :config
   ;; show number of matches while searching
@@ -611,7 +620,7 @@
 ;;==================================================
 ;; elisp
 ;;==================================================
-(req-package highlight-quoted
+(use-package highlight-quoted
   :commands highlight-quoted-mode
   :init
   (add-hook 'emacs-lisp-mode-hook (lambda () (highlight-quoted-mode 1))))
@@ -621,59 +630,60 @@
 ;;==================================================
 ;; smart-mode-line
 ;;==================================================
-;; (req-package smart-mode-line
+;; (use-package smart-mode-line
 ;;   :config
 ;;   (sml/setup))
 
 ;;==================================================
 ;; smartparens
 ;;==================================================
-(req-package smartparens-config
-  :ensure smartparens
-  :diminish (smartparens-mode . "SP")
-  :bind (:map smartparens-mode-map
-              ("C-M-a" . sp-beginning-of-sexp)
-              ("C-M-e" . sp-end-of-sexp)
+;;; req-todo
+;; (use-package smartparens-config
+;;   :ensure smartparens
+;;   :diminish (smartparens-mode . "SP")
+;;   :bind (:map smartparens-mode-map
+;;               ("C-M-a" . sp-beginning-of-sexp)
+;;               ("C-M-e" . sp-end-of-sexp)
 
-              ("C-<down>" . sp-down-sexp)
-              ("C-<up>"   . sp-up-sexp)
-              ("M-<down>" . sp-backward-down-sexp)
-              ("M-<up>"   . sp-backward-up-sexp)
+;;               ("C-<down>" . sp-down-sexp)
+;;               ("C-<up>"   . sp-up-sexp)
+;;               ("M-<down>" . sp-backward-down-sexp)
+;;               ("M-<up>"   . sp-backward-up-sexp)
 
-              ("C-M-f" . sp-forward-sexp)
-              ("C-M-b" . sp-backward-sexp)
+;;               ("C-M-f" . sp-forward-sexp)
+;;               ("C-M-b" . sp-backward-sexp)
 
-              ("C-M-n" . sp-next-sexp)
-              ("C-M-p" . sp-previous-sexp)
+;;               ("C-M-n" . sp-next-sexp)
+;;               ("C-M-p" . sp-previous-sexp)
 
-              ("C-S-f" . sp-forward-symbol)
-              ("C-S-b" . sp-backward-symbol)
+;;               ("C-S-f" . sp-forward-symbol)
+;;               ("C-S-b" . sp-backward-symbol)
 
-              ("C-<right>" . sp-forward-slurp-sexp)
-              ("M-<right>" . sp-backward-barf-sexp)
-              ("C-<left>"  . sp-forward-barf-sexp)
-              ("M-<left>"  . sp-backward-slurp-sexp)
+;;               ("C-<right>" . sp-forward-slurp-sexp)
+;;               ("M-<right>" . sp-backward-barf-sexp)
+;;               ("C-<left>"  . sp-forward-barf-sexp)
+;;               ("M-<left>"  . sp-backward-slurp-sexp)
 
-              ("C-M-t" . sp-transpose-sexp)
-              ("C-M-k" . sp-kill-sexpa)
-              ("C-k"   . sp-kill-hybrid-sexp)
-              ("M-k"   . sp-backward-kill-sexp)
-              ("C-M-w" . sp-copy-sexp)
+;;               ("C-M-t" . sp-transpose-sexp)
+;;               ("C-M-k" . sp-kill-sexpa)
+;;               ("C-k"   . sp-kill-hybrid-sexp)
+;;               ("M-k"   . sp-backward-kill-sexp)
+;;               ("C-M-w" . sp-copy-sexp)
 
-              ("C-M-d" . delete-sexp)
+;;               ("C-M-d" . delete-sexp)
 
-              ("M-<backspace>" . backward-kill-word)
-              ("C-<backspace>" . sp-backward-kill-word)
-              ([remap sp-backward-kill-word] . backward-kill-word)
+;;               ("M-<backspace>" . backward-kill-word)
+;;               ("C-<backspace>" . sp-backward-kill-word)
+;;               ([remap sp-backward-kill-word] . backward-kill-word)
 
-              ;; breaks bracketed paste mode
-              ;("M-[" . sp-backward-unwrap-sexp)
-              ;("M-]" . sp-unwrap-sexp)
+;;               ;; breaks bracketed paste mode
+;;               ;("M-[" . sp-backward-unwrap-sexp)
+;;               ;("M-]" . sp-unwrap-sexp)
 
-              ("C-x C-t" . sp-transpose-hybrid-sexp))
-  :init
-  (show-smartparens-global-mode)
-  (smartparens-global-mode t))
+;;               ("C-x C-t" . sp-transpose-hybrid-sexp))
+;;   :init
+;;   (show-smartparens-global-mode)
+;;   (smartparens-global-mode t))
 
 ;;==================================================
 ;; ediff
@@ -687,7 +697,7 @@
 ;;==================================================
 
 ; TODO: add mode
-(req-package scss-mode
+(use-package scss-mode
   :config
   (setq scss-compile-at-save nil))
 
@@ -716,11 +726,12 @@
 (bind-key "C-x C-j" 'dired-jump)
 (bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
 
-(req-package dired+
-  :config
-  (global-dired-hide-details-mode -1))
+;; req-todo
+;; (use-package dired+
+;;   :config
+;;   (global-dired-hide-details-mode -1))
 
-(req-package peep-dired
+(use-package peep-dired
   :bind (:map dired-mode-map
               ("P" . peep-dired)))
 
@@ -733,20 +744,20 @@
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
-(req-package browse-kill-ring+
-  :require (browse-kill-ring)
-  :config
-  (browse-kill-ring-default-keybindings)
-  (setq browse-kill-ring-highlight-current-entry t)
-  (setq browse-kill-ring-highlight-inserted-item t)
-  (setq browse-kill-ring-quit-action 'save-and-restore))
+;; req-todo
+;; (use-package browse-kill-ring)
+;; (use-package browse-kill-ring+
+;;   :config
+;;   (browse-kill-ring-default-keybindings)
+;;   (setq browse-kill-ring-highlight-current-entry t)
+;;   (setq browse-kill-ring-highlight-inserted-item t)
+;;   (setq browse-kill-ring-quit-action 'save-and-restore))
 
 ;;==================================================
 ;; deft
 ;;==================================================
-
-(req-package deft
-  :require markdown-mode
+(use-package markdown-mode)
+(use-package deft
   :init
   (setq deft-extensions '("md" "txt"))
   :config
@@ -757,7 +768,7 @@
 ;; fasd settings
 ;;==================================================
 
-(req-package fasd
+(use-package fasd
   :bind ("C-h C-/" . fasd-find-file)
   :config
   (global-fasd-mode 1))
@@ -766,7 +777,7 @@
 ;; multiple cursors
 ;;==================================================
 
-(req-package multiple-cursors
+(use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
          ("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
@@ -780,7 +791,7 @@
 ;;==================================================
 ;; paredit
 ;;==================================================
-;; (req-package paredit
+;; (use-package paredit
 ;;   :diminish (paredit-mode . "Par")
 ;;   :init
 ;;   (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
@@ -789,22 +800,24 @@
 ;; change-inner/outer
 ;;==================================================
 
-(req-package change-inner
+(use-package change-inner
   :bind (("M-I" . change-inner)
          ("M-O" . change-outer)))
 
 ;;==================================================
 ;; misc
 ;;==================================================
-(req-package misc
+(use-package misc
+  :ensure nil
   :bind ("M-z" . zap-up-to-char)
   :init (bind-key "\M-Z" 'zap-to-char))
 
-(req-package jc-misc
+(use-package jc-misc
+  :ensure nil
   :commands (chmod+x-this)
   :bind ("M-p" . goto-match-paren))
 
-(req-package crux
+(use-package crux
   :bind (("C-a" . crux-move-beginning-of-line)
          ("S-<return>" . crux-smart-open-line)
          ("C-S-k" . crux-kill-whole-line)
@@ -820,7 +833,8 @@
 ;;                (file-writable-p buffer-file-name))
 ;;     (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
 
-(req-package jc-windows
+(use-package jc-windows
+  :ensure nil
   :load-path "site-lisp"
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
@@ -831,7 +845,8 @@
 (bind-key "C-1" 'delete-other-windows)
 (bind-key "C-0" 'delete-window)
 
-(req-package bm
+(use-package bm
+  :ensure nil
   :bind (("<C-f2>" . bm-toggle)
          ("<f2>" . bm-next)
          ("<S-f2>" . bm-previous)))
@@ -843,16 +858,16 @@
 (bind-key "S-C-<up>" 'enlarge-window)
 
 ; ibuffer
-(req-package ibuffer
+(use-package ibuffer
   :bind ("C-x C-b" . ibuffer))
 
 ; shrink-whitespace
-(req-package shrink-whitespace
+(use-package shrink-whitespace
   :commands shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
 ; beacon
-(req-package beacon
+(use-package beacon
   :diminish beacon-mode
   :config
   (setq beacon-color "#6F6F6F"
@@ -860,7 +875,7 @@
   (beacon-mode))
 
 ;; move-text
-(req-package drag-stuff
+(use-package drag-stuff
   :diminish drag-stuff-mode
   :config
   (setq drag-stuff-modifier '(meta super))
@@ -876,7 +891,7 @@
 ;; (bind-key "S-<return>" 'sanityinc/newline-at-end-of-line)
 
 ;; Cut/copy the current line if no region is active
-(req-package whole-line-or-region
+(use-package whole-line-or-region
   :diminish whole-line-or-region-mode
   :config
   (whole-line-or-region-mode t))
@@ -919,7 +934,8 @@
 ;;==================================================
 ;; mark customizations
 ;;==================================================
-(req-package jc-marks
+(use-package jc-marks
+  :ensure nil
   :commands exchange-point-and-mark-no-activate
   :bind (("C-`" . push-mark-no-activate)
          ("M-`" . jump-to-mark)))
@@ -928,7 +944,7 @@
 ;; swier settings
 ;;==================================================
 
-;; (req-package ivy
+;; (use-package ivy
 ;;   :require counsel
 ;;   :init
 ;;   (ivy-mode 1)
@@ -954,7 +970,7 @@
 ;; smex settings
 ;;==================================================
 
-;; (req-package smex
+;; (use-package smex
 ;;   :require ido
 ;;   :bind (("M-x" . smex)
 ;;          ("M-X" . smex-major-mode-commands)
@@ -963,7 +979,7 @@
 ;;   (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
 ;;   (smex-initialize))
 
-(req-package amx
+(use-package amx
   :config
   (amx-mode t))
 
@@ -971,7 +987,7 @@
 ;; Projectile settings
 ;;==================================================
 
-(req-package projectile
+(use-package projectile
   :config
   (setq projectile-mode-line
         '(:eval
@@ -981,7 +997,7 @@
   (projectile-global-mode)
   (setq projectile-require-project-file nil))
 
-(req-package dumb-jump
+(use-package dumb-jump
   :config
   (dumb-jump-mode t))
 
@@ -989,15 +1005,14 @@
 ;; popup-imenu settings
 ;;==================================================
 
-(req-package popup-imenu
+(use-package popup-imenu
   :bind ("M-i" . popup-imenu))
 
 ;;==================================================
 ;; auto-complete settings
 ;;==================================================
-
-(req-package auto-complete
-  :require fuzzy
+(use-package fuzzy)
+(use-package auto-complete
   :bind ("M-/" . auto-complete)
   :config
   (ac-config-default)
@@ -1017,10 +1032,9 @@
 ;; wgrep
 ;;==================================================
 
-(req-package wgrep)
-
-(req-package wgrep-ag
-  :require (ag wgrep)
+(use-package wgrep)
+(use-package ag)
+(use-package wgrep-ag
   :if (executable-find "ag")
   :config
   (setq-default ag-highlight-search t))
@@ -1029,7 +1043,13 @@
 ;;==================================================
 ;; web
 ;;==================================================
-(req-package web-mode
+(use-package rust-mode
+  :mode "\\.rs\\'")
+
+;;==================================================
+;; web
+;;==================================================
+(use-package web-mode
   :mode "\\.html?\\'"
   :config
   (setq web-mode-code-indent-offset 2)
@@ -1042,18 +1062,18 @@
 
 (setq js-indent-level 2)
 
-(req-package yaml-mode
+(use-package yaml-mode
   :mode "\\.yaml?\\'")
 
-(req-package json-mode
+(use-package json-mode
   :mode "\\.json?\\'")
 
-(req-package scss-mode
+(use-package scss-mode
   :mode "\\.scss?\\'"
   :init
   (setq scss-compile-at-save nil))
 
-(req-package js2-mode)
+(use-package js2-mode)
 
 ;;==================================================
 ;; jump-char
@@ -1061,7 +1081,7 @@
 
 ;; NOTE: keep this after loading ido, otherwise M-m won't work inside
 ;; ido
-;; (req-package jump-char
+;; (use-package jump-char
 ;;   :config
 ;;   :bind (("M-m" . jump-char-forward)
 ;;          ("M-M" . jump-char-backward)))
@@ -1070,13 +1090,13 @@
 ;; python
 ;;==================================================
 
-(req-package pip-requirements)
+(use-package pip-requirements)
 
 ;;==================================================
 ;; yasnippet
 ;;==================================================
 
-;; (req-package yasnippet
+;; (use-package yasnippet
 ;;   :diminish yas-global-mode
 ;;   :config (progn
 ;;           (setq yas/prompt-functions '(yas/dropdown-prompt
@@ -1088,14 +1108,14 @@
 ;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
-(req-package paradox)
-(req-package cypher-mode)
-(req-package jade-mode)
-(req-package highlight-symbol)
-(req-package markdown-mode)
-(req-package ssh-config-mode)
+(use-package paradox)
+(use-package cypher-mode)
+(use-package jade-mode)
+(use-package highlight-symbol)
+(use-package markdown-mode)
+;; (use-package ssh-config-mode)
 
-(req-package avy-mode
+(use-package avy
   :bind (("M-g g" . avy-goto-line)
          ;("C-'" . avy-goto-char)
          ("C-\"" . avy-goto-char-timer))
@@ -1104,28 +1124,29 @@
         '(?c ?a ?s ?d ?e ?f ?h ?w ?y ?j ?k ?l ?n ?m ?v ?r ?u ?p))
   (avy-setup-default))
 
-(req-package ace-window
+(use-package ace-window
   :bind
   ("M-o" . ace-window)
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
-(req-package expand-region
+(use-package expand-region
   :bind ("C-=" . er/expand-region))
 
-(req-package fic-mode
-  :diminish fic-mode
-  :commands turn-on-fic-mode
-  :init
-  (add-hook 'prog-mode-hook 'fic-mode)
-  :config
-  (set-face-attribute 'font-lock-fic-face nil
-                      :inherit font-lock-warning-face
-                      :foreground nil
-                      :background nil
-                      :underline nil))
+;; req-todo
+;; (use-package fic-mode
+;;   :diminish fic-mode
+;;   :commands turn-on-fic-mode
+;;   :init
+;;   (add-hook 'prog-mode-hook 'fic-mode)
+;;   :config
+;;   (set-face-attribute 'font-lock-fic-face nil
+;;                       :inherit font-lock-warning-face
+;;                       :foreground nil
+;;                       :background nil
+;;                       :underline nil))
 
-(req-package rainbow-mode
+(use-package rainbow-mode
   :commands rainbow-mode
   :init
   (add-hook 'css-mode-hook 'rainbow-mode)
@@ -1182,22 +1203,22 @@ comment to the line."
 ;;==================================================
 ;; experiments
 ;;==================================================
-;; (req-package golden-ratio
+;; (use-package golden-ratio
 ;;   :diminish golden-ratio-mode
 ;;   :init (golden-ratio-mode 1))
 
-;; (req-package guru-mode
+;; (use-package guru-mode
 ;;   :config (guru-global-mode 1)
 ;;   :diminish guru-mode)
 
 
-;(req-package indent-guide)
+;(use-package indent-guide)
 
 ;;==================================================
 ;; server
 ;;==================================================
 
-(req-package server
+(use-package server
   :if window-system
   :init
   (add-hook 'after-init-hook 'server-start t))
@@ -1206,4 +1227,4 @@ comment to the line."
 ;;==================================================
 ;; Now finally load everything
 ;;==================================================
-(req-package-finish)
+;; (use-package-finish)
