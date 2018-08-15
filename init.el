@@ -51,14 +51,8 @@
   (require 'url-handlers))
 
 (require 'package)
-
-;; Add melpa to package repos
-;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
-
 (setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
 			 ("melpa" . "https://melpa.org/packages/")))
-
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -67,13 +61,6 @@
 
 (setq use-package-always-ensure t)
 (require 'use-package)
-
-;;(require 'req-package)
-;; (req-package el-get ;; prepare el-get (optional)
-;;   :force t ;; load package immediately, no dependency resolution
-;;   :config
-;;   (add-to-list 'el-get-recipe-path "~/.emacs.d/el-get/el-get/recipes")
-;;   (el-get 'sync))
 
 ;;==================================================
 ;; Appearance settings
@@ -141,10 +128,12 @@
 (column-number-mode 1)
 
 (use-package highlight-numbers
+  :commands highlight-numbers-mode
   :config
   (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
-(use-package smooth-scrolling)
+(use-package smooth-scrolling
+  :commands smooth-scrolling-mode)
 (setq scroll-conservatively 100000)
 (setq scroll-preserve-screen-position 'always)
 ;(setq scroll-step 0); what?
@@ -210,7 +199,6 @@
 (bind-key "M-s-/" 'hippie-expand)
 
 (use-package diminish)
-(use-package try)
 (use-package helpful
   :bind (("C-h f" . helpful-callable)
          ("C-h v" . helpful-variable)
@@ -221,9 +209,10 @@
 
 (use-package whitespace-cleanup-mode
   :diminish (whitespace-cleanup-mode . "_")
-  :config
-  ;(add-to-list 'whitespace-cleanup-mode-ignore-modes 'deft-mode)
-  (global-whitespace-cleanup-mode))
+  :commands whitespace-cleanup-mode
+  :init
+  (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
+  (add-hook 'prog-mode-hook #'whitespace-cleanup-mode))
 
 ;; But don't show trailing whitespace in these modes
 (defun sanityinc/no-trailing-whitespace ()
@@ -532,9 +521,13 @@
 ;;==================================================
 
 ;; TODO: load as needed
-(use-package gitconfig-mode)
-(use-package gitignore-mode)
-(use-package git-timemachine)
+(use-package gitconfig-mode
+  :mode (("\\.gitconfig\\'" . gitconfig-mode)
+	 ("\\.git/config\\'" . gitconfig-mode)
+	 ("\\.gitmodules\\'" . gitconfig-mode)))
+(use-package gitignore-mode
+  :mode ("\\.gitignore\\'" . gitignore-mode))
+;; (use-package git-timemachine)
 (use-package gl-conf-mode
   :load-path "site-lisp/gl-conf-mode"
   :mode "gitolite\\.conf\\'")
@@ -611,11 +604,18 @@
 
 (use-package anzu
   :diminish anzu-mode
+  :bind
+  (([remap query-replace] . anzu-query-replace)
+   ([remap query-replace-regexp] . anzu-query-replace-regexp)
+   :map isearch-mode-map
+   ([remap isearch-query-replace] . anzu-isearch-query-replace)
+   ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp))
   :config
   ;; show number of matches while searching
   (global-anzu-mode 1)
   ;; use anzu for query for query-replace
-  (global-set-key [remap query-replace] 'anzu-query-replace-regexp))
+  ;;(global-set-key [remap query-replace] 'anzu-query-replace-regexp)
+  )
 
 ;;==================================================
 ;; elisp
@@ -695,11 +695,9 @@
 ;;==================================================
 ;; scss-mode settings
 ;;==================================================
-
-; TODO: add mode
-(use-package scss-mode
-  :config
-  (setq scss-compile-at-save nil))
+;; (use-package scss-mode
+;;   :config
+;;   (setq scss-compile-at-save nil))
 
 ;;==================================================
 ;; Dired settings
@@ -756,13 +754,17 @@
 ;;==================================================
 ;; deft
 ;;==================================================
-(use-package markdown-mode)
-(use-package deft
-  :init
-  (setq deft-extensions '("md" "txt"))
-  :config
-  (setq deft-auto-save-interval 15.0)
-  (setq deft-text-mode 'markdown-mode))
+(use-package markdown-mode
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode)))
+
+;; (use-package deft
+;;   :init
+;;   (setq deft-extensions '("md" "txt"))
+;;   :config
+;;   (setq deft-auto-save-interval 15.0)
+;;   (setq deft-text-mode 'markdown-mode))
 
 ;;==================================================
 ;; fasd settings
@@ -988,6 +990,7 @@
 ;;==================================================
 
 (use-package projectile
+  :defer t
   :config
   (setq projectile-mode-line
         '(:eval
@@ -1073,7 +1076,8 @@
   :init
   (setq scss-compile-at-save nil))
 
-(use-package js2-mode)
+(use-package js2-mode
+    :mode "\\.js\\'")
 
 ;;==================================================
 ;; jump-char
@@ -1090,7 +1094,8 @@
 ;; python
 ;;==================================================
 
-(use-package pip-requirements)
+(use-package pip-requirements
+  :mode "requirements\\.txt\\'")
 
 ;;==================================================
 ;; yasnippet
@@ -1109,10 +1114,9 @@
 ;; Misc packages and utilities
 ;;==================================================
 (use-package paradox)
-(use-package cypher-mode)
-(use-package jade-mode)
+;; (use-package cypher-mode)
+;; (use-package jade-mode)
 (use-package highlight-symbol)
-(use-package markdown-mode)
 ;; (use-package ssh-config-mode)
 
 (use-package avy
