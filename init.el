@@ -350,7 +350,9 @@
 ;; Save point position between sessions
 (require 'saveplace)
 (setq save-place-file (expand-file-name ".places" user-emacs-directory))
-(save-place-mode t)
+(if (fboundp #'save-place-mode)
+    (save-place-mode 1)
+  (setq-default save-place t))
 
 ;; initiate GC every 20 MB allocated (default is 0.8MB)
 (setq gc-cons-threshold 20000000)
@@ -466,7 +468,8 @@
         ido-ignore-extensions t
         ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
                                     ".rb" ".org" ".txt"
-                                    ".c" ".cpp" ".cxx" ".h" ".hpp"))
+                                    ".c" ".cpp" ".cxx" ".h" ".hpp")
+        ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   (setq ido-use-faces nil)
   (setq confirm-nonexistent-file-or-buffer nil)
@@ -990,7 +993,8 @@
 ;;==================================================
 
 (use-package projectile
-  :defer t
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
   :config
   (setq projectile-mode-line
         '(:eval
@@ -1042,6 +1046,16 @@
   :config
   (setq-default ag-highlight-search t))
 
+;;==================================================
+;; terraform settings
+;;==================================================
+
+(use-package terraform-mode
+  ;:requires auto-complete
+  :mode ("\\.tf\\'" . terraform-mode)
+  :config
+  ;(add-to-list 'ac-modes 'terraform-mode)
+  (add-hook 'terraform-mode-hook #'terraform-format-on-save-mode))
 
 ;;==================================================
 ;; web
