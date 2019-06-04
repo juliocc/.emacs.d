@@ -81,15 +81,15 @@
   :config
   (window-numbering-mode t))
 
-(use-package spaceline
-  :demand t
-  :init
-  (setq powerline-default-separator 'arrow-fade)
-  (setq ns-use-srgb-colorspace nil)
-  (setq anzu-cons-mode-line-p nil)
-  :config
-  (require 'spaceline-config)
-  (spaceline-spacemacs-theme))
+;; (use-package spaceline
+;;   :ensure t
+;;   :init
+;;   (setq powerline-default-separator 'arrow-fade)
+;;   (setq ns-use-srgb-colorspace nil)
+;;   (setq anzu-cons-mode-line-p nil)
+;;   :config
+;;   (require 'spaceline-config)
+;;   (spaceline-spacemacs-theme))
 
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
@@ -126,6 +126,7 @@
 (global-font-lock-mode t)               ; just in case
 (line-number-mode 1)
 (column-number-mode 1)
+(global-linum-mode 1)
 
 (use-package highlight-numbers
   :commands highlight-numbers-mode
@@ -344,8 +345,8 @@
 (windmove-default-keybindings)
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
-;; (show-paren-mode +1)
-;; (setq show-paren-style 'parenthesis)
+(show-paren-mode +1)
+(setq show-paren-style 'parenthesis)
 
 ;; Save point position between sessions
 (require 'saveplace)
@@ -1001,6 +1002,18 @@
           (format " Prj:%s"
                   (projectile-project-name))))
 
+  (setq projectile-indexing-method 'alien)
+  (setq projectile-enable-caching t)
+  (setq projectile-sort-order 'recently-active)
+  (when (executable-find "fd")
+    (let ((fd-command "fd . --type f --print0"))
+      (setq projectile-hg-command fd-command)
+      (setq projectile-git-command fd-command)
+      (setq projectile-fossil-command fd-command)
+      (setq projectile-bzr-command fd-command)
+      (setq projectile-darcs-command fd-command)
+      (setq projectile-svn-command fd-command)
+      (setq projectile-generic-command fd-command)))
   (projectile-global-mode)
   (setq projectile-require-project-file nil))
 
