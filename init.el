@@ -399,7 +399,9 @@
   (setq mac-command-modifier 'meta)
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
-  (set-face-font 'default "Consolas 14")
+  (setq default-directory (getenv "HOME"))
+  (set-face-font 'default "Source Code Pro 14")
+  ;(set-face-font 'default "Consolas 14")
   (dolist (multiple '("" "double-" "triple-"))
     (dolist (direction '("right" "left"))
       (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
@@ -774,10 +776,10 @@
 ;; fasd settings
 ;;==================================================
 
-(use-package fasd
-  :bind ("C-h C-/" . fasd-find-file)
-  :config
-  (global-fasd-mode 1))
+;; (use-package fasd
+;;   :bind ("C-h C-/" . fasd-find-file)
+;;   :config
+;;   (global-fasd-mode 1))
 
 ;;==================================================
 ;; multiple cursors
@@ -846,7 +848,7 @@
          ("C-x _" . split-window-vertically-instead)
          ("C-2" . split-window-vertically-with-other-buffer)
          ("C-3" . split-window-horizontally-with-other-buffer)
-         ("C-S-j" . quick-switch-buffer)))
+         ("C-s-j" . quick-switch-buffer)))
 
 (bind-key "C-1" 'delete-other-windows)
 (bind-key "C-0" 'delete-window)
@@ -1029,24 +1031,56 @@
   :bind ("M-i" . popup-imenu))
 
 ;;==================================================
+;; company-mode settings
+;;==================================================
+(use-package company               
+  :diminish company-mode
+  :defer 5
+  :init
+  (setq
+   company-idle-delay 0.05
+   company-dabbrev-downcase nil)  
+  :config
+  (global-company-mode))
+
+(use-package company-terraform
+  :after company
+  :config
+  (add-to-list 'company-backends 'company-terraform))
+
+;; (use-package company-quickhelp          ; Documentation popups for Company
+;;   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
+
+(use-package yasnippet
+  :defer t
+  :diminish yas-minor-mode
+  :commands yas/hippie-try-expand
+  :init (progn
+          (add-to-list 'hippie-expand-try-functions-list 'yas/hippie-try-expand)
+          (yas-global-mode 1)))
+
+(use-package yasnippet-snippets         ; Collection of snippets
+  :after yasnippet)
+
+;;==================================================
 ;; auto-complete settings
 ;;==================================================
-(use-package fuzzy)
-(use-package auto-complete
-  :bind ("M-/" . auto-complete)
-  :config
-  (ac-config-default)
-  (setq ac-auto-show-menu nil)
-  (setq ac-auto-start nil)
-  (setq ac-menu-height 15)
-  (setq ac-fuzzy-enable t)
-  (setq ac-dwim-enable t)
-  (setq ac-use-menu-map t)
-  (setq-default ac-sources '(ac-source-abbrev
-                             ac-source-words-in-same-mode-buffers
-                             ac-source-files-in-current-dir
-                             ac-source-filename
-                             ac-source-dictionary)))
+;; (use-package fuzzy)
+;; (use-package auto-complete
+;;   :bind ("M-/" . auto-complete)
+;;   :config
+;;   (ac-config-default)
+;;   (setq ac-auto-show-menu nil)
+;;   (setq ac-auto-start nil)
+;;   (setq ac-menu-height 15)
+;;   (setq ac-fuzzy-enable t)
+;;   (setq ac-dwim-enable t)
+;;   (setq ac-use-menu-map t)
+;;   (setq-default ac-sources '(ac-source-abbrev
+;;                              ac-source-words-in-same-mode-buffers
+;;                              ac-source-files-in-current-dir
+;;                              ac-source-filename
+;;                              ac-source-dictionary)))
 
 ;;==================================================
 ;; wgrep
@@ -1159,7 +1193,8 @@
   :bind
   ("M-o" . ace-window)
   :config
-  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (setq aw-dispatch-always t))
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
