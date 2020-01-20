@@ -6,9 +6,10 @@
 (set-register ?e `(file . ,user-init-file))
 
 ;;==================================================
-;; Harden emacs TLS config b ased on
+;; Harden emacs TLS config based on
 ;; https://glyph.twistedmatrix.com/2015/11/editor-malware.html but
 ;; using a local cacert.pem instead of relying on certify.
+;; https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
 ;; ==================================================
 
 ;;(unless (executable-find "gnutls-cli")
