@@ -1,5 +1,6 @@
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
+
 (setq use-package-verbose t)
 
 ;; Put this file in register e for easy access
@@ -901,9 +902,9 @@
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :diminish whole-line-or-region-mode
+  :diminish whole-line-or-region-global-mode
   :config
-  (whole-line-or-region-mode t))
+  (whole-line-or-region-global-mode t))
 
 ;;==================================================
 ;; ispell
@@ -1034,13 +1035,13 @@
 ;;==================================================
 ;; company-mode settings
 ;;==================================================
-(use-package company               
+(use-package company
   :diminish company-mode
   :defer 5
   :init
   (setq
    company-idle-delay 0.05
-   company-dabbrev-downcase nil)  
+   company-dabbrev-downcase nil)
   :config
   (global-company-mode))
 
@@ -1055,13 +1056,39 @@
 (use-package yasnippet
   :defer t
   :diminish yas-minor-mode
-  :commands yas/hippie-try-expand
+  :commands yas-hippie-try-expand
   :init (progn
-          (add-to-list 'hippie-expand-try-functions-list 'yas/hippie-try-expand)
+          (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
           (yas-global-mode 1)))
 
 (use-package yasnippet-snippets         ; Collection of snippets
   :after yasnippet)
+
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
+(use-package flymake-shellcheck
+  :after flycheck
+  :commands flymake-shellcheck-load
+  :init
+  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
+
+(use-package flycheck-popup-tip
+  :ensure t
+  :after flycheck
+  :config
+  (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
+
+
+;; (use-package flycheck-posframe
+;;   :ensure t
+;;   :after flycheck
+;;   :config
+;;   (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
+;;   (flycheck-posframe-configure-pretty-defaults)
+;;   (setq flycheck-posframe-border-width 2)
+;;   (set-face-foreground 'flycheck-posframe-border-face "red"))
 
 ;;==================================================
 ;; auto-complete settings
@@ -1164,19 +1191,6 @@
 
 (use-package pip-requirements
   :mode "requirements\\.txt\\'")
-
-;;==================================================
-;; yasnippet
-;;==================================================
-
-;; (use-package yasnippet
-;;   :diminish yas-global-mode
-;;   :config (progn
-;;           (setq yas/prompt-functions '(yas/dropdown-prompt
-;;                                        yas/ido-prompt
-;;                                        yas/completing-prompt))
-
-;;           (yas-global-mode 1)))
 
 ;;==================================================
 ;; Misc packages and utilities
