@@ -1,6 +1,10 @@
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
 
+;; initiate GC every 250 MB allocated (default is 0.8MB)
+(setq gc-cons-threshold 250000000)
+(setq load-prefer-newer noninteractive)
+
 (setq use-package-verbose t)
 
 ;; Put this file in register e for easy access
@@ -20,10 +24,10 @@
   (setq tls-program
         (list
          (format "gnutls-cli%s --x509cafile %s -p %%p %%h"
-                 (if (eq window-system 'w32) ".exe" "") trustfile)))
-  (setf tls-checktrust t)
-  (setq gnutls-verify-error t)
-  (setq gnutls-trustfiles (list trustfile)))
+                 (if (eq window-system 'w32) ".exe" "") trustfile))
+        tls-checktrust t
+        gnutls-verify-error t
+        gnutls-trustfiles (list trustfile)))
 
 ;;==================================================
 ;; Setup basic stuff
@@ -39,7 +43,15 @@
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 
 ;; No splash screen
-(setq inhibit-startup-message t)
+;; (setq inhibit-startup-message t)
+
+;; Less noise at startup. The dashboard/empty scratch buffer is good enough.
+(setq inhibit-startup-message t
+      inhibit-startup-echo-area-message user-login-name
+      inhibit-default-init t
+      initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
+
 
 ;; Keep emacs custom-settings in separate file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -64,6 +76,10 @@
 (setq use-package-always-ensure t)
 (require 'use-package)
 
+(use-package jc-lib
+  :ensure nil
+  :load-path "site-lisp")
+
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
@@ -74,10 +90,20 @@
 ;;   :config
 ;;   (load-theme 'sunburn t))
 
-(use-package spacemacs-theme
-  :defer t
-  :init
-  (load-theme 'spacemacs-dark t))
+;; (use-package spacemacs-theme
+;;   :defer t
+;;   :init
+;;   (load-theme 'spacemacs-dark t))
+
+(use-package doom-themes
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (load-theme 'doom-one t)
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config))
 
 (use-package window-numbering
   :config
@@ -93,6 +119,10 @@
 ;;   (require 'spaceline-config)
 ;;   (spaceline-spacemacs-theme))
 
+;; Resizing the Emacs frame can be a terribly expensive part of changing the
+;; font. By inhibiting this, we halve startup times, particularly when we use
+;; fonts that are larger than the system default (which would resize the frame).
+(setq frame-inhibit-implied-resize t)
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
 
@@ -100,7 +130,8 @@
 (setq redisplay-dont-pause t)
 
 (when window-system
-  (setq frame-title-format '(buffer-file-name "%f" ("%b")))
+  (setq frame-title-format '(buffer-file-name "%f" ("%b"))
+        icon-title-format frame-title-format)
   (tooltip-mode nil)
   (blink-cursor-mode nil))
 
@@ -110,17 +141,17 @@
 ; (message "Can't find font"))
 
 ;; Other good fonts. Test text: ()[]l1t  O0o Ilegal1 = O0
-;; (set-face-font 'default "Envy Code R 10")
-;; (set-face-font 'default "ProggyCleanTT 12")
+;; (set-face-font 'default "Envy Code R 13")
+;; (set-face-font 'default "ProggyCleanTT Nerd Font Complete 12")
 ;; (set-face-font 'default "gohufont")
-;; (set-face-font 'default "Consolas 11")
+;; (set-face-font 'default "Consolas 14")
+;; (set-face-font 'default "Source Code Pro 14")
 ;; (set-face-font 'default "Droid Sans Mono Dotted 10")
-;; (set-face-font 'default "Anonymous Pro 10")
+;; (set-face-font 'default "Anonymous Pro 14")
 ;; (set-face-font 'default "Liberation Mono 10")
 ;; (set-face-font 'default "Ubuntu Mono 11")
-;; (set-face-font 'default "Source Code Pro 10")
 ;; (set-face-font 'default "MonteCarlo")
-;; (set-face-font 'default "Inconsolata 11")
+;; (set-face-font 'default "Inconsolata 16")
 
 ;; Put fringe on the side
 (if (fboundp 'fringe-mode) (fringe-mode))
@@ -128,63 +159,115 @@
 (global-font-lock-mode t)               ; just in case
 (line-number-mode 1)
 (column-number-mode 1)
-(global-linum-mode 1)
+
+;; Explicitly define a width to reduce computation
+(setq-default display-line-numbers-width 3)
+
+;; Show absolute line numbers for narrowed regions makes it easier to tell the
+;; buffer is narrowed, and where you are, exactly.
+(setq-default display-line-numbers-widen nil)
+                                        ;(global-linum-mode 1)
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(add-hook 'text-mode-hook #'display-line-numbers-mode)
+(add-hook 'conf-mode-hook #'display-line-numbers-mode)
+
+
+;; More performant rapid scrolling over unfontified regions. May cause brief
+;; spells of inaccurate syntax highlighting right after scrolling, which should
+;; quickly self-correct.
+(setq fast-but-imprecise-scrolling t)
 
 (use-package highlight-numbers
-  :commands highlight-numbers-mode
-  :config
-  (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+  :hook ((prog-mode conf-mode) . highlight-numbers-mode)
+  :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
 
-(use-package smooth-scrolling
-  :commands smooth-scrolling-mode)
-(setq scroll-conservatively 100000)
-(setq scroll-preserve-screen-position 'always)
+;(setq scroll-conservatively 100000)
+;(setq scroll-preserve-screen-position 'always)
 ;(setq scroll-step 0); what?
+
+(setq hscroll-margin 2
+      hscroll-step 1
+      ;; Emacs spends too much effort recentering the screen if you scroll the
+      ;; cursor more than N lines past window edges (where N is the settings of
+      ;; `scroll-conservatively'). This is especially slow in larger files
+      ;; during large-scale scrolling commands. If kept over 100, the window is
+      ;; never automatically recentered.
+      scroll-conservatively 101
+      scroll-margin 0
+      scroll-preserve-screen-position t
+      ;; Reduce cursor lag by a tiny bit by not auto-adjusting `window-vscroll'
+      ;; for tall lines.
+      auto-window-vscroll nil
+      ;; mouse
+      mouse-wheel-scroll-amount '(5 ((shift) . 2))
+      mouse-wheel-progressive-speed nil)  ; don't accelerate scrolling
+
+;; TODO: Remove hscroll-margin in shells, otherwise it causes jumpiness
+;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
+
+(when *is-a-mac*
+  ;; sane trackpad/mouse scroll settings
+  (setq mac-redisplay-dont-reset-vscroll t
+        mac-mouse-wheel-smooth-scroll nil))
 
 ;;==================================================
 ;; General settings
 ;;=================================================
 
-(setq mouse-wheel-scroll-amount '(0.01))
+(setq mouse-yank-at-point t                  ; mouse pastes at point
+      x-select-enable-clipboard t            ; Allow pasting selection outside of Emacs
+      global-auto-revert-non-file-buffers t  ; auto refresh dired
+      auto-revert-verbose nil                ; and be quiet about it
+      eval-expression-print-level nil
+      echo-keystrokes 0.02                    ; Show keystrokes in progress
+      confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
+      history-length 1000                    ; looong history
+      use-dialog-box nil                     ; never show a dialog box
+      use-file-dialog nil
+      mark-even-if-inactive t                ;
+      enable-recursive-minibuffers t         ; yes, please
+      highlight-nonselected-windows t        ; show region even on inactive windows
+      require-final-newline t                ; end files with a newline
+      fill-column 80
+      compilation-scroll-output t
+      grep-highlight-matches t
+      set-mark-command-repeat-p t
+      isearch-allow-scroll t
+      blink-matching-paren-distance 51200
+      confirm-nonexistent-file-or-buffer nil
+      indicate-buffer-boundaries nil
+      indicate-empty-lines t
+      next-line-add-newlines nil) ; don't add new lines when scrolling down
 
-(setq
- mouse-yank-at-point t                  ; mouse pastes at point
- x-select-enable-clipboard t            ; Allow pasting selection outside of Emacs
- global-auto-revert-non-file-buffers t  ; auto refresh dired
- auto-revert-verbose nil                ; and be quiet about it
- eval-expression-print-level nil
- echo-keystrokes 0.1                    ; Show keystrokes in progress
- confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
- history-length 1000                    ; looong history
- use-dialog-box nil                     ; never show a dialog box
- use-file-dialog nil
+;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
+;; indicates misconfiguration (or that the user needs to stop relying on case
+;; insensitivity).
+(setq auto-mode-case-fold nil)
 
- ; browse-url-browser-function 'browse-url-generic
- ; browse-url-generic-program "firefox-trunk"
- ; browse-url-new-window-flag  t
- ; browse-url-firefox-new-window-is-tab
- mark-even-if-inactive t                ;
- enable-recursive-minibuffers t         ; yes, please
- highlight-nonselected-windows t        ; show region even on inactive windows
- require-final-newline t                ; end files with a newline
- fill-column 80
- compilation-scroll-output t
- grep-highlight-matches t
- set-mark-command-repeat-p t
- isearch-allow-scroll t
- blink-matching-paren-distance 51200
- next-line-add-newlines nil
- ) ; don't add new lines when scrolling down
+;; Disable warnings from legacy advice system. They aren't useful, and what can
+;; we do about them, besides changing packages upstream?
+(setq ad-redefinition-action 'accept)
+
+;; Make apropos omnipotent. It's more useful this way.
+(setq apropos-do-all t)
+
 
 (setq-default visible-bell t)
 ;(setq-default show-trailing-whitespace t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
+(setq-default word-wrap t)
 (setq-default truncate-lines t)         ; don't word-wrap
+(setq truncate-partial-width-windows nil)
 (setq-default save-interprogram-paste-before-kill t)
 (setq-default set-mark-command-repeat-pop t)
 (setq shift-select-mode nil)            ; this is not windows
 (setq delete-by-moving-to-trash t)
+(setq sentence-end-double-space nil)
+
+;; Disable bidirectional text rendering for a modest performance boost.
+(setq-default bidi-display-reordering 'left-to-right
+              bidi-paragraph-direction 'left-to-right)
 
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -203,9 +286,26 @@
 
 (use-package diminish)
 (use-package helpful
-  :bind (("C-h f" . helpful-callable)
-         ("C-h v" . helpful-variable)
-         ("C-h k" . helpful-key)))
+  :commands helpful--read-symbol
+  :init
+  (global-set-key [remap describe-function] #'helpful-callable)
+  (global-set-key [remap describe-command]  #'helpful-command)
+  (global-set-key [remap describe-variable] #'helpful-variable)
+  (global-set-key [remap describe-key]      #'helpful-key)
+  (global-set-key [remap describe-symbol]   #'helpful-symbol)  
+  (after! apropos
+    ;; patch apropos buttons to call helpful instead of help
+    (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
+      (button-type-put
+       fun-bt 'action
+       (lambda (button)
+         (helpful-callable (button-get button 'apropos-symbol)))))
+    (dolist (var-bt '(apropos-variable apropos-user-option))
+      (button-type-put
+       var-bt 'action
+       (lambda (button)
+         (helpful-variable (button-get button 'apropos-symbol)))))))
+
 
 ;; Delete whitespace at the end of lines when saving
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -256,6 +356,8 @@
 (make-directory "~/.emacs.d/autosaves/" t)
 
 ;; UTF-8 everything please
+(when (fboundp 'set-charset-priority)
+  (set-charset-priority 'unicode))
 (setq locale-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
@@ -293,10 +395,10 @@
   :init
   (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
 
-(use-package highlight-parentheses
-  :diminish highlight-parentheses-mode
-  :config
-  (global-highlight-parentheses-mode t))
+;; (use-package highlight-parentheses
+;;   :diminish highlight-parentheses-mode
+;;   :config
+;;   (global-highlight-parentheses-mode t))
 
 (use-package volatile-highlights
   :diminish volatile-highlights-mode
@@ -317,15 +419,22 @@
 (setq recentf-exclude '("/tmp/" "/ssh:"))
 (recentf-mode 1)
 
-;; Save minibuffer history
 (setq history-length 1000)
 (setq savehist-file (expand-file-name ".savehist" user-emacs-directory))
-;(setq savehist-additional-variables '(search ring regexp-search-ring)
+(setq savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
 (savehist-mode t)
+
+(add-hook 'kill-emacs-hook
+          (defun doom-unpropertize-kill-ring-h ()
+            "Remove text properties from `kill-ring' for a smaller savehist file."
+            (setq kill-ring (cl-loop for item in kill-ring
+                                     if (stringp item)
+                                     collect (substring-no-properties item)
+                                     else if item collect it))))
 
 ;; Never ever use tabs
 (setq-default indent-tabs-mode nil)
-(setq-default tab-width 8)            ;; but maintain correct apeparance
+(setq-default tab-width 4)            ;; but maintain correct apeparance
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
@@ -347,8 +456,14 @@
 (windmove-default-keybindings)
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
-(show-paren-mode +1)
-(setq show-paren-style 'parenthesis)
+(use-package paren
+  :config
+  (setq show-paren-delay 0.1
+        show-paren-style 'parenthesis
+        show-paren-highlight-openparen t
+        show-paren-when-point-inside-paren t
+        show-paren-when-point-in-periphery t)
+  (show-paren-mode +1))
 
 ;; Save point position between sessions
 (require 'saveplace)
@@ -357,8 +472,6 @@
     (save-place-mode 1)
   (setq-default save-place t))
 
-;; initiate GC every 20 MB allocated (default is 0.8MB)
-(setq gc-cons-threshold 20000000)
 
 ;; guide-key setup
 ;; (use-package guide-key
@@ -375,7 +488,15 @@
 
 (use-package which-key
   :diminish which-key-mode
+  :init
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10)  
   :config
+  (which-key-setup-side-window-bottom)
   (setq which-key-max-description-length 45)
   (which-key-mode t))
 
@@ -395,6 +516,7 @@
 ;; Mac-specific settings
 ;;==================================================
 (when *is-a-mac*
+  (setq delete-by-moving-to-trash t)
   (setq mac-option-modifier 'super) ; make opt key do Super
   (setq mac-control-modifier 'control)
   (setq ns-function-modifier 'hyper)
@@ -403,7 +525,6 @@
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
   (set-face-font 'default "Source Code Pro 14")
-  ;(set-face-font 'default "Consolas 14")
   (dolist (multiple '("" "double-" "triple-"))
     (dolist (direction '("right" "left"))
       (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
@@ -423,7 +544,15 @@
 ;; disable visible bell in windowed OSX (doesn't work in El Capitan)
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
+  (setq ns-use-native-fullscreen nil)
+  (setq ns-pop-up-frames nil)
   (setq ring-bell-function 'ignore))
+
+(use-package ns-auto-titlebar
+  :if *is-a-windowed-mac*
+  :config
+  (ns-auto-titlebar-mode +1))
+
 
 (use-package exec-path-from-shell
   :if *is-a-mac*
@@ -477,7 +606,6 @@
         ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   (setq ido-use-faces nil)
-  (setq confirm-nonexistent-file-or-buffer nil)
   (add-hook 'ido-setup-hook
             (lambda ()
               ;; Go straight home
@@ -697,8 +825,10 @@
 ;; ediff
 ;;==================================================
 
-(setq ediff-window-setup-function 'ediff-setup-windows-plain)
-(setq ediff-split-window-function 'split-window-horizontally)
+(after! ediff
+  (setq ediff-diff-options "-w" ; turn off whitespace checking
+        ediff-split-window-function #'split-window-horizontally
+        ediff-window-setup-function #'ediff-setup-windows-plain))
 
 ;;==================================================
 ;; scss-mode settings
@@ -751,13 +881,12 @@
 ;; browse-kill-ring settings
 ;;==================================================
 ;; req-todo
-;; (use-package browse-kill-ring)
-;; (use-package browse-kill-ring+
-;;   :config
-;;   (browse-kill-ring-default-keybindings)
-;;   (setq browse-kill-ring-highlight-current-entry t)
-;;   (setq browse-kill-ring-highlight-inserted-item t)
-;;   (setq browse-kill-ring-quit-action 'save-and-restore))
+(use-package browse-kill-ring
+  :config
+  (browse-kill-ring-default-keybindings)
+  (setq browse-kill-ring-highlight-current-entry t)
+  (setq browse-kill-ring-highlight-inserted-item t)
+  (setq browse-kill-ring-quit-action 'save-and-restore))
 
 ;;==================================================
 ;; deft
@@ -1040,7 +1169,8 @@
   :defer 5
   :init
   (setq
-   company-idle-delay 0.05
+   company-idle-delay 0.5
+   company-show-numbers t
    company-dabbrev-downcase nil)
   :config
   (global-company-mode))
@@ -1239,27 +1369,27 @@
   (add-hook 'css-mode-hook 'rainbow-mode)
   (add-hook 'html-mode-hook 'rainbow-mode))
 
-;; keep scratch around
-(save-excursion
-  (set-buffer (get-buffer-create "*scratch*"))
-  (lisp-interaction-mode)
-  (make-local-variable 'kill-buffer-query-functions)
-  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer))
+;; ;; keep scratch around
+;; (save-excursion
+;;   (set-buffer (get-buffer-create "*scratch*"))
+;;   (lisp-interaction-mode)
+;;   (make-local-variable 'kill-buffer-query-functions)
+;;   (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer))
 
-(defun kill-scratch-buffer ()
-  ;; The next line is just in case someone calls this manually
-  (set-buffer (get-buffer-create "*scratch*"))
-  ;; Kill the current (*scratch*) buffer
-  (remove-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-  (kill-buffer (current-buffer))
-  ;; Make a brand new *scratch* buffer
-  (set-buffer (get-buffer-create "*scratch*"))
-  (lisp-interaction-mode)
-  (make-local-variable 'kill-buffer-query-functions)
-  (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-  (insert initial-scratch-message)
-  ;; Since we killed it, don't let caller do that.
-  nil)
+;; (defun kill-scratch-buffer ()
+;;   ;; The next line is just in case someone calls this manually
+;;   (set-buffer (get-buffer-create "*scratch*"))
+;;   ;; Kill the current (*scratch*) buffer
+;;   (remove-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
+;;   (kill-buffer (current-buffer))
+;;   ;; Make a brand new *scratch* buffer
+;;   (set-buffer (get-buffer-create "*scratch*"))
+;;   (lisp-interaction-mode)
+;;   (make-local-variable 'kill-buffer-query-functions)
+;;   (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
+;;   (insert initial-scratch-message)
+;;   ;; Since we killed it, don't let caller do that.
+;;   nil)
 
 
 (defadvice comment-dwim (around comment-line-maybe activate)
@@ -1311,7 +1441,113 @@ comment to the line."
   (add-hook 'after-init-hook 'server-start t))
 
 
-;;==================================================
-;; Now finally load everything
-;;==================================================
-;; (use-package-finish)
+;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
+;; do-what-I-mean. It serves four purposes (in order):
+;;
+;; 1. Quit active states; e.g. highlights, searches, snippets, iedit,
+;;    multiple-cursors, recording macros, etc.
+;; 2. Close popup windows remotely (if it is allowed to)
+;; 3. Refresh buffer indicators, like git-gutter and flycheck
+;; 4. Or fall back to `keyboard-quit'
+;;
+;; And it should do these things incrementally, rather than all at once. And it
+;; shouldn't interfere with recording macros or the minibuffer. This may require
+;; you press ESC/C-g two or three times on some occasions to reach
+;; `keyboard-quit', but this is much more intuitive.
+
+(defvar doom-escape-hook nil
+  "A hook run when C-g is pressed (or ESC in normal mode, for evil users).
+More specifically, when `doom/escape' is pressed. If any hook returns non-nil,
+all hooks after it are ignored.")
+
+(defun doom/escape ()
+  "Run `doom-escape-hook'."
+  (interactive)
+  (cond ((minibuffer-window-active-p (minibuffer-window))
+         ;; quit the minibuffer if open.
+         (abort-recursive-edit))
+        ;; Run all escape hooks. If any returns non-nil, then stop there.
+        ((run-hook-with-args-until-success 'doom-escape-hook))
+        ;; don't abort macros
+        ((or defining-kbd-macro executing-kbd-macro) nil)
+        ;; Back to the default
+        ((keyboard-quit))))
+
+(global-set-key [remap keyboard-quit] #'doom/escape)
+
+;; Don't resize windows & frames in steps; it's prohibitive to prevent the user
+;; from resizing it to exact dimensions, and looks weird.
+(setq window-resize-pixelwise t
+      frame-resize-pixelwise t)
+
+
+;; The native border "consumes" a pixel of the fringe on righter-most splits,
+;; `window-divider' does not. Available since Emacs 25.1.
+(setq window-divider-default-places t
+      window-divider-default-bottom-width 1
+      window-divider-default-right-width 1)
+(window-divider-mode t)
+
+ ;; Favor vertical splits over horizontal ones. Screens are usually wide.
+(setq split-width-threshold 160
+      split-height-threshold nil)
+
+(setq resize-mini-windows 'grow-only
+      ;; But don't let the minibuffer grow beyond this size
+      max-mini-window-height 0.15)
+
+;; Enable mouse in terminal Emacs
+(add-hook 'tty-setup-hook #'xterm-mouse-mode)
+
+(use-package hl-line
+  ;; Highlights the current line
+  :hook ((prog-mode text-mode conf-mode) . hl-line-mode)
+  :config
+  ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
+  ;; performance boost. I also don't need to see it in other buffers.
+  (setq hl-line-sticky-flag nil
+        global-hl-line-sticky-flag nil)
+
+  ;; Temporarily disable `hl-line' when selection is active, since it doesn't
+  ;; serve much purpose when the selection is so much more visible.
+  (defvar doom--hl-line-mode nil)
+
+  (add-hook 'activate-mark-hook
+    (defun doom-disable-hl-line-h ()
+      (when hl-line-mode
+        (setq-local doom--hl-line-mode t)
+        (hl-line-mode -1))))
+
+  (add-hook 'deactivate-mark-hook
+    (defun doom-enable-hl-line-maybe-h ()
+      (when doom--hl-line-mode
+        (hl-line-mode +1)))))
+
+
+(setq image-animate-loop t)
+
+;; Resolve symlinks when opening files, so that any operations are conducted
+;; from the file's true directory (like `find-file').
+(setq find-file-visit-truename t
+      vc-follow-symlinks t)
+
+;; Disable the warning "X and Y are the same file". It's fine to ignore this
+;; warning as it will redirect you to the existing buffer anyway.
+(setq find-file-suppress-same-file-warnings t)
+
+;; Allow UTF or composed text from the clipboard, even in the terminal or on
+;; non-X systems (like Windows or macOS), where only `STRING' is used.
+(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+
+
+(use-package restart-emacs)
+
+(use-package solaire-mode
+  :hook
+  ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
+  (minibuffer-setup . solaire-mode-in-minibuffer)
+  :config
+  (solaire-global-mode +1)
+  (solaire-mode-swap-bg))
+
+; doom: recentf better-jumber dtrt-indent smartparens so-long ws-butler pcre2el highlight-indent-guides
