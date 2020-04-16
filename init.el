@@ -108,7 +108,6 @@
   (doom-themes-visual-bell-config))
 
 (use-package doom-modeline
-  :hook (after-init . doom-modeline-mode)
   :init
   (setq doom-modeline-bar-width 2
         doom-modeline-enable-word-count t)
@@ -121,7 +120,8 @@
       "Show minimal modeline in magit-status buffer, no modeline elsewhere."
       (if (eq major-mode 'magit-status-mode)
           (doom-modeline-set-vcs-modeline)
-        (hide-mode-line-mode)))))
+        (hide-mode-line-mode))))
+  (doom-modeline-mode))
 
 (use-package centaur-tabs
   ;;:after-call after-find-file dired-initial-position-hook
@@ -591,6 +591,7 @@
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
   (setq ns-use-native-fullscreen nil)
+  (setq ns-use-fullscreen-animation nil)
   (setq ns-pop-up-frames nil))
 
 ;; breaks doom theme
@@ -718,16 +719,13 @@
 
 (use-package magit
   :bind ("C-x C-z" . magit-status)
-  :init
-  (setq magit-repository-directories '("~/code/"))
-  (setq-default
-   magit-stage-all-confirm nil
-   magit-unstage-all-confirm nil
-   magit-save-some-buffers nil
-   magit-process-popup-time 5
-   magit-diff-refine-hunk t
-   magit-completing-read-function 'magit-ido-completing-read)
   :config
+  (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
+        magit-stage-all-confirm nil
+        magit-unstage-all-confirm nil
+        magit-save-some-buffers nil
+        magit-diff-refine-hunk t 
+        magit-save-repository-buffers nil)
   (defadvice magit-status (around magit-fullscreen activate)
     (window-configuration-to-register :magit-fullscreen)
     ad-do-it
@@ -761,6 +759,14 @@
 
 (use-package git-messenger
   :bind ("C-x v p" . git-messenger:popup-message))
+
+(use-package git-commit
+  :config
+  (global-git-commit-mode +1)
+  ;; Enforce git commit conventions.
+  ;; See https://chris.beams.io/posts/git-commit/
+  (setq git-commit-summary-max-length 50
+        git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line)))
 
 ;;==================================================
 ;; isearch settings
@@ -1226,7 +1232,10 @@
 
 (use-package flycheck
   :ensure t
-  :init (global-flycheck-mode))
+  :config  
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (setq flycheck-display-errors-delay 0.25)
+  (global-flycheck-mode))
 
 (use-package flymake-shellcheck
   :after flycheck
@@ -1234,21 +1243,31 @@
   :init
   (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
 
-(use-package flycheck-popup-tip
-  :ensure t
-  :after flycheck
-  :config
-  (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
-
-
-;; (use-package flycheck-posframe
+;; (use-package flycheck-popup-tip
 ;;   :ensure t
 ;;   :after flycheck
 ;;   :config
-;;   (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
-;;   (flycheck-posframe-configure-pretty-defaults)
-;;   (setq flycheck-posframe-border-width 2)
-;;   (set-face-foreground 'flycheck-posframe-border-face "red"))
+;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
+
+
+(use-package flycheck-posframe
+  :after flycheck
+  :hook
+  (flycheck-mode . flycheck-posframe-mode)
+  :config
+  (setq flycheck-posframe-border-width 2
+        flycheck-posframe-warning-prefix "⚠ "
+        flycheck-posframe-info-prefix "··· "
+        flycheck-posframe-error-prefix "✕ ")
+  (after! company
+    ;; Don't display popups if company is open
+    (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)))
+  
+
+  ;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
+  ;; (flycheck-posframe-configure-pretty-defaults)
+  ;; (setq flycheck-posframe-border-width 2)
+  ;; (set-face-foreground 'flycheck-posframe-border-face "red"))
 
 ;;==================================================
 ;; auto-complete settings
@@ -1292,11 +1311,8 @@
 ;;==================================================
 
 (use-package terraform-mode
-  ;:requires auto-complete
-  :mode ("\\.tf\\'" . terraform-mode)
-  :config
-  ;(add-to-list 'ac-modes 'terraform-mode)
-  (add-hook 'terraform-mode-hook #'terraform-format-on-save-mode))
+  :hook
+  (terraform-mode . terraform-format-on-save-mode))
 
 ;;==================================================
 ;; web
@@ -1583,9 +1599,14 @@ all hooks after it are ignored.")
           ;; For things that just gotta go and will soon be gone.
           ("DEPRECATED" font-lock-doc-face bold))))
 
+(use-package highlight-indent-guides
+  :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+  :init
+  (setq highlight-indent-guides-method 'character))
+
 ;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
-;; ws-butler pcre2el highlight-indent-guides doom/escape auto-revert
-;; company ivy nav-flash workspaces 
+;; ws-butler pcre2el highlight-doom/escape auto-revert
+;; company ivy nav-flash workspaces lsp
 ;;
 ;; zstd (un)compress
 ;;
