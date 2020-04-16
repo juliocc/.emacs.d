@@ -42,16 +42,12 @@
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 
-;; No splash screen
-;; (setq inhibit-startup-message t)
-
 ;; Less noise at startup. The dashboard/empty scratch buffer is good enough.
 (setq inhibit-startup-message t
       inhibit-startup-echo-area-message user-login-name
       inhibit-default-init t
       initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
-
 
 ;; Keep emacs custom-settings in separate file
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -98,12 +94,38 @@
 (use-package doom-themes
   :config
   ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (setq doom-themeds-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t
+        doom-one-brighter-modeline t)
+  ;; (load-theme 'doom-opera t)
+  ;; (load-theme 'doom-spacegrey t)
+  ;; (load-theme 'doom-tomorrow-night t)
+  ;; (load-theme 'doom-nord t)
   (load-theme 'doom-one t)
-
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
+
+(use-package all-the-icons)
+
+(use-package centaur-tabs
+  ;;:after-call after-find-file dired-initial-position-hook
+  :init
+  (setq centaur-tabs-style "bar"
+        centaur-tabs-height 32
+        centaur-tabs-gray-out-icons 'buffer
+        centaur-tabs-set-icons t
+        centaur-tabs-set-bar 'under
+        centaur-tabs-set-close-button t
+        centaur-tabs-icon-scale-factor 0.7
+        centaur-tabs-close-button "✕"
+        centaur-tabs-show-navigation-buttons nil
+        centaur-tabs-set-modified-marker nil
+        centaur-tabs-modified-marker "⬤")
+
+  :config
+  (centaur-tabs-headline-match)
+  (centaur-tabs-mode +1))
+
 
 (use-package winum
   :config
@@ -237,6 +259,7 @@
       confirm-nonexistent-file-or-buffer nil
       indicate-buffer-boundaries nil
       indicate-empty-lines t
+      x-underline-at-descent-line t
       next-line-add-newlines nil) ; don't add new lines when scrolling down
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
@@ -446,7 +469,7 @@
   :ensure nil
   :init
   ;(setq uniquify-buffer-name-style 'forward)
-  (setq uniquify-buffer-name-style 'reverse)
+  (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
   (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
   (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
@@ -517,7 +540,6 @@
 ;;==================================================
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
-
   ; left and right commands are meta
   (setq ns-command-modifier 'meta)
   (setq ns-right-command-modifier 'left)
@@ -537,29 +559,16 @@
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
-  (set-face-font 'default "Source Code Pro 14")
-  (dolist (multiple '("" "double-" "triple-"))
-    (dolist (direction '("right" "left"))
-      (global-set-key (kbd (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-  (global-set-key [kp-delete] 'delete-char);; sets fn-delete to be right-delete
-  (defun jc/toggle-mac-option-modifier ()
-    "Toggle between passing option modifier either to Emacs or OS X."
-    (interactive)
-    (let ((old-opt mac-option-modifier))
-      (setq mac-option-modifier
-            (if (eq mac-option-modifier 'super)
-                'none
-              'super))
-      (message "Toggled `mac-option-modifier' from %s to %s."
-               old-opt
-               mac-option-modifier))))
+  (set-face-font 'default "Source Code Pro 14"))
 
 ;; disable visible bell in windowed OSX (doesn't work in El Capitan)
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
   (setq ns-use-native-fullscreen nil)
-  (setq ns-pop-up-frames nil)
-  (setq ring-bell-function 'ignore))
+  (setq ns-pop-up-frames nil))
+
+;; breaks doom theme
+;; (setq ring-bell-function 'ignore)
 
 (use-package ns-auto-titlebar
   :if *is-a-windowed-mac*
@@ -901,29 +910,11 @@
   (setq browse-kill-ring-highlight-inserted-item t)
   (setq browse-kill-ring-quit-action 'save-and-restore))
 
-;;==================================================
-;; deft
-;;==================================================
 (use-package markdown-mode
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode)))
 
-;; (use-package deft
-;;   :init
-;;   (setq deft-extensions '("md" "txt"))
-;;   :config
-;;   (setq deft-auto-save-interval 15.0)
-;;   (setq deft-text-mode 'markdown-mode))
-
-;;==================================================
-;; fasd settings
-;;==================================================
-
-;; (use-package fasd
-;;   :bind ("C-h C-/" . fasd-find-file)
-;;   :config
-;;   (global-fasd-mode 1))
 
 ;;==================================================
 ;; multiple cursors
@@ -1574,8 +1565,9 @@ all hooks after it are ignored.")
           ;; For things that just gotta go and will soon be gone.
           ("DEPRECATED" font-lock-doc-face bold))))
 
-;; doom: recentf better-jumber dtrt-indent smartparens so-long
+;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
 ;; ws-butler pcre2el highlight-indent-guides doom/escape auto-revert
 ;; company ivy nav-flash workspaces
 ;;
 ;; use-package defer
+
