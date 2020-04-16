@@ -91,12 +91,14 @@
 ;;   :init
 ;;   (load-theme 'spacemacs-dark t))
 
+(use-package all-the-icons)
+
 (use-package doom-themes
   :config
   ;; Global settings (defaults)
   (setq doom-themeds-enable-bold t    ; if nil, bold is universally disabled
         doom-themes-enable-italic t
-        doom-one-brighter-modeline t)
+        doom-one-brighter-modeline nil)
   ;; (load-theme 'doom-opera t)
   ;; (load-theme 'doom-spacegrey t)
   ;; (load-theme 'doom-tomorrow-night t)
@@ -105,7 +107,21 @@
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
 
-(use-package all-the-icons)
+(use-package doom-modeline
+  :hook (after-init . doom-modeline-mode)
+  :init
+  (setq doom-modeline-bar-width 2
+        doom-modeline-enable-word-count t)
+  (unless after-init-time
+    ;; prevent flash of unstyled modeline at startup
+    (setq-default mode-line-format nil))
+  :config
+  (add-hook 'magit-mode-hook
+    (lambda ()
+      "Show minimal modeline in magit-status buffer, no modeline elsewhere."
+      (if (eq major-mode 'magit-status-mode)
+          (doom-modeline-set-vcs-modeline)
+        (hide-mode-line-mode)))))
 
 (use-package centaur-tabs
   ;;:after-call after-find-file dired-initial-position-hook
@@ -121,15 +137,23 @@
         centaur-tabs-show-navigation-buttons nil
         centaur-tabs-set-modified-marker nil
         centaur-tabs-modified-marker "⬤")
-
   :config
   (centaur-tabs-headline-match)
-  (centaur-tabs-mode +1))
-
+  (centaur-tabs-mode +1)
+  (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
 
 (use-package winum
   :config
   (winum-mode t))
+
+(use-package solaire-mode
+  :hook
+  ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
+  (minibuffer-setup . solaire-mode-in-minibuffer)
+  :config
+  (solaire-global-mode +1)
+  (solaire-mode-swap-bg))
+
 
 ;; (use-package spaceline
 ;;   :ensure t
@@ -431,9 +455,11 @@
 (use-package undo-tree
   :diminish undo-tree-mode
   :config
-  (setq undo-tree-auto-save-history t)
-  (setq undo-tree-history-directory-alist
-        `((".*" . ,(concat user-emacs-directory "undo-list"))))
+  (setq undo-tree-auto-save-history t
+        undo-limit 800000
+        undo-strong-limit 12000000
+        undo-outer-limit 120000000
+        undo-tree-history-directory-alist `((".*" . ,(concat user-emacs-directory "undo-list"))))
   (global-undo-tree-mode))
 
 ;; Save a list of recent files visited.
@@ -1535,14 +1561,6 @@ all hooks after it are ignored.")
 
 (use-package restart-emacs)
 
-(use-package solaire-mode
-  :hook
-  ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
-  (minibuffer-setup . solaire-mode-in-minibuffer)
-  :config
-  (solaire-global-mode +1)
-  (solaire-mode-swap-bg))
-
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
   :config
@@ -1567,7 +1585,10 @@ all hooks after it are ignored.")
 
 ;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
 ;; ws-butler pcre2el highlight-indent-guides doom/escape auto-revert
-;; company ivy nav-flash workspaces
+;; company ivy nav-flash workspaces 
+;;
+;; zstd (un)compress
 ;;
 ;; use-package defer
+
 
