@@ -105,9 +105,9 @@
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
 
-(use-package window-numbering
+(use-package winum
   :config
-  (window-numbering-mode t))
+  (winum-mode t))
 
 ;; (use-package spaceline
 ;;   :ensure t
@@ -517,10 +517,23 @@
 ;;==================================================
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
-  (setq mac-option-modifier 'super) ; make opt key do Super
-  (setq mac-control-modifier 'control)
+
+  ; left and right commands are meta
+  (setq ns-command-modifier 'meta)
+  (setq ns-right-command-modifier 'left)
+
+  ; left opt key is super
+  (setq ns-alternate-modifier 'super) 
+  ; right opt is ignored by emacs (useful for mac-style accent input)
+  (setq ns-right-alternate-modifier 'none) 
+
+  ; left and right controls are control
+  (setq ns-control-modifier 'control)
+  (setq ns-right-control-modifier 'left)
+
+  ; function key is hyper
   (setq ns-function-modifier 'hyper)
-  (setq mac-command-modifier 'meta)
+  
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
@@ -1325,7 +1338,7 @@
 ;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
-(use-package paradox)
+;; (use-package paradox)
 ;; (use-package cypher-mode)
 ;; (use-package jade-mode)
 (use-package highlight-symbol)
@@ -1341,27 +1354,16 @@
   (avy-setup-default))
 
 (use-package ace-window
-  :bind
-  ("M-o" . ace-window)
+  ;; :bind
+  ;; ("M-o" . ace-window)
+  :init
+  (global-set-key [remap other-window] #'ace-window)
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
-  (setq aw-dispatch-always t))
+  (setq aw-dispatch-always nil))
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
-
-;; req-todo
-;; (use-package fic-mode
-;;   :diminish fic-mode
-;;   :commands turn-on-fic-mode
-;;   :init
-;;   (add-hook 'prog-mode-hook 'fic-mode)
-;;   :config
-;;   (set-face-attribute 'font-lock-fic-face nil
-;;                       :inherit font-lock-warning-face
-;;                       :foreground nil
-;;                       :background nil
-;;                       :underline nil))
 
 (use-package rainbow-mode
   :commands rainbow-mode
