@@ -1,9 +1,26 @@
+(defvar file-name-handler-alist-old file-name-handler-alist)
+
+(setq ;package-enable-at-startup nil
+      file-name-handler-alist nil
+      message-log-max 16384
+      gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 0.6
+      auto-window-vscroll nil)
+
+(add-hook 'after-init-hook
+          `(lambda ()
+             (setq file-name-handler-alist file-name-handler-alist-old
+                   gc-consq-threshold 1600000
+                   gc-cons-percentage 0.1)
+             (garbage-collect)) t)
+
+;; In noninteractive sessions, prioritize non-byte-compiled source files to
+;; prevent the use of stale byte-code. Otherwise, it saves us a little IO time
+;; to skip the mtime checks on every *.elc file.
+(setq load-prefer-newer noninteractive)
+
 ;; Report load time after initializing
 (add-hook 'after-init-hook 'emacs-init-time)
-
-;; initiate GC every 250 MB allocated (default is 0.8MB)
-(setq gc-cons-threshold 250000000)
-(setq load-prefer-newer noninteractive)
 
 (setq use-package-verbose t)
 
@@ -35,6 +52,8 @@
 
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
+(defvar jc-interactive-mode (not noninteractive)
+  "If non-nil, Emacs is in interactive mode.")
 
 ;; Turn off mouse interface early in startup to avoid momentary display
 (unless *is-a-windowed-mac* ; hide menu if not in Mac
@@ -61,8 +80,10 @@
   (require 'url-handlers))
 
 (require 'package)
-(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-			 ("melpa" . "https://melpa.org/packages/")))
+(setq package-enable-at-startup nil
+      package-archives
+      '(("gnu"   . "https://elpa.gnu.org/packages/")
+		("melpa" . "https://melpa.org/packages/")))
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -72,9 +93,32 @@
 (setq use-package-always-ensure t)
 (require 'use-package)
 
-(use-package jc-lib
+(if init-file-debug
+    (setq use-package-verbose t
+          use-package-expand-minimally nil
+          use-package-compute-statistics t
+          debug-on-error t)
+  (setq use-package-verbose nil
+        use-package-expand-minimally t))
+
+(use-package jc-doom
   :ensure nil
   :load-path "site-lisp")
+
+(use-package gcmh
+  :defer t
+  :if jc-interactive-mode
+  :commands gcmh-mode)
+
+(when jc-interactive-mode
+  (add-transient-hook! 'pre-command-hook (gcmh-mode +1))
+  (with-eval-after-load 'gcmh
+    (setq gcmh-idle-delay 10
+          gcmh-high-cons-threshold 16777216
+          gcmh-verbose nil
+          gc-cons-percentage 0.1)
+    (add-hook 'focus-out-hook #'gcmh-idle-garbage-collect)))
+
 
 ;;==================================================
 ;; Appearance settings
@@ -91,13 +135,20 @@
 ;;   :init
 ;;   (load-theme 'spacemacs-dark t))
 
-(use-package all-the-icons)
+(use-package all-the-icons
+  :commands (all-the-icons-octicon
+             all-the-icons-faicon
+             all-the-icons-fileicon
+             all-the-icons-wicon
+             all-the-icons-material
+             all-the-icons-alltheicon))
 
+;; TODO: nodefer
 (use-package doom-themes
   :config
   ;; Global settings (defaults)
-  (setq doom-themeds-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t
+  (setq doom-themeds-enable-bold nil    ; if nil, bold is universally disabled
+        doom-themes-enable-italic nil
         doom-one-brighter-modeline nil)
   ;; (load-theme 'doom-opera t)
   ;; (load-theme 'doom-spacegrey t)
@@ -143,9 +194,11 @@
   (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
 
 (use-package winum
+  :after-call after-init-hook
   :config
-  (winum-mode t))
+  (winum-mode +1))
 
+;; TODO: nodefer
 (use-package solaire-mode
   :hook
   ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
@@ -153,17 +206,6 @@
   :config
   (solaire-global-mode +1)
   (solaire-mode-swap-bg))
-
-
-;; (use-package spaceline
-;;   :ensure t
-;;   :init
-;;   (setq powerline-default-separator 'arrow-fade)
-;;   (setq ns-use-srgb-colorspace nil)
-;;   (setq anzu-cons-mode-line-p nil)
-;;   :config
-;;   (require 'spaceline-config)
-;;   (spaceline-spacemacs-theme))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -202,9 +244,9 @@
 ;; Put fringe on the side
 (if (fboundp 'fringe-mode) (fringe-mode))
 
-(global-font-lock-mode t)               ; just in case
-(line-number-mode 1)
-(column-number-mode 1)
+(global-font-lock-mode +1)               ; just in case
+(line-number-mode +1)
+(column-number-mode +1)
 
 ;; Explicitly define a width to reduce computation
 (setq-default display-line-numbers-width 3)
@@ -213,10 +255,8 @@
 ;; buffer is narrowed, and where you are, exactly.
 (setq-default display-line-numbers-widen nil)
                                         ;(global-linum-mode 1)
-(add-hook 'prog-mode-hook #'display-line-numbers-mode)
-(add-hook 'text-mode-hook #'display-line-numbers-mode)
-(add-hook 'conf-mode-hook #'display-line-numbers-mode)
-
+(add-hook! '(prog-mode-hook text-mode-hook conf-mode-hook)
+           #'display-line-numbers-mode)
 
 ;; More performant rapid scrolling over unfontified regions. May cause brief
 ;; spells of inaccurate syntax highlighting right after scrolling, which should
@@ -224,6 +264,7 @@
 (setq fast-but-imprecise-scrolling t)
 
 (use-package highlight-numbers
+  :commands highlight-numbers-mode
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
 
@@ -248,8 +289,8 @@
       mouse-wheel-scroll-amount '(5 ((shift) . 2))
       mouse-wheel-progressive-speed nil)  ; don't accelerate scrolling
 
-;; TODO: Remove hscroll-margin in shells, otherwise it causes jumpiness
-;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
+;; Remove hscroll-margin in shells, otherwise it causes jumpiness
+(setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
 
 (when *is-a-mac*
   ;; sane trackpad/mouse scroll settings
@@ -329,17 +370,17 @@
                                          try-expand-line
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
-(bind-key "M-s-/" 'hippie-expand)
+(bind-key "M-s-/" #'hippie-expand)
 
-(use-package diminish)
 (use-package helpful
   :commands helpful--read-symbol
+  :bind
+  ([remap describe-function] . #'helpful-callable)
+  ([remap describe-command]  . #'helpful-command)
+  ([remap describe-variable] . #'helpful-variable)
+  ([remap describe-key]      . #'helpful-key)
+  ([remap describe-symbol]   . #'helpful-symbol)
   :init
-  (global-set-key [remap describe-function] #'helpful-callable)
-  (global-set-key [remap describe-command]  #'helpful-command)
-  (global-set-key [remap describe-variable] #'helpful-variable)
-  (global-set-key [remap describe-key]      #'helpful-key)
-  (global-set-key [remap describe-symbol]   #'helpful-symbol)  
   (after! apropos
     ;; patch apropos buttons to call helpful instead of help
     (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
@@ -358,11 +399,8 @@
 ;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (use-package whitespace-cleanup-mode
-  :diminish (whitespace-cleanup-mode . "_")
   :commands whitespace-cleanup-mode
-  :init
-  (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
-  (add-hook 'prog-mode-hook #'whitespace-cleanup-mode))
+  :hook (prog-mode text-mode))
 
 ;; But don't show trailing whitespace in these modes
 (defun sanityinc/no-trailing-whitespace ()
@@ -370,15 +408,15 @@
   (setq show-trailing-whitespace nil))
 
 ;; But don't show trailing whitespace in SQLi, inf-ruby etc.
-(dolist (hook '(special-mode-hook
-                Info-mode-hook
-                term-mode-hook
-                ido-minibuffer-setup-hook
-                comint-mode-hook
-                compilation-mode-hook
-                isearch-mode-hook
-                minibuffer-setup-hook))
-  (add-hook hook #'sanityinc/no-trailing-whitespace))
+(add-hook! '(special-mode-hook
+             Info-mode-hook
+             term-mode-hook
+             ido-minibuffer-setup-hook
+             comint-mode-hook
+             compilation-mode-hook
+             isearch-mode-hook
+             minibuffer-setup-hook)
+           #'sanityinc/no-trailing-whitespace)
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
@@ -414,21 +452,19 @@
 (set-default-coding-systems 'utf-8)
 
 ;; Don't cripple my emacs
-(put 'downcase-region 'disabled nil)
-(put 'upcase-region 'disabled nil)
-(put 'narrow-to-region 'disabled nil)
+(setq disabled-command-function nil)
 
 ;; Useful modes
-(auto-image-file-mode 1)                ; display images
-(size-indication-mode 1)                ; display file size
-(delete-selection-mode 1)               ; delete selected text on input
+(auto-image-file-mode +1)                ; display images
+(size-indication-mode +1)                ; display file size
+(delete-selection-mode +1)               ; delete selected text on input
 ;(global-subword-mode 1)
-(global-auto-revert-mode 1)             ; auto reload files if changed outside emacs
-(auto-compression-mode t)               ; open compressed files a la dired
-(transient-mark-mode 1)                 ; show me the region, please
-(winner-mode 1)                         ; stack window settings
-(minibuffer-depth-indicate-mode 1)
-(electric-indent-mode 0)             ; make return key not auto indent
+(global-auto-revert-mode +1)             ; auto reload files if changed outside emacs
+(auto-compression-mode +1)               ; open compressed files a la dired
+(transient-mark-mode +1)                 ; show me the region, please
+(winner-mode +1)                         ; stack window settings
+(minibuffer-depth-indicate-mode +1)
+(electric-indent-mode -1)             ; make return key not auto indent
 ;(desktop-save-mode 1)
 
 ;(fancy-narrow-mode)
@@ -438,22 +474,21 @@
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 
 (use-package rainbow-delimiters
-  :commands rainbow-delimiters-mode
-  :init
-  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+  :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; (use-package highlight-parentheses
-;;   :diminish highlight-parentheses-mode
 ;;   :config
 ;;   (global-highlight-parentheses-mode t))
 
+;; TODO: nodefer
 (use-package volatile-highlights
-  :diminish volatile-highlights-mode
+  ;; :ensure hideshow
+  ;; :after-call pre-command-hook
   :config
-  (volatile-highlights-mode t))
+  (volatile-highlights-mode +1))
 
 (use-package undo-tree
-  :diminish undo-tree-mode
+  :after-call pre-command-hook
   :config
   (setq undo-tree-auto-save-history t
         undo-limit 800000
@@ -463,23 +498,45 @@
   (global-undo-tree-mode))
 
 ;; Save a list of recent files visited.
-(setq recentf-max-saved-items 1000)
-(setq recentf-save-file (expand-file-name ".recentf" user-emacs-directory))
-(setq recentf-exclude '("/tmp/" "/ssh:"))
-(recentf-mode 1)
+(use-package recentf
+  :after-call after-find-file
+  :bind ("C-x f" . recentf-ido-find-file)
+  :commands recentf-open-files
+  :config
+  (setq recentf-max-saved-items 500
+        recentf-save-file (expand-file-name ".recentf" user-emacs-directory)
+        recentf-auto-cleanup 'never
+        recentf-max-menu-items 0
+        recentf-exclude '("/tmp/" "/ssh:"))
+  (add-hook! 'dired-mode-hook
+             (defun doom--recentf-add-dired-directory-h ()
+               "Add dired directory to recentf file list."
+               (recentf-add-file default-directory)))
+
+  (defun recentf-ido-find-file ()
+    "Find a recent file using Ido."
+    (interactive)
+    (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+      (when file
+        (find-file file))))
+  (recentf-mode +1))
 
 (setq history-length 1000)
-(setq savehist-file (expand-file-name ".savehist" user-emacs-directory))
-(setq savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
-(savehist-mode t)
 
-(add-hook 'kill-emacs-hook
-          (defun doom-unpropertize-kill-ring-h ()
-            "Remove text properties from `kill-ring' for a smaller savehist file."
-            (setq kill-ring (cl-loop for item in kill-ring
-                                     if (stringp item)
-                                     collect (substring-no-properties item)
-                                     else if item collect it))))
+(use-package savehist
+  :after-call post-command-hook
+  :config
+  (setq savehist-file (expand-file-name ".savehist" user-emacs-directory)
+        savehist-save-minibuffer-history t
+        savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
+  (savehist-mode +1)
+  (add-hook! 'kill-emacs-hook
+    (defun doom-unpropertize-kill-ring-h ()
+      "Remove text properties from `kill-ring' for a smaller savehist file."
+      (setq kill-ring (cl-loop for item in kill-ring
+                               if (stringp item)
+                               collect (substring-no-properties item)
+                               else if item collect it)))))
 
 ;; Never ever use tabs
 (setq-default indent-tabs-mode nil)
@@ -501,11 +558,14 @@
   (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
 
 ;; use shift + arrow keys to switch between visible buffers
-(require 'windmove)
-(windmove-default-keybindings)
+(use-package windmove
+  :after-call window-configuration-change-hook
+  :config
+  (windmove-default-keybindings))
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
 (use-package paren
+  :after-call pre-command-hook
   :config
   (setq show-paren-delay 0.1
         show-paren-style 'parenthesis
@@ -515,16 +575,14 @@
   (show-paren-mode +1))
 
 ;; Save point position between sessions
-(require 'saveplace)
-(setq save-place-file (expand-file-name ".places" user-emacs-directory))
-(if (fboundp #'save-place-mode)
-    (save-place-mode 1)
-  (setq-default save-place t))
-
+(use-package saveplace
+  :after-call after-find-file dired-initial-position-hook
+  :config
+  (setq save-place-file (expand-file-name ".places" user-emacs-directory))
+  (save-place-mode +1))
 
 ;; guide-key setup
 ;; (use-package guide-key
-;;   :diminish guide-key-mode
 ;;   :config
 ;;   (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
 ;;                                        "C-x C-k" "<f8>" "C-c !" "M-s"
@@ -536,18 +594,18 @@
 ;;   (setq guide-key/popup-window-position 'bottom))
 
 (use-package which-key
-  :diminish which-key-mode
+  :after-call pre-command-hook
   :init
   (setq which-key-sort-order #'which-key-prefix-then-key-order
         which-key-sort-uppercase-first nil
         which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 6
-        which-key-side-window-slot -10)  
+        which-key-side-window-slot -10)
   :config
   (which-key-setup-side-window-bottom)
   (setq which-key-max-description-length 45)
-  (which-key-mode t))
+  (which-key-mode +1))
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
@@ -571,9 +629,9 @@
   (setq ns-right-command-modifier 'left)
 
   ; left opt key is super
-  (setq ns-alternate-modifier 'super) 
+  (setq ns-alternate-modifier 'super)
   ; right opt is ignored by emacs (useful for mac-style accent input)
-  (setq ns-right-alternate-modifier 'none) 
+  (setq ns-right-alternate-modifier 'none)
 
   ; left and right controls are control
   (setq ns-control-modifier 'control)
@@ -581,63 +639,64 @@
 
   ; function key is hyper
   (setq ns-function-modifier 'hyper)
-  
+
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
   (set-face-font 'default "Source Code Pro 14"))
 
-;; disable visible bell in windowed OSX (doesn't work in El Capitan)
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
   (setq ns-use-native-fullscreen nil)
   (setq ns-use-fullscreen-animation nil)
-  (setq ns-pop-up-frames nil))
+  (setq ns-pop-up-frames nil)
+
+  ;; set my path manually on mac
+  (let* ((mypaths '("~/bin" "~/homebrew/bin"))
+         (expanded (mapcar 'expand-file-name mypaths)))
+    (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
+    (setq exec-path (append expanded exec-path))))
 
 ;; breaks doom theme
 ;; (setq ring-bell-function 'ignore)
 
 (use-package ns-auto-titlebar
+  :defer 1
   :if *is-a-windowed-mac*
   :config
   (ns-auto-titlebar-mode +1))
 
-
-(use-package exec-path-from-shell
-  :if *is-a-mac*
-  :config
-  (setq exec-path-from-shell-check-startup-files nil)
-  (exec-path-from-shell-initialize))
-
 (use-package reveal-in-osx-finder
-  :if *is-a-mac*)
-
+  :if *is-a-mac*
+  :commands reveal-in-osx-finder)
 
 ; Stop C-z from minimizing windows under OS X
-(defun sanityinc/maybe-suspend-frame ()
-  (interactive)
-  (unless *is-a-windowed-mac*
-    (suspend-frame)))
-
-(bind-key "C-z" 'sanityinc/maybe-suspend-frame)
+(when *is-a-windowed-mac*
+  (unbind-key "C-z"))
 
 ;; enable electric pairs and indent
 ;; (when (fboundp 'electric-pair-mode)
 ;;   (electric-pair-mode))
 
-(when (eval-when-compile (version< "24.4" emacs-version))
-  (electric-indent-mode 1))
+;; (when (eval-when-compile (version< "24.4" emacs-version))
+;;   (electric-indent-mode 1))
 
-(global-set-key (kbd "RET") 'newline-and-indent)
+(bind-key "RET" #'newline-and-indent)
 
 ;;==================================================
 ;; ido settings
 ;;==================================================
-(use-package ido)
-(use-package flx)
-(use-package ido-grid-mode)
-(use-package ido-completing-read+)
+(use-package ido
+  :commands ido-mode)
+(use-package flx
+  :commands flx-ido-mode)
+(use-package ido-grid-mode
+  :commands ido-grid-mode)
+(use-package ido-completing-read+
+  :commands ido-ubiquitous-mode)
+
 (use-package flx-ido
+  :after-call after-init-hook
   :init
   (setq ido-enable-prefix nil
         ido-enable-flex-matching t
@@ -650,48 +709,23 @@
         ido-default-file-method 'selected-window
         ido-ignore-extensions t
         ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
-                                    ".rb" ".org" ".txt"
+                                    ".tf" ".md" ".rb" ".org" ".txt"
                                     ".c" ".cpp" ".cxx" ".h" ".hpp")
         ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   (setq ido-use-faces nil)
-  (add-hook 'ido-setup-hook
-            (lambda ()
-              ;; Go straight home
-              (define-key ido-file-completion-map
-                (kbd "~")
-                (lambda ()
-                  (interactive)
-                  (cond
-                   ((looking-back "~/") (insert "code/"))
-                   ((looking-back "/") (insert "~/"))
-                   (:else (call-interactively 'self-insert-command)))))
-
-              ;; Use C-w to go back up a dir to better match normal usage of C-w
-              ;; - insert current file name with C-x C-w instead.
-              (define-key ido-file-completion-map (kbd "C-w") 'ido-delete-backward-updir)
-              (define-key ido-file-completion-map (kbd "C-x C-w") 'ido-copy-current-file-name)))
   :config
-  (ido-mode t)
-  (ido-everywhere t)
-  (flx-ido-mode 1)
-  (ido-grid-mode)
-  (ido-ubiquitous-mode 1))
+  (ido-mode +1)
+  (ido-everywhere +1)
+  (flx-ido-mode +1)
+  (ido-grid-mode +1)
+  (ido-ubiquitous-mode +1))
 
-;; TODO: move to autoloaded file
-(defun recentf-ido-find-file ()
-  "Find a recent file using Ido."
-  (interactive)
-  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
-    (when file
-      (find-file file))))
-
-(bind-key "C-x f" 'recentf-ido-find-file)
 
 ;;==================================================
 ;; which-func-mode settings
 ;;==================================================
-(which-function-mode 1)                 ; show me where I'm standing
+(which-function-mode +1)                 ; show me where I'm standing
 
 ; puts which-function-mode in the header
 ;; (setq-default header-line-format
@@ -708,24 +742,28 @@
 ;; TODO: load as needed
 (use-package gitconfig-mode
   :mode (("\\.gitconfig\\'" . gitconfig-mode)
-	 ("\\.git/config\\'" . gitconfig-mode)
-	 ("\\.gitmodules\\'" . gitconfig-mode)))
+	     ("\\.git/config\\'" . gitconfig-mode)
+	     ("\\.gitmodules\\'" . gitconfig-mode)))
+
 (use-package gitignore-mode
   :mode ("\\.gitignore\\'" . gitignore-mode))
-;; (use-package git-timemachine)
+
 (use-package gl-conf-mode
   :load-path "site-lisp/gl-conf-mode"
   :mode "gitolite\\.conf\\'")
 
 (use-package magit
-  :bind ("C-x C-z" . magit-status)
+  :bind
+  (("C-x C-z" . magit-status)
+   :map magit-status-mode-map
+   ("q" . magit-quit-session))
   :config
   (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
-        magit-stage-all-confirm nil
-        magit-unstage-all-confirm nil
-        magit-save-some-buffers nil
-        magit-diff-refine-hunk t 
+        magit-no-confirm '(stage-all-changes unstage-all-changes)
+        magit-delete-by-moving-to-trash t
+        magit-diff-refine-hunk 'all
         magit-save-repository-buffers nil)
+
   (defadvice magit-status (around magit-fullscreen activate)
     (window-configuration-to-register :magit-fullscreen)
     ad-do-it
@@ -735,46 +773,27 @@
     "Restores the previous window configuration and kills the magit buffer"
     (interactive)
     (kill-buffer)
-    (jump-to-register :magit-fullscreen))
+    (jump-to-register :magit-fullscreen)))
 
-  (define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
 
-  (defun magit-toggle-whitespace ()
-    (interactive)
-    (if (member "-w" magit-diff-options)
-        (magit-dont-ignore-whitespace)
-      (magit-ignore-whitespace)))
-
-  (defun magit-ignore-whitespace ()
-    (interactive)
-    (add-to-list 'magit-diff-options "-w")
-    (magit-refresh))
-
-  (defun magit-dont-ignore-whitespace ()
-    (interactive)
-    (setq magit-diff-options (remove "-w" magit-diff-options))
-    (magit-refresh))
-
-  (define-key magit-status-mode-map (kbd "W") 'magit-toggle-whitespace))
-
-(use-package git-messenger
-  :bind ("C-x v p" . git-messenger:popup-message))
-
+;; TODO: nodefer
 (use-package git-commit
   :config
   (global-git-commit-mode +1)
   ;; Enforce git commit conventions.
   ;; See https://chris.beams.io/posts/git-commit/
   (setq git-commit-summary-max-length 50
-        git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line)))
+        git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
+
+  (setq-hook! 'git-commit-mode-hook fill-column 72))
 
 ;;==================================================
 ;; isearch settings
 ;;==================================================
 
 ;; use regexp isearch by default
-(global-set-key [remap isearch-forward] 'isearch-forward-regexp)
-(global-set-key [remap isearch-backward] 'isearch-backward-regexp)
+(bind-key [remap isearch-forward] #'isearch-forward-regexp)
+(bind-key [remap isearch-backward] #'isearch-backward-regexp)
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
@@ -793,27 +812,21 @@
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
 (use-package anzu
-  :diminish anzu-mode
   :bind
-  (([remap query-replace] . anzu-query-replace)
-   ([remap query-replace-regexp] . anzu-query-replace-regexp)
+  (([remap query-replace-regexp] . anzu-query-replace)
+   ([remap query-replace] . anzu-query-replace-regexp)
    :map isearch-mode-map
-   ([remap isearch-query-replace] . anzu-isearch-query-replace)
-   ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp))
+   ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp)
+   ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp))
   :config
   ;; show number of matches while searching
-  (global-anzu-mode 1)
-  ;; use anzu for query for query-replace
-  ;;(global-set-key [remap query-replace] 'anzu-query-replace-regexp)
-  )
+  (global-anzu-mode +1))
 
 ;;==================================================
 ;; elisp
 ;;==================================================
 (use-package highlight-quoted
-  :commands highlight-quoted-mode
-  :init
-  (add-hook 'emacs-lisp-mode-hook (lambda () (highlight-quoted-mode 1))))
+  :hook (emacs-lisp-mode . highlight-quoted-mode))
 
 ;(add-hook 'emacs-lisp-mode-hook 'hl-sexp-mode)
 
@@ -830,7 +843,6 @@
 ;;; req-todo
 ;; (use-package smartparens-config
 ;;   :ensure smartparens
-;;   :diminish (smartparens-mode . "SP")
 ;;   :bind (:map smartparens-mode-map
 ;;               ("C-M-a" . sp-beginning-of-sexp)
 ;;               ("C-M-e" . sp-end-of-sexp)
@@ -913,7 +925,7 @@
 (define-key dired-mode-map (vector 'remap 'beginning-of-buffer) 'dired-back-to-top)
 (define-key dired-mode-map (vector 'remap 'smart-up) 'dired-back-to-top)
 
-(bind-key "C-x C-j" 'dired-jump)
+(bind-key "C-x C-j" #'dired-jump)
 (bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
 
 ;; req-todo
@@ -934,8 +946,9 @@
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
-;; req-todo
+;; TODO: nodefer
 (use-package browse-kill-ring
+  ;:after-call after-init-hook
   :config
   (browse-kill-ring-default-keybindings)
   (setq browse-kill-ring-highlight-current-entry t)
@@ -967,7 +980,6 @@
 ;; paredit
 ;;==================================================
 ;; (use-package paredit
-;;   :diminish (paredit-mode . "Par")
 ;;   :init
 ;;   (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
 
@@ -985,7 +997,7 @@
 (use-package misc
   :ensure nil
   :bind ("M-z" . zap-up-to-char)
-  :init (bind-key "\M-Z" 'zap-to-char))
+  :init (bind-key "\M-Z" #'zap-to-char))
 
 (use-package jc-misc
   :ensure nil
@@ -1000,7 +1012,7 @@
   :config
   (crux-with-region-or-buffer indent-region)
   (crux-with-region-or-buffer untabify)
-  (crux-reopen-as-root-mode t))
+  (crux-reopen-as-root-mode +1))
 
 ;; (defadvice ido-find-file (after find-file-sudo activate)
 ;;   "Find file as root if necessary."
@@ -1017,8 +1029,8 @@
          ("C-3" . split-window-horizontally-with-other-buffer)
          ("C-s-j" . quick-switch-buffer)))
 
-(bind-key "C-1" 'delete-other-windows)
-(bind-key "C-0" 'delete-window)
+(bind-key "C-1" #'delete-other-windows)
+(bind-key "C-0" #'delete-window)
 
 (use-package bm
   :ensure nil
@@ -1027,10 +1039,10 @@
          ("<S-f2>" . bm-previous)))
 
 ;; resize windows
-(bind-key "S-C-<left>" 'shrink-window-horizontally)
-(bind-key "S-C-<right>" 'enlarge-window-horizontally)
-(bind-key "S-C-<down>" 'shrink-window)
-(bind-key "S-C-<up>" 'enlarge-window)
+(bind-key "S-C-<left>" #'shrink-window-horizontally)
+(bind-key "S-C-<right>" #'enlarge-window-horizontally)
+(bind-key "S-C-<down>" #'shrink-window)
+(bind-key "S-C-<up>" #'enlarge-window)
 
 ; ibuffer
 (use-package ibuffer
@@ -1043,7 +1055,7 @@
 
 ; beacon
 (use-package beacon
-  :diminish beacon-mode
+  :defer 2
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
@@ -1051,11 +1063,11 @@
 
 ;; move-text
 (use-package drag-stuff
-  :diminish drag-stuff-mode
+  :hook
+  ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
   :config
   (setq drag-stuff-modifier '(meta super))
-  (drag-stuff-define-keys)
-  (drag-stuff-global-mode t))
+  (drag-stuff-define-keys))
 
 ;; (defun sanityinc/newline-at-end-of-line ()
 ;;   "Move to end of line, enter a newline, and reindent."
@@ -1067,9 +1079,10 @@
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :diminish whole-line-or-region-global-mode
+  :hook
+  ((prog-mode text-mode conf-mode) . whole-line-or-region-local-mode)
   :config
-  (whole-line-or-region-global-mode t))
+  (whole-line-or-region-global-mode +1))
 
 ;;==================================================
 ;; ispell
@@ -1155,8 +1168,9 @@
 ;;   (smex-initialize))
 
 (use-package amx
+  ;:after-call after-init-hook
   :config
-  (amx-mode t))
+  (amx-mode +1))
 
 ;;==================================================
 ;; Projectile settings
@@ -1183,13 +1197,18 @@
       (setq projectile-darcs-command fd-command)
       (setq projectile-svn-command fd-command)
       (setq projectile-generic-command fd-command)))
-  (projectile-global-mode)
+  (projectile-mode +1)
   (setq projectile-require-project-file nil))
 
 (use-package dumb-jump
-  :config
-  (dumb-jump-mode t))
-
+  :bind (("M-g o" . dumb-jump-go-other-window)
+         ("M-g j" . dumb-jump-go)
+         ("M-g b" . dumb-jump-back)
+         ("M-g i" . dumb-jump-go-prompt)
+         ("M-g x" . dumb-jump-go-prefer-external)
+         ("M-g z" . dumb-jump-go-prefer-external-other-window))
+  ;:config (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
+  )
 ;;==================================================
 ;; popup-imenu settings
 ;;==================================================
@@ -1201,7 +1220,6 @@
 ;; company-mode settings
 ;;==================================================
 (use-package company
-  :diminish company-mode
   :defer 5
   :init
   (setq
@@ -1212,7 +1230,7 @@
   (global-company-mode))
 
 (use-package company-terraform
-  :after company
+  :after terraform-mode
   :config
   (add-to-list 'company-backends 'company-terraform))
 
@@ -1220,19 +1238,18 @@
 ;;   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
 
 (use-package yasnippet
-  :defer t
-  :diminish yas-minor-mode
+  :defer-incrementally eldoc easymenu help-mode
   :commands yas-hippie-try-expand
   :init (progn
           (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-          (yas-global-mode 1)))
+          (yas-global-mode +1)))
 
 (use-package yasnippet-snippets         ; Collection of snippets
   :after yasnippet)
 
 (use-package flycheck
-  :ensure t
-  :config  
+  :after-call after-find-file
+  :config
   (setq flycheck-check-syntax-automatically '(save mode-enabled))
   (setq flycheck-display-errors-delay 0.25)
   (global-flycheck-mode))
@@ -1240,11 +1257,9 @@
 (use-package flymake-shellcheck
   :after flycheck
   :commands flymake-shellcheck-load
-  :init
-  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
+  :hook (sh-mode . flymake-shellcheck-load))
 
 ;; (use-package flycheck-popup-tip
-;;   :ensure t
 ;;   :after flycheck
 ;;   :config
 ;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
@@ -1262,7 +1277,7 @@
   (after! company
     ;; Don't display popups if company is open
     (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)))
-  
+
 
   ;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
   ;; (flycheck-posframe-configure-pretty-defaults)
@@ -1292,6 +1307,8 @@
 ;;==================================================
 ;; wgrep
 ;;==================================================
+
+; ;; TODO: nodefer
 
 (use-package wgrep)
 (use-package ag)
@@ -1374,7 +1391,10 @@
 ;; (use-package paradox)
 ;; (use-package cypher-mode)
 ;; (use-package jade-mode)
-(use-package highlight-symbol)
+(use-package highlight-symbol
+  :commands (qhighlight-symbol
+             highlight-symbol-query-replace
+             highlight-symbol-occur))
 ;; (use-package ssh-config-mode)
 
 (use-package avy
@@ -1387,10 +1407,8 @@
   (avy-setup-default))
 
 (use-package ace-window
-  ;; :bind
-  ;; ("M-o" . ace-window)
-  :init
-  (global-set-key [remap other-window] #'ace-window)
+  :bind
+  ([remap other-window] . ace-window)
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (setq aw-dispatch-always nil))
@@ -1400,9 +1418,7 @@
 
 (use-package rainbow-mode
   :commands rainbow-mode
-  :init
-  (add-hook 'css-mode-hook 'rainbow-mode)
-  (add-hook 'html-mode-hook 'rainbow-mode))
+  :hook (css-mode html-mode))
 
 ;; ;; keep scratch around
 ;; (save-excursion
@@ -1464,8 +1480,6 @@ comment to the line."
 ;;   :diminish guru-mode)
 
 
-;(use-package indent-guide)
-
 ;;==================================================
 ;; server
 ;;==================================================
@@ -1508,7 +1522,7 @@ all hooks after it are ignored.")
         ;; Back to the default
         ((keyboard-quit))))
 
-(global-set-key [remap keyboard-quit] #'doom/escape)
+(bind-key [remap keyboard-quit] #'doom/escape)
 
 ;; Don't resize windows & frames in steps; it's prohibitive to prevent the user
 ;; from resizing it to exact dimensions, and looks weird.
@@ -1575,7 +1589,8 @@ all hooks after it are ignored.")
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 
 
-(use-package restart-emacs)
+(use-package restart-emacs
+  :commands restart-emacs)
 
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
@@ -1604,12 +1619,23 @@ all hooks after it are ignored.")
   :init
   (setq highlight-indent-guides-method 'character))
 
+(after! compile
+  (setq compilation-always-kill t       ; kill compilation process before starting another
+        compilation-ask-about-save nil  ; save all buffers on `compile'
+        compilation-scroll-output 'first-error)
+  ;; Handle ansi codes in compilation buffer
+  (add-hook 'compilation-filter-hook #'doom-apply-ansi-color-to-compilation-buffer-h))
+
+
+(add-hook! '(completion-list-mode-hook Man-mode-hook)
+           #'hide-mode-line-mode)
+
 ;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
 ;; ws-butler pcre2el highlight-doom/escape auto-revert
-;; company ivy nav-flash workspaces lsp
+;; company ivy workspaces lsp visual-line-mode
 ;;
 ;; zstd (un)compress
 ;;
 ;; use-package defer
 
-
+(use-package-report)
