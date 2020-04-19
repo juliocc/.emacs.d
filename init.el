@@ -340,8 +340,9 @@
 (setq apropos-do-all t)
 
 
-(setq-default visible-bell t)
+(setq-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) show-trailing-whitespace t)
 ;(setq-default show-trailing-whitespace t)
+;(setq-default visible-bell t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
 (setq-default word-wrap t)
@@ -393,10 +394,6 @@
        var-bt 'action
        (lambda (button)
          (helpful-variable (button-get button 'apropos-symbol)))))))
-
-
-;; Delete whitespace at the end of lines when saving
-;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (use-package whitespace-cleanup-mode
   :commands whitespace-cleanup-mode
