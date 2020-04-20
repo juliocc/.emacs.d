@@ -106,7 +106,6 @@
   :load-path "site-lisp")
 
 (use-package gcmh
-  :defer t
   :if jc-interactive-mode
   :commands gcmh-mode)
 
@@ -158,6 +157,7 @@
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
 
+;; TODO: nodefer
 (use-package doom-modeline
   :init
   (setq doom-modeline-bar-width 2
@@ -174,6 +174,7 @@
         (hide-mode-line-mode))))
   (doom-modeline-mode))
 
+;; TODO: nodefer
 (use-package centaur-tabs
   ;;:after-call after-find-file dired-initial-position-hook
   :init
@@ -264,7 +265,6 @@
 (setq fast-but-imprecise-scrolling t)
 
 (use-package highlight-numbers
-  :commands highlight-numbers-mode
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
 
@@ -341,7 +341,6 @@
 
 
 (setq-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) show-trailing-whitespace t)
-;(setq-default show-trailing-whitespace t)
 ;(setq-default visible-bell t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
@@ -375,12 +374,12 @@
 
 (use-package helpful
   :commands helpful--read-symbol
-  :bind
-  ([remap describe-function] . #'helpful-callable)
-  ([remap describe-command]  . #'helpful-command)
-  ([remap describe-variable] . #'helpful-variable)
-  ([remap describe-key]      . #'helpful-key)
-  ([remap describe-symbol]   . #'helpful-symbol)
+  :bind (([remap describe-function] . #'helpful-callable)
+         ([remap describe-command]  . #'helpful-command)
+         ([remap describe-variable] . #'helpful-variable)
+         ([remap describe-key]      . #'helpful-key)
+         ([remap describe-symbol]   . #'helpful-symbol)
+         ("C-h ." . helpful-at-point))
   :init
   (after! apropos
     ;; patch apropos buttons to call helpful instead of help
@@ -622,7 +621,7 @@
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
   ; left and right commands are meta
-  (setq ns-command-modifier 'meta)
+  (setq ns-command-modifier 'meta) 
   (setq ns-right-command-modifier 'left)
 
   ; left opt key is super
@@ -750,10 +749,9 @@
   :mode "gitolite\\.conf\\'")
 
 (use-package magit
-  :bind
-  (("C-x C-z" . magit-status)
-   :map magit-status-mode-map
-   ("q" . magit-quit-session))
+  :bind (("C-x C-z" . magit-status)
+         :map magit-status-mode-map
+         ("q" . magit-quit-session))
   :config
   (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
         magit-no-confirm '(stage-all-changes unstage-all-changes)
@@ -809,12 +807,11 @@
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
 (use-package anzu
-  :bind
-  (([remap query-replace-regexp] . anzu-query-replace)
-   ([remap query-replace] . anzu-query-replace-regexp)
-   :map isearch-mode-map
-   ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp)
-   ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp))
+  :bind (([remap query-replace-regexp] . anzu-query-replace)
+         ([remap query-replace] . anzu-query-replace-regexp)
+         :map isearch-mode-map
+         ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp)
+         ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp))
   :config
   ;; show number of matches while searching
   (global-anzu-mode +1))
@@ -1047,12 +1044,10 @@
 
 ; shrink-whitespace
 (use-package shrink-whitespace
-  :commands shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
 ; beacon
 (use-package beacon
-  :defer 2
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
@@ -1174,8 +1169,7 @@
 ;;==================================================
 
 (use-package projectile
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
+  :bind-keymap ("C-c p" . projectile-command-map)
   :config
   (setq projectile-mode-line
         '(:eval
@@ -1253,7 +1247,6 @@
 
 (use-package flymake-shellcheck
   :after flycheck
-  :commands flymake-shellcheck-load
   :hook (sh-mode . flymake-shellcheck-load))
 
 ;; (use-package flycheck-popup-tip
@@ -1389,7 +1382,7 @@
 ;; (use-package cypher-mode)
 ;; (use-package jade-mode)
 (use-package highlight-symbol
-  :commands (qhighlight-symbol
+  :commands (highlight-symbol
              highlight-symbol-query-replace
              highlight-symbol-occur))
 ;; (use-package ssh-config-mode)
@@ -1404,8 +1397,7 @@
   (avy-setup-default))
 
 (use-package ace-window
-  :bind
-  ([remap other-window] . ace-window)
+  :bind ([remap other-window] . ace-window)
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (setq aw-dispatch-always nil))
@@ -1414,7 +1406,6 @@
   :bind ("C-=" . er/expand-region))
 
 (use-package rainbow-mode
-  :commands rainbow-mode
   :hook (css-mode html-mode))
 
 ;; ;; keep scratch around
@@ -1635,4 +1626,5 @@ all hooks after it are ignored.")
 ;;
 ;; use-package defer
 
-(use-package-report)
+(when init-file-debug
+  (use-package-report))
