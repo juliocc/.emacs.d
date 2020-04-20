@@ -241,19 +241,20 @@ advised)."
   ;;   :defer-incrementally SYMBOL|LIST|t
   ;;
   ;; Check out `use-package!'s documentation for more about these two.
-  (dolist (keyword '(:defer-incrementally :after-call))
-    (push keyword use-package-deferring-keywords)
-    (setq use-package-keywords
-          (use-package-list-insert keyword use-package-keywords :after)))
+  ;; (dolist (keyword '(:defer-incrementally :after-call))
+  (dolist (keyword '(:after-call))
+     (push keyword use-package-deferring-keywords)
+     (setq use-package-keywords
+           (use-package-list-insert keyword use-package-keywords :after)))
 
-  (defalias 'use-package-normalize/:defer-incrementally #'use-package-normalize-symlist)
-  (defun use-package-handler/:defer-incrementally (name _keyword targets rest state)
-    (use-package-concat
-     `((doom-load-packages-incrementally
-        ',(if (equal targets '(t))
-              (list name)
-            (append targets (list name)))))
-     (use-package-process-keywords name rest state)))
+  ;; (defalias 'use-package-normalize/:defer-incrementally #'use-package-normalize-symlist)
+  ;; (defun use-package-handler/:defer-incrementally (name _keyword targets rest state)
+  ;;   (use-package-concat
+  ;;    `((doom-load-packages-incrementally
+  ;;       ',(if (equal targets '(t))
+  ;;             (list name)
+  ;;           (append targets (list name)))))
+  ;;    (use-package-process-keywords name rest state)))
 
   (defalias 'use-package-normalize/:after-call #'use-package-normalize-symlist)
   (defun use-package-handler/:after-call (name _keyword hooks rest state)
@@ -287,73 +288,73 @@ advised)."
          (use-package-process-keywords name rest state))))))
 
 
-(defvar doom-incremental-packages '(t)
-  "A list of packages to load incrementally after startup. Any large packages
-here may cause noticable pauses, so it's recommended you break them up into
-sub-packages. For example, `org' is comprised of many packages, and can be
-broken up into:
+;; (defvar doom-incremental-packages '(t)
+;;   "A list of packages to load incrementally after startup. Any large packages
+;; here may cause noticable pauses, so it's recommended you break them up into
+;; sub-packages. For example, `org' is comprised of many packages, and can be
+;; broken up into:
 
-  (doom-load-packages-incrementally
-   '(calendar find-func format-spec org-macs org-compat
-     org-faces org-entities org-list org-pcomplete org-src
-     org-footnote org-macro ob org org-clock org-agenda
-     org-capture))
+;;   (doom-load-packages-incrementally
+;;    '(calendar find-func format-spec org-macs org-compat
+;;      org-faces org-entities org-list org-pcomplete org-src
+;;      org-footnote org-macro ob org org-clock org-agenda
+;;      org-capture))
 
-This is already done by the lang/org module, however.
+;; This is already done by the lang/org module, however.
 
-If you want to disable incremental loading altogether, either remove
-`doom-load-packages-incrementally-h' from `emacs-startup-hook' or set
-`doom-incremental-first-idle-timer' to nil. Incremental loading does not occur
-in daemon sessions (they are loaded immediately at startup).")
+;; If you want to disable incremental loading altogether, either remove
+;; `doom-load-packages-incrementally-h' from `emacs-startup-hook' or set
+;; `doom-incremental-first-idle-timer' to nil. Incremental loading does not occur
+;; in daemon sessions (they are loaded immediately at startup).")
 
-(defvar doom-incremental-first-idle-timer 2.0
-  "How long (in idle seconds) until incremental loading starts.
+;; (defvar doom-incremental-first-idle-timer 2.0
+;;   "How long (in idle seconds) until incremental loading starts.
 
-Set this to nil to disable incremental loading.")
+;; Set this to nil to disable incremental loading.")
 
-(defvar doom-incremental-idle-timer 0.75
-  "How long (in idle seconds) in between incrementally loading packages.")
+;; (defvar doom-incremental-idle-timer 0.75
+;;   "How long (in idle seconds) in between incrementally loading packages.")
 
-(defun doom-load-packages-incrementally (packages &optional now)
-  "Registers PACKAGES to be loaded incrementally.
+;; (defun doom-load-packages-incrementally (packages &optional now)
+;;   "Registers PACKAGES to be loaded incrementally.
 
-If NOW is non-nil, load PACKAGES incrementally, in `doom-incremental-idle-timer'
-intervals."
-  (if (not now)
-      (nconc doom-incremental-packages packages)
-    (while packages
-      (let ((req (pop packages)))
-        (unless (featurep req)
-          (message "Incrementally loading %s" req)
-          (condition-case e
-              (or (while-no-input
-                    (let ((gc-cons-threshold most-positive-fixnum)
-                          file-name-handler-alist)
-                      (require req nil t))
-                    t)
-                  (push req packages))
-            ((error debug)
-             (message "Failed to load '%s' package incrementally, because: %s"
-                      req e)))
-          (if (not packages)
-              (message "Finished incremental loading")
-            (run-with-idle-timer doom-incremental-idle-timer
-                                 nil #'doom-load-packages-incrementally
-                                 packages t)
-            (setq packages nil)))))))
+;; If NOW is non-nil, load PACKAGES incrementally, in `doom-incremental-idle-timer'
+;; intervals."
+;;   (if (not now)
+;;       (nconc doom-incremental-packages packages)
+;;     (while packages
+;;       (let ((req (pop packages)))
+;;         (unless (featurep req)
+;;           (message "Incrementally loading %s" req)
+;;           (condition-case e
+;;               (or (while-no-input
+;;                     (let ((gc-cons-threshold most-positive-fixnum)
+;;                           file-name-handler-alist)
+;;                       (require req nil t))
+;;                     t)
+;;                   (push req packages))
+;;             ((error debug)
+;;              (message "Failed to load '%s' package incrementally, because: %s"
+;;                       req e)))
+;;           (if (not packages)
+;;               (message "Finished incremental loading")
+;;             (run-with-idle-timer doom-incremental-idle-timer
+;;                                  nil #'doom-load-packages-incrementally
+;;                                  packages t)
+;;             (setq packages nil)))))))
 
-(defun doom-load-packages-incrementally-h ()
-  "Begin incrementally loading packages in `doom-incremental-packages'.
+;; (defun doom-load-packages-incrementally-h ()
+;;   "Begin incrementally loading packages in `doom-incremental-packages'.
 
-If this is a daemon session, load them all immediately instead."
-  (if (daemonp)
-      (mapc #'require (cdr doom-incremental-packages))
-    (when (numberp doom-incremental-first-idle-timer)
-      (run-with-idle-timer doom-incremental-first-idle-timer
-                           nil #'doom-load-packages-incrementally
-                           (cdr doom-incremental-packages) t))))
+;; If this is a daemon session, load them all immediately instead."
+;;   (if (daemonp)
+;;       (mapc #'require (cdr doom-incremental-packages))
+;;     (when (numberp doom-incremental-first-idle-timer)
+;;       (run-with-idle-timer doom-incremental-first-idle-timer
+;;                            nil #'doom-load-packages-incrementally
+;;                            (cdr doom-incremental-packages) t))))
 
-(add-hook 'emacs-startup-hook #'doom-load-packages-incrementally-h)
+;; (add-hook 'emacs-startup-hook #'doom-load-packages-incrementally-h)
 
 (defun doom-apply-ansi-color-to-compilation-buffer-h ()
   "Applies ansi codes to the compilation buffers. Meant for

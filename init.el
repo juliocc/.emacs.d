@@ -1,6 +1,6 @@
 (defvar file-name-handler-alist-old file-name-handler-alist)
 
-(setq ;package-enable-at-startup nil
+(setq package-enable-at-startup nil
       file-name-handler-alist nil
       message-log-max 16384
       gc-cons-threshold most-positive-fixnum
@@ -142,11 +142,12 @@
              all-the-icons-material
              all-the-icons-alltheicon))
 
-;; TODO: nodefer
+; TODO: nodefer
 (use-package doom-themes
+  :init
   :config
   ;; Global settings (defaults)
-  (setq doom-themeds-enable-bold nil    ; if nil, bold is universally disabled
+  (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
         doom-themes-enable-italic nil
         doom-one-brighter-modeline nil)
   ;; (load-theme 'doom-opera t)
@@ -154,11 +155,12 @@
   ;; (load-theme 'doom-tomorrow-night t)
   ;; (load-theme 'doom-nord t)
   (load-theme 'doom-one t)
-  ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
 
-;; TODO: nodefer
 (use-package doom-modeline
+  :hook (after-init . doom-modeline-mode)
+  :hook (doom-modeline-mode . size-indication-mode) ; filesize in modeline
+  :hook (doom-modeline-mode . column-number-mode)   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 2
         doom-modeline-enable-word-count t)
@@ -195,11 +197,11 @@
   (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
 
 (use-package winum
-  :after-call after-init-hook
+  ;:after-call after-init-hook
+  :defer 3
   :config
   (winum-mode +1))
 
-;; TODO: nodefer
 (use-package solaire-mode
   :hook
   ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
@@ -246,8 +248,8 @@
 (if (fboundp 'fringe-mode) (fringe-mode))
 
 (global-font-lock-mode +1)               ; just in case
-(line-number-mode +1)
-(column-number-mode +1)
+;(line-number-mode +1)
+;(column-number-mode +1)
 
 ;; Explicitly define a width to reduce computation
 (setq-default display-line-numbers-width 3)
@@ -452,7 +454,7 @@
 
 ;; Useful modes
 (auto-image-file-mode +1)                ; display images
-(size-indication-mode +1)                ; display file size
+;(size-indication-mode +1)                ; display file size
 (delete-selection-mode +1)               ; delete selected text on input
 ;(global-subword-mode 1)
 (global-auto-revert-mode +1)             ; auto reload files if changed outside emacs
@@ -478,8 +480,8 @@
 
 ;; TODO: nodefer
 (use-package volatile-highlights
-  ;; :ensure hideshow
-  ;; :after-call pre-command-hook
+  ;;:after-call after-init-hook
+  ;;:defer 5
   :config
   (volatile-highlights-mode +1))
 
@@ -555,7 +557,6 @@
 
 ;; use shift + arrow keys to switch between visible buffers
 (use-package windmove
-  :after-call window-configuration-change-hook
   :config
   (windmove-default-keybindings))
 
@@ -682,17 +683,8 @@
 ;;==================================================
 ;; ido settings
 ;;==================================================
-(use-package ido
-  :commands ido-mode)
-(use-package flx
-  :commands flx-ido-mode)
-(use-package ido-grid-mode
-  :commands ido-grid-mode)
-(use-package ido-completing-read+
-  :commands ido-ubiquitous-mode)
-
 (use-package flx-ido
-  :after-call after-init-hook
+  :defer 1
   :init
   (setq ido-enable-prefix nil
         ido-enable-flex-matching t
@@ -711,6 +703,11 @@
   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
   (setq ido-use-faces nil)
   :config
+  (use-package ido)
+  (use-package flx)
+  (use-package ido-grid-mode)
+  (use-package ido-completing-read+)
+  
   (ido-mode +1)
   (ido-everywhere +1)
   (flx-ido-mode +1)
@@ -735,7 +732,6 @@
 ;; git and magit settings
 ;;==================================================
 
-;; TODO: load as needed
 (use-package gitconfig-mode
   :mode (("\\.gitconfig\\'" . gitconfig-mode)
 	     ("\\.git/config\\'" . gitconfig-mode)
@@ -753,6 +749,21 @@
          :map magit-status-mode-map
          ("q" . magit-quit-session))
   :config
+  (use-package git-commit
+    :config
+    (global-git-commit-mode +1)
+
+    ;; TODO
+    ;; (add-hook 'git-commit-mode-hook 'turn-on-flyspell)
+    
+    ;; Enforce git commit conventions.
+    ;; See https://chris.beams.io/posts/git-commit/
+    (setq git-commit-summary-max-length 50
+          git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
+    (setq-hook! 'git-commit-mode-hook fill-column 72))
+
+  (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
+
   (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
         magit-no-confirm '(stage-all-changes unstage-all-changes)
         magit-delete-by-moving-to-trash t
@@ -770,17 +781,6 @@
     (kill-buffer)
     (jump-to-register :magit-fullscreen)))
 
-
-;; TODO: nodefer
-(use-package git-commit
-  :config
-  (global-git-commit-mode +1)
-  ;; Enforce git commit conventions.
-  ;; See https://chris.beams.io/posts/git-commit/
-  (setq git-commit-summary-max-length 50
-        git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
-
-  (setq-hook! 'git-commit-mode-hook fill-column 72))
 
 ;;==================================================
 ;; isearch settings
@@ -940,9 +940,9 @@
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
-;; TODO: nodefer
 (use-package browse-kill-ring
   ;:after-call after-init-hook
+  :defer 2
   :config
   (browse-kill-ring-default-keybindings)
   (setq browse-kill-ring-highlight-current-entry t)
@@ -1048,6 +1048,7 @@
 
 ; beacon
 (use-package beacon
+  :defer 2
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
@@ -1060,14 +1061,6 @@
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-define-keys))
-
-;; (defun sanityinc/newline-at-end-of-line ()
-;;   "Move to end of line, enter a newline, and reindent."
-;;   (interactive)
-;;   (move-end-of-line 1)
-;;   (newline-and-indent))
-
-;; (bind-key "S-<return>" 'sanityinc/newline-at-end-of-line)
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
@@ -1160,7 +1153,7 @@
 ;;   (smex-initialize))
 
 (use-package amx
-  ;:after-call after-init-hook
+  :after-call pre-command-hook
   :config
   (amx-mode +1))
 
@@ -1211,7 +1204,7 @@
 ;; company-mode settings
 ;;==================================================
 (use-package company
-  :defer 5
+  :defer 4
   :init
   (setq
    company-idle-delay 0.5
@@ -1229,11 +1222,11 @@
 ;;   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
 
 (use-package yasnippet
-  :defer-incrementally eldoc easymenu help-mode
   :commands yas-hippie-try-expand
-  :init (progn
-          (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-          (yas-global-mode +1)))
+  :init
+  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
+  :config 
+  (yas-global-mode +1))
 
 (use-package yasnippet-snippets         ; Collection of snippets
   :after yasnippet)
@@ -1298,20 +1291,24 @@
 ;; wgrep
 ;;==================================================
 
-; ;; TODO: nodefer
+;; TODO: ripgrep
 
-(use-package wgrep)
-(use-package ag)
-(use-package wgrep-ag
+(use-package wgrep
+  :commands wgrep-change-to-wgrep-mode)
+
+(use-package ag
+  :after wgrep
   :if (executable-find "ag")
   :config
-  (setq-default ag-highlight-search t))
+  (use-package wgrep-ag)
+  (setq ag-highlight-search t))
 
 ;;==================================================
 ;; dockerfile settings
 ;;==================================================
 
-(use-package dockerfile-mode)
+(use-package dockerfile-mode
+  :mode "Dockerfile[a-zA-Z.-]*\\'")
 
 ;;==================================================
 ;; terraform settings
@@ -1474,8 +1471,7 @@ comment to the line."
 
 (use-package server
   :if window-system
-  :init
-  (add-hook 'after-init-hook 'server-start t))
+  :hook (after-init . server-start))
 
 
 ;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
@@ -1523,7 +1519,8 @@ all hooks after it are ignored.")
 (setq window-divider-default-places t
       window-divider-default-bottom-width 1
       window-divider-default-right-width 1)
-(window-divider-mode t)
+(add-hook 'window-setup-hook #'window-divider-mode)
+                                        ;(window-divider-mode t)
 
  ;; Favor vertical splits over horizontal ones. Screens are usually wide.
 (setq split-width-threshold 160
@@ -1616,7 +1613,7 @@ all hooks after it are ignored.")
 
 
 (add-hook! '(completion-list-mode-hook Man-mode-hook)
-           #'hide-mode-line-mode)
+           #'hide-modeq-line-mode)
 
 ;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
 ;; ws-butler pcre2el highlight-doom/escape auto-revert
@@ -1624,7 +1621,6 @@ all hooks after it are ignored.")
 ;;
 ;; zstd (un)compress
 ;;
-;; use-package defer
 
 (when init-file-debug
   (use-package-report))
