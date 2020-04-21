@@ -1602,7 +1602,8 @@ all hooks after it are ignored.")
 (use-package highlight-indent-guides
   :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
   :init
-  (setq highlight-indent-guides-method 'character))
+  (setq highlight-indent-guides-method 'character
+        highlight-indent-guides-responsive 'top-edge))
 
 (after! compile
   (setq compilation-always-kill t       ; kill compilation process before starting another
@@ -1613,7 +1614,7 @@ all hooks after it are ignored.")
 
 
 (add-hook! '(completion-list-mode-hook Man-mode-hook)
-           #'hide-modeq-line-mode)
+           #'hide-mode-line-mode)
 
 ;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
 ;; ws-butler pcre2el highlight-doom/escape auto-revert
