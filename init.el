@@ -2,6 +2,7 @@
 
 (setq package-enable-at-startup nil
       file-name-handler-alist nil
+      inhibit-compacting-font-caches t
       message-log-max 16384
       gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6
@@ -175,6 +176,7 @@
           (doom-modeline-set-vcs-modeline)
         (hide-mode-line-mode))))
   (doom-modeline-mode))
+
 
 ;; TODO: nodefer
 (use-package centaur-tabs
@@ -1113,44 +1115,10 @@
   :bind (("C-`" . push-mark-no-activate)
          ("M-`" . jump-to-mark)))
 
-;;==================================================
-;; swier settings
-;;==================================================
-
-;; (use-package ivy
-;;   :require counsel
-;;   :init
-;;   (ivy-mode 1)
-;;   (setq ivy-use-virtual-buffers t)
-;;   (global-set-key "\C-s" 'swiper)
-;;   (global-set-key (kbd "C-c C-r") 'ivy-resume)
-;;   (global-set-key (kbd "<f6>") 'ivy-resume)
-;;   (global-set-key (kbd "M-x") 'counsel-M-x)
-;;   (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-;;   (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-;;   (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-;;   (global-set-key (kbd "<f1> l") 'counsel-load-library)
-;;   (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-;;   (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-;;   (global-set-key (kbd "C-c g") 'counsel-git)
-;;   (global-set-key (kbd "C-c j") 'counsel-git-grep)
-;;   (global-set-key (kbd "C-c k") 'counsel-ag)
-;;   (global-set-key (kbd "C-x l") 'counsel-locate)
-;;   (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-;;   (define-key read-expression-map (kbd "C-r") 'counsel-expression-history))
 
 ;;==================================================
 ;; smex settings
 ;;==================================================
-
-;; (use-package smex
-;;   :require ido
-;;   :bind (("M-x" . smex)
-;;          ("M-X" . smex-major-mode-commands)
-;;          ("C-c C-c M-x" . execute-extended-command))
-;;   :config
-;;   (setq smex-save-file (expand-file-name "smex.items" user-emacs-directory))
-;;   (smex-initialize))
 
 (use-package amx
   :after-call pre-command-hook
