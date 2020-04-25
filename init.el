@@ -20,32 +20,8 @@
 ;; to skip the mtime checks on every *.elc file.
 (setq load-prefer-newer noninteractive)
 
-;; Report load time after initializing
-(add-hook 'after-init-hook 'emacs-init-time)
-
-(setq use-package-verbose t)
-
 ;; Put this file in register e for easy access
 (set-register ?e `(file . ,user-init-file))
-
-;;==================================================
-;; Harden emacs TLS config based on
-;; https://glyph.twistedmatrix.com/2015/11/editor-malware.html but
-;; using a local cacert.pem instead of relying on certify.
-;; https://raw.githubusercontent.com/certifi/python-certifi/master/certifi/cacert.pem
-;; ==================================================
-
-;;(unless (executable-find "gnutls-cli")
-;;  (error "make sure gnutls-cli is in your $PATH"))
-
-(let ((trustfile (expand-file-name "cacert.pem" user-emacs-directory)))
-  (setq tls-program
-        (list
-         (format "gnutls-cli%s --x509cafile %s -p %%p %%h"
-                 (if (eq window-system 'w32) ".exe" "") trustfile))
-        tls-checktrust t
-        gnutls-verify-error t
-        gnutls-trustfiles (list trustfile)))
 
 ;;==================================================
 ;; Setup basic stuff
@@ -84,15 +60,30 @@
 (setq package-enable-at-startup nil
       package-archives
       '(("gnu"   . "https://elpa.gnu.org/packages/")
-		("melpa" . "https://melpa.org/packages/")))
+		("melpa" . "https://melpa.org/packages/"))
+      gnutls-verify-error t
+      tls-checktrust t
+      gnutls-min-prime-bits 3072
+      ;gnutls-log-level 2
+      gnutls-algorithm-priority
+      (when (boundp 'libgnutls-version)
+        (concat "SECURE128:+SECURE192:-VERS-ALL"
+                (if (and (not (version< emacs-version "26.3"))
+                         (>= libgnutls-version 30605))
+                    ":+VERS-TLS1.3")
+                ":+VERS-TLS1.2")))
+
 (package-initialize)
+
+;; use-package setup
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 
-(setq use-package-always-ensure t)
-(require 'use-package)
+;; (require 'use-package)
+;; (require 'use-package-ensure)
+;; (setq use-package-always-ensure t)
 
 (if init-file-debug
     (setq use-package-verbose t
@@ -180,7 +171,7 @@
 
 ;; TODO: nodefer
 (use-package centaur-tabs
-  ;;:after-call after-find-file dired-initial-position-hook
+  :after-call after-find-file dired-initial-position-hook
   :init
   (setq centaur-tabs-style "bar"
         centaur-tabs-height 32
@@ -329,6 +320,7 @@
       indicate-buffer-boundaries nil
       indicate-empty-lines t
       x-underline-at-descent-line t
+      idle-update-delay 2 
       next-line-add-newlines nil) ; don't add new lines when scrolling down
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
@@ -483,7 +475,7 @@
 ;; TODO: nodefer
 (use-package volatile-highlights
   ;;:after-call after-init-hook
-  ;;:defer 5
+  :defer 5
   :config
   (volatile-highlights-mode +1))
 
@@ -797,10 +789,10 @@
 (use-package jc-search
   :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
-  :init (bind-keys :map isearch-mode-map
-                   ("M-z" . zap-to-isearch)
-                   ("C-w" . isearch-yank-symbol)
-                   ("C-RET" . isearch-exit-other-end)))
+  :bind (:map isearch-mode-map
+              ("M-z" . zap-to-isearch)
+              ("C-w" . isearch-yank-symbol)
+              ("C-RET" . isearch-exit-other-end)))
 
 (define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
@@ -992,8 +984,8 @@
 ;;==================================================
 (use-package misc
   :ensure nil
-  :bind ("M-z" . zap-up-to-char)
-  :init (bind-key "\M-Z" #'zap-to-char))
+  :bind (("M-z" . zap-up-to-char)
+         ("M-Z" . zap-to-char)))
 
 (use-package jc-misc
   :ensure nil
@@ -1174,10 +1166,9 @@
 (use-package company
   :defer 4
   :init
-  (setq
-   company-idle-delay 0.5
-   company-show-numbers t
-   company-dabbrev-downcase nil)
+  (setq company-idle-delay 0.5
+        company-show-numbers t
+        company-dabbrev-downcase nil)
   :config
   (global-company-mode))
 
@@ -1187,7 +1178,8 @@
   (add-to-list 'company-backends 'company-terraform))
 
 ;; (use-package company-quickhelp          ; Documentation popups for Company
-;;   :init (add-hook 'global-company-mode-hook #'company-quickhelp-mode))
+;;   :hook
+;;   (global-company-mode . company-quickhelp))
 
 (use-package yasnippet
   :commands yas-hippie-try-expand
@@ -1316,7 +1308,7 @@
 
 (use-package scss-mode
   :mode "\\.scss?\\'"
-  :init
+  :config
   (setq scss-compile-at-save nil))
 
 (use-package js2-mode
