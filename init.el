@@ -60,7 +60,7 @@
 (setq package-enable-at-startup nil
       package-archives
       '(("gnu"   . "https://elpa.gnu.org/packages/")
-		("melpa" . "https://melpa.org/packages/"))
+        ("melpa" . "https://melpa.org/packages/"))
       gnutls-verify-error t
       tls-checktrust t
       gnutls-min-prime-bits 3072
@@ -259,6 +259,9 @@
 ;; quickly self-correct.
 (setq fast-but-imprecise-scrolling t)
 
+(setq jit-lock-defer-time 0    ; only defer while processing input
+      jit-lock-stealth-time 2) ; fontify the rest of the buffer after a delay
+
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
@@ -320,7 +323,7 @@
       indicate-buffer-boundaries nil
       indicate-empty-lines t
       x-underline-at-descent-line t
-      idle-update-delay 2 
+      idle-update-delay 2
       next-line-add-newlines nil) ; don't add new lines when scrolling down
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
@@ -391,8 +394,7 @@
          (helpful-variable (button-get button 'apropos-symbol)))))))
 
 (use-package whitespace-cleanup-mode
-  :commands whitespace-cleanup-mode
-  :hook (prog-mode text-mode))
+  :hook (after-init . global-whitespace-cleanup-mode))
 
 ;; But don't show trailing whitespace in these modes
 (defun sanityinc/no-trailing-whitespace ()
@@ -616,7 +618,7 @@
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
   ; left and right commands are meta
-  (setq ns-command-modifier 'meta) 
+  (setq ns-command-modifier 'meta)
   (setq ns-right-command-modifier 'left)
 
   ; left opt key is super
@@ -643,6 +645,7 @@
   (setq ns-pop-up-frames nil)
 
   ;; set my path manually on mac
+  (setenv "LANG" "en_US.UTF-8")
   (let* ((mypaths '("~/bin" "~/homebrew/bin"))
          (expanded (mapcar 'expand-file-name mypaths)))
     (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
@@ -701,7 +704,7 @@
   (use-package flx)
   (use-package ido-grid-mode)
   (use-package ido-completing-read+)
-  
+
   (ido-mode +1)
   (ido-everywhere +1)
   (flx-ido-mode +1)
@@ -728,8 +731,8 @@
 
 (use-package gitconfig-mode
   :mode (("\\.gitconfig\\'" . gitconfig-mode)
-	     ("\\.git/config\\'" . gitconfig-mode)
-	     ("\\.gitmodules\\'" . gitconfig-mode)))
+         ("\\.git/config\\'" . gitconfig-mode)
+         ("\\.gitmodules\\'" . gitconfig-mode)))
 
 (use-package gitignore-mode
   :mode ("\\.gitignore\\'" . gitignore-mode))
@@ -749,7 +752,7 @@
 
     ;; TODO
     ;; (add-hook 'git-commit-mode-hook 'turn-on-flyspell)
-    
+
     ;; Enforce git commit conventions.
     ;; See https://chris.beams.io/posts/git-commit/
     (setq git-commit-summary-max-length 50
@@ -1185,7 +1188,7 @@
   :commands yas-hippie-try-expand
   :init
   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-  :config 
+  :config
   (yas-global-mode +1))
 
 (use-package yasnippet-snippets         ; Collection of snippets
@@ -1582,6 +1585,20 @@ all hooks after it are ignored.")
 ;;
 ;; zstd (un)compress
 ;;
+
+;; (use-package persistent-scratch
+;;   :unless (or (null window-system)
+;;               noninteractive)
+;;   :defer 5
+;;   :config
+;;   (persistent-scratch-autosave-mode)
+;;   (with-demoted-errors "Error: %S"
+;;     (persistent-scratch-setup-default))
+;;   :commands persistent-scratch-setup-default)
+
+(use-package vterm
+  :hook (vterm-mode . hide-mode-line-mode)
+  :commands vterm)
 
 (when init-file-debug
   (use-package-report))
