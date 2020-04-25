@@ -81,9 +81,9 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-;; (require 'use-package)
-;; (require 'use-package-ensure)
-;; (setq use-package-always-ensure t)
+(require 'use-package)
+(require 'use-package-ensure)
+(setq use-package-always-ensure t)
 
 (if init-file-debug
     (setq use-package-verbose t
@@ -125,6 +125,9 @@
 ;;   :defer t
 ;;   :init
 ;;   (load-theme 'spacemacs-dark t))
+
+(use-package hide-mode-line
+  :commands hide-mode-line-mode)
 
 (use-package all-the-icons
   :commands (all-the-icons-octicon
