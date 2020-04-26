@@ -81,6 +81,7 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
+(setq use-package-enable-imenu-support t)
 (require 'use-package)
 (setq use-package-always-ensure t)
 
@@ -91,6 +92,7 @@
           debug-on-error t)
   (setq use-package-verbose nil
         use-package-expand-minimally t))
+
 
 (use-package jc-doom
   :ensure nil
@@ -451,7 +453,12 @@
 (setq disabled-command-function nil)
 
 ;; Useful modes
-(auto-image-file-mode +1)                ; display images
+(use-package image-file
+  :defer 5
+  :config
+  (auto-image-file-mode 1)
+  (add-hook 'image-mode-hook #'image-transform-reset))
+
 ;(size-indication-mode +1)                ; display file size
 (delete-selection-mode +1)               ; delete selected text on input
 ;(global-subword-mode 1)
@@ -821,6 +828,10 @@
 (use-package highlight-quoted
   :hook (emacs-lisp-mode . highlight-quoted-mode))
 
+(use-package aggressive-indent
+  :hook (emacs-lisp-mode . aggressive-indent-mode))
+
+
 ;(add-hook 'emacs-lisp-mode-hook 'hl-sexp-mode)
 
 ;;==================================================
@@ -987,10 +998,14 @@
 ;;==================================================
 ;; misc
 ;;==================================================
-(use-package misc
-  :ensure nil
-  :bind (("M-z" . zap-up-to-char)
-         ("M-Z" . zap-to-char)))
+;; (use-package misc
+;;   :ensure nil
+;;   :bind (("M-z" . zap-up-to-char)
+;;          ("M-Z" . zap-to-char)))
+
+(use-package avy-zap
+  :bind (("M-z" . avy-zap-to-char-dwim)
+         ("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package jc-misc
   :ensure nil
@@ -1024,12 +1039,6 @@
 
 (bind-key "C-1" #'delete-other-windows)
 (bind-key "C-0" #'delete-window)
-
-(use-package bm
-  :ensure nil
-  :bind (("<C-f2>" . bm-toggle)
-         ("<f2>" . bm-next)
-         ("<S-f2>" . bm-previous)))
 
 ;; resize windows
 (bind-key "S-C-<left>" #'shrink-window-horizontally)
@@ -1170,6 +1179,7 @@
 ;;==================================================
 (use-package company
   :defer 4
+  :commands company-mode
   :init
   (setq company-idle-delay 0.5
         company-show-numbers t
@@ -1340,9 +1350,9 @@
 ;;==================================================
 ;; Misc packages and utilities
 ;;==================================================
-;; (use-package paradox)
-;; (use-package cypher-mode)
-;; (use-package jade-mode)
+(use-package paradox
+  :commands paradox-list-packages)
+
 (use-package highlight-symbol
   :commands (highlight-symbol
              highlight-symbol-query-replace
@@ -1351,7 +1361,7 @@
 
 (use-package avy
   :bind (("M-g g" . avy-goto-line)
-         ;("C-'" . avy-goto-char)
+                                        ;("C-'" . avy-goto-char)
          ("C-\"" . avy-goto-char-timer))
   :config
   (setq avy-keys
@@ -1581,8 +1591,8 @@ all hooks after it are ignored.")
 (add-hook! '(completion-list-mode-hook Man-mode-hook)
            #'hide-mode-line-mode)
 
-;; TODO doom: recentf better-jumber dtrt-indent smartparens so-long
-;; ws-butler pcre2el highlight-doom/escape auto-revert
+;; TODO doom:  better-jumber dtrt-indent smartparens so-long
+;;  pcre2el  auto-revert ace-mc
 ;; company ivy workspaces lsp visual-line-mode
 ;;
 ;; zstd (un)compress
@@ -1601,6 +1611,21 @@ all hooks after it are ignored.")
 (use-package vterm
   :hook (vterm-mode . hide-mode-line-mode)
   :commands vterm)
+
+(use-package imenu-list
+  :commands imenu-list-minor-mode)
+
+(use-package copy-as-format
+  :commands copy-as-format)
+
+(use-package csv-mode
+  :mode "\\.csv\\'")
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
+
+(use-package ialign
+  :commands ialign-interactive-align)
 
 (when init-file-debug
   (use-package-report))
