@@ -28,3 +28,5 @@ emms
 /projectile.cache
 flycheck_init.el
 /eshell/
+/network-security.data
+/.cache/
