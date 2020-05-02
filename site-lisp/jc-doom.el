@@ -264,7 +264,7 @@ advised)."
         (use-package-concat
          `((fset ',fn
                  (lambda (&rest _)
-                   (message "Loading deferred package %s from %s" ',name ',fn)
+                   ;(message "Loading deferred package %s from %s" ',name ',fn)
                    (condition-case e
                        (require ',name)
                      ((debug error)
