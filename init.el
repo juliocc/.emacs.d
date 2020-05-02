@@ -838,66 +838,6 @@
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
-
-;(add-hook 'emacs-lisp-mode-hook 'hl-sexp-mode)
-
-;;==================================================
-;; smart-mode-line
-;;==================================================
-;; (use-package smart-mode-line
-;;   :config
-;;   (sml/setup))
-
-;;==================================================
-;; smartparens
-;;==================================================
-;;; req-todo
-;; (use-package smartparens-config
-;;   :ensure smartparens
-;;   :bind (:map smartparens-mode-map
-;;               ("C-M-a" . sp-beginning-of-sexp)
-;;               ("C-M-e" . sp-end-of-sexp)
-
-;;               ("C-<down>" . sp-down-sexp)
-;;               ("C-<up>"   . sp-up-sexp)
-;;               ("M-<down>" . sp-backward-down-sexp)
-;;               ("M-<up>"   . sp-backward-up-sexp)
-
-;;               ("C-M-f" . sp-forward-sexp)
-;;               ("C-M-b" . sp-backward-sexp)
-
-;;               ("C-M-n" . sp-next-sexp)
-;;               ("C-M-p" . sp-previous-sexp)
-
-;;               ("C-S-f" . sp-forward-symbol)
-;;               ("C-S-b" . sp-backward-symbol)
-
-;;               ("C-<right>" . sp-forward-slurp-sexp)
-;;               ("M-<right>" . sp-backward-barf-sexp)
-;;               ("C-<left>"  . sp-forward-barf-sexp)
-;;               ("M-<left>"  . sp-backward-slurp-sexp)
-
-;;               ("C-M-t" . sp-transpose-sexp)
-;;               ("C-M-k" . sp-kill-sexpa)
-;;               ("C-k"   . sp-kill-hybrid-sexp)
-;;               ("M-k"   . sp-backward-kill-sexp)
-;;               ("C-M-w" . sp-copy-sexp)
-
-;;               ("C-M-d" . delete-sexp)
-
-;;               ("M-<backspace>" . backward-kill-word)
-;;               ("C-<backspace>" . sp-backward-kill-word)
-;;               ([remap sp-backward-kill-word] . backward-kill-word)
-
-;;               ;; breaks bracketed paste mode
-;;               ;("M-[" . sp-backward-unwrap-sexp)
-;;               ;("M-]" . sp-unwrap-sexp)
-
-;;               ("C-x C-t" . sp-transpose-hybrid-sexp))
-;;   :init
-;;   (show-smartparens-global-mode)
-;;   (smartparens-global-mode t))
-
 ;;==================================================
 ;; ediff
 ;;==================================================
@@ -1254,25 +1194,11 @@
   ;; (setq flycheck-posframe-border-width 2)
   ;; (set-face-foreground 'flycheck-posframe-border-face "red"))
 
-;;==================================================
-;; auto-complete settings
-;;==================================================
-;; (use-package fuzzy)
-;; (use-package auto-complete
-;;   :bind ("M-/" . auto-complete)
-;;   :config
-;;   (ac-config-default)
-;;   (setq ac-auto-show-menu nil)
-;;   (setq ac-auto-start nil)
-;;   (setq ac-menu-height 15)
-;;   (setq ac-fuzzy-enable t)
-;;   (setq ac-dwim-enable t)
-;;   (setq ac-use-menu-map t)
-;;   (setq-default ac-sources '(ac-source-abbrev
-;;                              ac-source-words-in-same-mode-buffers
-;;                              ac-source-files-in-current-dir
-;;                              ac-source-filename
-;;                              ac-source-dictionary)))
+;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
+;; (flycheck-posframe-configure-pretty-defaults)
+;; (setq flycheck-posframe-border-width 2)
+;; (set-face-foreground 'flycheck-posframe-border-face "red"))
+
 
 ;;==================================================
 ;; wgrep
