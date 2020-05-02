@@ -911,30 +911,10 @@
 
 (add-hook 'find-file-not-found-functions #'make-parent-directory)
 
-;;==================================================
-;; browse-kill-ring settings
-;;==================================================
-;; (use-package browse-kill-ring
-;;   :defer 2)
-
-;; (use-package browse-kill-ring+
-;;   :load-path "site-lisp"
-;;   :after browse-kill-ring
-;;   :config
-;;   (browse-kill-ring-default-keybindings)
-;;                                         ;(setq browse-kill-ring-highlight-current-entry t)
-;;                                         ;(setq browse-kill-ring-highlight-inserted-item t)
-;;   (setq browse-kill-ring-quit-action 'save-and-restore))
-
 (use-package markdown-mode
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode)))
-
-
-;;==================================================
-;; multiple cursors
-;;==================================================
 
 (use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
@@ -947,24 +927,10 @@
          ("C-c c e" . mc/edit-ends-of-lines)
          ("C-c c a" . mc/edit-beginnings-of-lines)))
 
-;;==================================================
-;; paredit
-;;==================================================
-;; (use-package paredit
-;;   :init
-;;   (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode))
-
-;;==================================================
-;; change-inner/outer
-;;==================================================
-
 (use-package change-inner
   :bind (("M-I" . change-inner)
          ("M-O" . change-outer)))
 
-;;==================================================
-;; misc
-;;==================================================
 ;; (use-package misc
 ;;   :ensure nil
 ;;   :bind (("M-z" . zap-up-to-char)
@@ -990,12 +956,6 @@
   (crux-with-region-or-buffer untabify)
   (crux-reopen-as-root-mode +1))
 
-;; (defadvice ido-find-file (after find-file-sudo activate)
-;;   "Find file as root if necessary."
-;;   (unless (and buffer-file-name
-;;                (file-writable-p buffer-file-name))
-;;     (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
-
 (use-package jc-windows
   :ensure nil
   :load-path "site-lisp"
@@ -1003,7 +963,7 @@
          ("C-x _" . split-window-vertically-instead)
          ("C-2" . split-window-vertically-with-other-buffer)
          ("C-3" . split-window-horizontally-with-other-buffer)
-         ("C-s-j" . quick-switch-buffer)))
+         ("S-C-j" . quick-switch-buffer)))
 
 (bind-key "C-1" #'delete-other-windows)
 (bind-key "C-0" #'delete-window)
@@ -1036,11 +996,9 @@
                  :v-adjust -0.05)
                 " ")))
 
-;; shrink-whitespace
 (use-package shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
-;; beacon
 (use-package beacon
   :defer 2
   :config
@@ -1048,7 +1006,6 @@
         beacon-blink-when-focused  t)
   (beacon-mode))
 
-;; move-text
 (use-package drag-stuff
   :hook
   ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
@@ -1066,37 +1023,37 @@
 ;;==================================================
 ;; ispell
 ;;==================================================
-(setq ispell-program-name "aspell" ; use aspell instead of ispell
-      ispell-extra-args '("--sug-mode=ultra"))
+;; (setq ispell-program-name "aspell" ; use aspell instead of ispell
+;;       ispell-extra-args '("--sug-mode=ultra"))
 
-(let ((langs '("american" "castellano8")))
-  (setq lang-ring (make-ring (length langs)))
-  (dolist (elem langs) (ring-insert lang-ring elem)))
+;; (let ((langs '("american" "castellano8")))
+;;   (setq lang-ring (make-ring (length langs)))
+;;   (dolist (elem langs) (ring-insert lang-ring elem)))
 
-;; Todo: Move to autoload
-(defun cycle-ispell-languages ()
-  (interactive)
-  (let ((lang (ring-ref lang-ring -1)))
-    (ring-insert lang-ring lang)
-    (ispell-change-dictionary lang)
-    (flyspell-buffer)
-    (message "Spell language changed to %s" lang)))
+;; ;; Todo: Move to autoload
+;; (defun cycle-ispell-languages ()
+;;   (interactive)
+;;   (let ((lang (ring-ref lang-ring -1)))
+;;     (ring-insert lang-ring lang)
+;;     (ispell-change-dictionary lang)
+;;     (flyspell-buffer)
+;;     (message "Spell language changed to %s" lang)))
 
-;; TODO: Move to autoload
-(defun flyspell-check-next-highlighted-word ()
-  "Custom function to spell check next highlighted word"
-  (interactive)
-  (flyspell-goto-next-error)
-  (ispell-word))
+;; ;; TODO: Move to autoload
+;; (defun flyspell-check-next-highlighted-word ()
+;;   "Custom function to spell check next highlighted word"
+;;   (interactive)
+;;   (flyspell-goto-next-error)
+;;   (ispell-word))
 
-(bind-keys :prefix-map jc-spelling-map
-           :prefix "<f8>"
-           ("<f8>" . ispell-word)
-           ("m" . flyspell-mode)
-           ("b" . flyspell-buffer)
-           ("p" . flyspell-check-previous-highlighted-word)
-           ("n" . flyspell-check-next-highlighted-word)
-           ("c" . cycle-ispell-languages))
+;; (bind-keys :prefix-map jc-spelling-map
+;;            :prefix "<f8>"
+;;            ("<f8>" . ispell-word)
+;;            ("m" . flyspell-mode)
+;;            ("b" . flyspell-buffer)
+;;            ("p" . flyspell-check-previous-highlighted-word)
+;;            ("n" . flyspell-check-next-highlighted-word)
+;;            ("c" . cycle-ispell-languages))
 
 ;;==================================================
 ;; mark customizations
@@ -1117,10 +1074,6 @@
 ;;   ;;:after-call pre-command-hook
 ;;   :config
 ;;   (amx-mode +1))
-
-;;==================================================
-;; Projectile settings
-;;==================================================
 
 (use-package projectile
   :bind-keymap ("C-c p" . projectile-command-map)
@@ -1156,13 +1109,6 @@
   :config
   ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
   (setq dumb-jump-prefer-searcher 'ag))
-
-;;==================================================
-;; popup-imenu settings
-;;==================================================
-
-;; (use-package popup-imenu
-;;   :bind ("M-i" . popup-imenu))
 
 ;;==================================================
 ;; company-mode settings
@@ -1237,8 +1183,6 @@
 ;; wgrep
 ;;==================================================
 
-;; TODO: ripgrep
-
 (use-package wgrep
   :commands wgrep-change-to-wgrep-mode)
 
@@ -1249,40 +1193,21 @@
   (use-package wgrep-ag)
   (setq ag-highlight-search t))
 
-;;==================================================
-;; dockerfile settings
-;;==================================================
-
 (use-package dockerfile-mode
   :mode "Dockerfile[a-zA-Z.-]*\\'")
-
-;;==================================================
-;; terraform settings
-;;==================================================
 
 (use-package terraform-mode
   :hook
   (terraform-mode . terraform-format-on-save-mode))
 
-;;==================================================
-;; web
-;;==================================================
 (use-package rust-mode
   :mode "\\.rs\\'")
 
-;;==================================================
-;; web
-;;==================================================
 (use-package web-mode
   :mode "\\.html?\\'"
   :config
   (setq web-mode-code-indent-offset 2)
   (setq web-mode-markup-indent-offset 2))
-
-;; (setq web-mode-engines-alist
-;;       '(("php" . "\\.phtml\\'")
-;;         ("django" . "\\.html\\'")))
-
 
 (setq js-indent-level 2)
 
@@ -1298,7 +1223,7 @@
   (setq scss-compile-at-save nil))
 
 (use-package js2-mode
-    :mode "\\.js\\'")
+  :mode "\\.js\\'")
 
 ;;==================================================
 ;; jump-char
@@ -1311,16 +1236,9 @@
 ;;   :bind (("M-m" . jump-char-forward)
 ;;          ("M-M" . jump-char-backward)))
 
-;;==================================================
-;; python
-;;==================================================
-
 (use-package pip-requirements
   :mode "requirements\\.txt\\'")
 
-;;==================================================
-;; Misc packages and utilities
-;;==================================================
 (use-package paradox
   :commands paradox-list-packages)
 
@@ -1328,7 +1246,9 @@
   :commands (highlight-symbol
              highlight-symbol-query-replace
              highlight-symbol-occur))
-;; (use-package ssh-config-mode)
+
+(use-package ssh-config-mode
+  :mode ("/\\.ssh/config\\'" "/known_hosts\\'"))
 
 (use-package avy
   :bind (("M-g g" . avy-goto-line)
@@ -1350,29 +1270,6 @@
 
 (use-package rainbow-mode
   :hook (css-mode html-mode))
-
-;; ;; keep scratch around
-;; (save-excursion
-;;   (set-buffer (get-buffer-create "*scratch*"))
-;;   (lisp-interaction-mode)
-;;   (make-local-variable 'kill-buffer-query-functions)
-;;   (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer))
-
-;; (defun kill-scratch-buffer ()
-;;   ;; The next line is just in case someone calls this manually
-;;   (set-buffer (get-buffer-create "*scratch*"))
-;;   ;; Kill the current (*scratch*) buffer
-;;   (remove-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-;;   (kill-buffer (current-buffer))
-;;   ;; Make a brand new *scratch* buffer
-;;   (set-buffer (get-buffer-create "*scratch*"))
-;;   (lisp-interaction-mode)
-;;   (make-local-variable 'kill-buffer-query-functions)
-;;   (add-hook 'kill-buffer-query-functions 'kill-scratch-buffer)
-;;   (insert initial-scratch-message)
-;;   ;; Since we killed it, don't let caller do that.
-;;   nil)
-
 
 (defadvice comment-dwim (around comment-line-maybe activate)
   "If invoked from the beginning of a line or the beginning of
@@ -1398,22 +1295,6 @@ comment to the line."
 
 (if (file-exists-p jc-local-settings)
     (load-file jc-local-settings))
-
-;;==================================================
-;; experiments
-;;==================================================
-;; (use-package golden-ratio
-;;   :diminish golden-ratio-mode
-;;   :init (golden-ratio-mode 1))
-
-;; (use-package guru-mode
-;;   :config (guru-global-mode 1)
-;;   :diminish guru-mode)
-
-
-;;==================================================
-;; server
-;;==================================================
 
 (use-package server
   :if window-system
