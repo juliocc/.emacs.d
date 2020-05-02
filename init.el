@@ -64,7 +64,8 @@
       gnutls-verify-error t
       tls-checktrust t
       gnutls-min-prime-bits 3072
-      ;gnutls-log-level 2
+      network-security-level 'high
+      ;; gnutls-log-level 2
       gnutls-algorithm-priority
       (when (boundp 'libgnutls-version)
         (concat "SECURE128:+SECURE192:-VERS-ALL"
@@ -246,8 +247,8 @@
 (if (fboundp 'fringe-mode) (fringe-mode))
 
 (global-font-lock-mode +1)               ; just in case
-;(line-number-mode +1)
-;(column-number-mode +1)
+;; (line-number-mode +1)
+;; (column-number-mode +1)
 
 ;; Explicitly define a width to reduce computation
 (setq-default display-line-numbers-width 3)
@@ -957,12 +958,15 @@
 ;; browse-kill-ring settings
 ;;==================================================
 (use-package browse-kill-ring
-  ;:after-call after-init-hook
-  :defer 2
+  :defer 2)
+
+(use-package browse-kill-ring+
+  :load-path "site-lisp"
+  :after browse-kill-ring
   :config
   (browse-kill-ring-default-keybindings)
-  (setq browse-kill-ring-highlight-current-entry t)
-  (setq browse-kill-ring-highlight-inserted-item t)
+                                        ;(setq browse-kill-ring-highlight-current-entry t)
+                                        ;(setq browse-kill-ring-highlight-inserted-item t)
   (setq browse-kill-ring-quit-action 'save-and-restore))
 
 (use-package markdown-mode
