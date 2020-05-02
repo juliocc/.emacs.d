@@ -145,12 +145,14 @@
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
         doom-themes-enable-italic nil
-        doom-one-brighter-modeline nil)
+        doom-one-brighter-modeline nil
+        doom-themes-treemacs-theme "doom-colors")
   ;; (load-theme 'doom-opera t)
   ;; (load-theme 'doom-spacegrey t)
   ;; (load-theme 'doom-tomorrow-night t)
   ;; (load-theme 'doom-nord t)
   (load-theme 'doom-one t)
+  (doom-themes-treemacs-config)
   (doom-themes-visual-bell-config))
 
 (use-package doom-modeline
@@ -165,39 +167,38 @@
     (setq-default mode-line-format nil))
   :config
   (add-hook 'magit-mode-hook
-    (lambda ()
-      "Show minimal modeline in magit-status buffer, no modeline elsewhere."
-      (if (eq major-mode 'magit-status-mode)
-          (doom-modeline-set-vcs-modeline)
-        (hide-mode-line-mode))))
+            (lambda ()
+              "Show minimal modeline in magit-status buffer, no modeline elsewhere."
+              (if (eq major-mode 'magit-status-mode)
+                  (doom-modeline-set-vcs-modeline)
+                (hide-mode-line-mode))))
   (doom-modeline-mode))
 
 
-;; TODO: nodefer
-(use-package centaur-tabs
-  :after-call after-find-file dired-initial-position-hook
-  :init
-  (setq centaur-tabs-style "bar"
-        centaur-tabs-height 32
-        centaur-tabs-gray-out-icons 'buffer
-        centaur-tabs-set-icons t
-        centaur-tabs-set-bar 'under
-        centaur-tabs-set-close-button t
-        centaur-tabs-icon-scale-factor 0.7
-        centaur-tabs-close-button "✕"
-        centaur-tabs-show-navigation-buttons nil
-        centaur-tabs-set-modified-marker nil
-        centaur-tabs-modified-marker "⬤")
-  :config
-  (centaur-tabs-headline-match)
-  (centaur-tabs-mode +1)
-  (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
+;; (use-package centaur-tabs
+;;   :after-call after-find-file dired-initial-position-hook
+;;   :init
+;;   (setq centaur-tabs-style "bar"
+;;         centaur-tabs-height 32
+;;         centaur-tabs-gray-out-icons 'buffer
+;;         centaur-tabs-set-icons t
+;;         centaur-tabs-set-bar 'under
+;;         centaur-tabs-set-close-button t
+;;         centaur-tabs-icon-scale-factor 0.7
+;;         centaur-tabs-close-button "✕"
+;;         centaur-tabs-show-navigation-buttons nil
+;;         centaur-tabs-set-modified-marker nil
+;;         centaur-tabs-modified-marker "⬤")
+;;   :config
+;;   (centaur-tabs-headline-match)
+;;   (centaur-tabs-mode +1)
+;;   (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
 
 (use-package winum
-  ;:after-call after-init-hook
   :defer 3
   :config
   (winum-mode +1))
+
 
 (use-package solaire-mode
   :hook
@@ -263,16 +264,16 @@
 ;; quickly self-correct.
 (setq fast-but-imprecise-scrolling t)
 
-(setq jit-lock-defer-time 0    ; only defer while processing input
-      jit-lock-stealth-time 2) ; fontify the rest of the buffer after a delay
+;; (setq jit-lock-defer-time 0    ; only defer while processing input
+;;       jit-lock-stealth-time 2) ; fontify the rest of the buffer after a delay
 
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
 
-;(setq scroll-conservatively 100000)
-;(setq scroll-preserve-screen-position 'always)
-;(setq scroll-step 0); what?
+;; (setq scroll-conservatively 100000)
+;; (setq scroll-preserve-screen-position 'always)
+;; (setq scroll-step 0); what?
 
 (setq hscroll-margin 2
       hscroll-step 1
@@ -293,6 +294,7 @@
 
 ;; Remove hscroll-margin in shells, otherwise it causes jumpiness
 (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
+
 
 (when *is-a-mac*
   ;; sane trackpad/mouse scroll settings
@@ -464,13 +466,17 @@
 ;(global-subword-mode 1)
 (global-auto-revert-mode +1)             ; auto reload files if changed outside emacs
 (auto-compression-mode +1)               ; open compressed files a la dired
-(transient-mark-mode +1)                 ; show me the region, please
-(winner-mode +1)                         ; stack window settings
+(transient-mark-mode +1)
 (minibuffer-depth-indicate-mode +1)
 (electric-indent-mode -1)             ; make return key not auto indent
-;(desktop-save-mode 1)
+;; (desktop-save-mode 1)
+;; (fancy-narrow-mode)
 
-;(fancy-narrow-mode)
+(use-package winner
+  :after-call after-init-hook
+  :config
+  (winner-mode +1))
+
 
 ;; don't let the cursor go into minibuffer prompt
 (setq minibuffer-prompt-properties
@@ -664,7 +670,7 @@
 ;; (setq ring-bell-function 'ignore)
 
 (use-package ns-auto-titlebar
-  :defer 1
+  :defer 10
   :if *is-a-windowed-mac*
   :config
   (ns-auto-titlebar-mode +1))
@@ -1013,6 +1019,7 @@
   :bind ("M-p" . goto-match-paren))
 
 (use-package crux
+  :commands crux-find-shell-init-file
   :bind (("C-a" . crux-move-beginning-of-line)
          ("S-<return>" . crux-smart-open-line)
          ("C-S-k" . crux-kill-whole-line)
@@ -1165,8 +1172,9 @@
          ("M-g i" . dumb-jump-go-prompt)
          ("M-g x" . dumb-jump-go-prefer-external)
          ("M-g z" . dumb-jump-go-prefer-external-other-window))
-  ;:config (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
-  )
+  :config
+  ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
+  (setq dumb-jump-prefer-searcher 'ag))
 ;;==================================================
 ;; popup-imenu settings
 ;;==================================================
@@ -1626,6 +1634,9 @@ all hooks after it are ignored.")
 
 (use-package ialign
   :commands ialign-interactive-align)
+
+(use-package treemacs
+  :commands treemacs)
 
 (when init-file-debug
   (use-package-report))
