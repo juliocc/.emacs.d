@@ -858,35 +858,58 @@
 ;; Dired settings
 ;;==================================================
 
-(require 'dired)
+(use-package dired
+  :ensure nil
+  :bind (("C-x C-j" . dired-jump)
+         ([remap beginning-of-buffer] . dired-back-to-top))
+  :init
+  (setq dired-listing-switches "--time-style long-iso -alhF"
+        dired-auto-revert-buffer t
+        dired-hide-details-hide-symlink-targets nil
+        dired-recursive-copies 'always
+        )
+  (setq-default diredp-hide-details-initially-flag nil
+                dired-dwim-target t) ; Move files between split pane
+  :config
+  (defun dired-back-to-top ()
+    (interactive)
+    (beginning-of-buffer)
+    (dired-next-line 4)))
 
-; dired
-;(setq dired-listing-switches "--time-style long-iso --group-directories-first -alhF")
-(setq dired-listing-switches "--time-style long-iso -alhF")
-(setq-default diredp-hide-details-initially-flag nil
-              dired-dwim-target t) ; Move files between split pane
 
-;; TODO: Move to autoload
-;; M-up is nicer in dired if it moves to the fourth line - the first file
-(defun dired-back-to-top ()
-  (interactive)
-  (beginning-of-buffer)
-  (dired-next-line 4))
+(use-package dired-x
+  :ensure nil
+  :after dired
+  :hook (dired-mode . dired-omit-mode)
+  :bind (:map dired-mode-map
+              ("h" . dired-omit-mode))
+  :config
+  (setq dired-omit-verbose nil
+        dired-omit-files
+        (concat dired-omit-files
+                "\\|^.DS_Store\\'"
+                "\\|^.project\\(?:ile\\)?\\'"
+                "\\|^.\\(svn\\|git\\)\\'"
+                "\\|^.ccls-cache\\'"
+                "\\|\\(?:\\.js\\)?\\.meta\\'"
+                "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")))
 
-(define-key dired-mode-map (vector 'remap 'beginning-of-buffer) 'dired-back-to-top)
-(define-key dired-mode-map (vector 'remap 'smart-up) 'dired-back-to-top)
-
-(bind-key "C-x C-j" #'dired-jump)
-(bind-key "C-x M-j" '(lambda () (interactive) (dired-jump 1)))
-
-;; req-todo
 ;; (use-package dired+
+;;   :after dired
 ;;   :config
 ;;   (global-dired-hide-details-mode -1))
 
 (use-package peep-dired
   :bind (:map dired-mode-map
               ("P" . peep-dired)))
+
+(use-package dired-hide-dotfiles
+  :bind (:map dired-mode-map
+              ("." . dired-hide-dotfiles-mode)))
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
+
 
 (defun make-parent-directory ()
   "Make sure the directory of `buffer-file-name' exists."
@@ -1559,14 +1582,25 @@ all hooks after it are ignored.")
 (use-package csv-mode
   :mode "\\.csv\\'")
 
-(use-package all-the-icons-dired
-  :hook (dired-mode . all-the-icons-dired-mode))
-
 (use-package ialign
   :commands ialign-interactive-align)
 
 (use-package treemacs
   :commands treemacs)
+;; (treemacs-follow-mode t)
+;; (treemacs-filewatch-mode t)
+;; (treemacs-fringe-indicator-mode t)
+;; (treemacs-git-mode 'deferred)
+
+
+(use-package treemacs-projectile
+  :after treemacs projectile
+  :ensure t)
+
+(use-package treemacs-magit
+  :after treemacs magit
+  :ensure t)
+
 
 (when init-file-debug
   (use-package-report))
