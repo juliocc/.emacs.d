@@ -246,8 +246,6 @@
 (if (fboundp 'fringe-mode) (fringe-mode))
 
 (global-font-lock-mode +1)               ; just in case
-;; (line-number-mode +1)
-;; (column-number-mode +1)
 
 ;; Explicitly define a width to reduce computation
 (setq-default display-line-numbers-width 3)
@@ -378,10 +376,12 @@
 (bind-key "M-s-/" #'hippie-expand)
 
 (use-package helpful
-  :commands helpful--read-symbol
-  :bind (([remap describe-function] . #'helpful-callable)
-         ([remap describe-command]  . #'helpful-command)
-         ([remap describe-variable] . #'helpful-variable)
+  :commands (helpful--read-symbol
+             helpful-command
+             helpful-variable
+             helpful-function
+             helpful-callable)
+  :bind (([remap describe-command]  . #'helpful-command)
          ([remap describe-key]      . #'helpful-key)
          ([remap describe-symbol]   . #'helpful-symbol)
          ("C-h ." . helpful-at-point))
@@ -509,8 +509,8 @@
 ;; Save a list of recent files visited.
 (use-package recentf
   :after-call after-find-file
-  :bind ("C-x f" . recentf-ido-find-file)
-  :commands recentf-open-files
+  ;; :bind ("C-x f" . recentf-ido-find-file)
+  ;; :commands recentf-open-files
   :config
   (setq recentf-max-saved-items 500
         recentf-save-file (expand-file-name ".recentf" user-emacs-directory)
@@ -518,16 +518,16 @@
         recentf-max-menu-items 0
         recentf-exclude '("/tmp/" "/ssh:"))
   (add-hook! 'dired-mode-hook
-             (defun doom--recentf-add-dired-directory-h ()
-               "Add dired directory to recentf file list."
-               (recentf-add-file default-directory)))
+    (defun doom--recentf-add-dired-directory-h ()
+      "Add dired directory to recentf file list."
+      (recentf-add-file default-directory)))
 
-  (defun recentf-ido-find-file ()
-    "Find a recent file using Ido."
-    (interactive)
-    (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
-      (when file
-        (find-file file))))
+  ;; (defun recentf-ido-find-file ()
+  ;;   "Find a recent file using Ido."
+  ;;   (interactive)
+  ;;   (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+  ;;     (when file
+  ;;       (find-file file))))
   (recentf-mode +1))
 
 (setq history-length 1000)
@@ -695,36 +695,36 @@
 ;;==================================================
 ;; ido settings
 ;;==================================================
-(use-package flx-ido
-  :defer 1
-  :init
-  (setq ido-enable-prefix nil
-        ido-enable-flex-matching t
-        ido-create-new-buffer 'always
-        ido-use-filename-at-point nil
-                                        ;ido-max-prospects 10
-        ido-max-window-height 10
-        ido-save-directory-list-file (expand-file-name ".ido.last" user-emacs-directory)
-        ido-auto-merge-work-directories-length -1
-        ido-default-file-method 'selected-window
-        ido-ignore-extensions t
-        ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
-                                    ".tf" ".md" ".rb" ".org" ".txt"
-                                    ".c" ".cpp" ".cxx" ".h" ".hpp")
-        ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-  ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-  (setq ido-use-faces nil)
-  :config
-  (use-package ido)
-  (use-package flx)
-  (use-package ido-grid-mode)
-  (use-package ido-completing-read+)
+;; (use-package flx-ido
+;;   :defer 1
+;;   :init
+;;   (setq ido-enable-prefix nil
+;;         ido-enable-flex-matching t
+;;         ido-create-new-buffer 'always
+;;         ido-use-filename-at-point nil
+;;                                         ;ido-max-prospects 10
+;;         ido-max-window-height 10
+;;         ido-save-directory-list-file (expand-file-name ".ido.last" user-emacs-directory)
+;;         ido-auto-merge-work-directories-length -1
+;;         ido-default-file-method 'selected-window
+;;         ido-ignore-extensions t
+;;         ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
+;;                                     ".tf" ".md" ".rb" ".org" ".txt"
+;;                                     ".c" ".cpp" ".cxx" ".h" ".hpp")
+;;         ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+;;   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+;;   (setq ido-use-faces nil)
+;;   :config
+;;   (use-package ido)
+;;   (use-package flx)
+;;   (use-package ido-grid-mode)
+;;   (use-package ido-completing-read+)
 
-  (ido-mode +1)
-  (ido-everywhere +1)
-  (flx-ido-mode +1)
-  (ido-grid-mode +1)
-  (ido-ubiquitous-mode +1))
+;;   (ido-mode +1)
+;;   (ido-everywhere +1)
+;;   (flx-ido-mode +1)
+;;   (ido-grid-mode +1)
+;;   (ido-ubiquitous-mode +1))
 
 
 ;;==================================================
@@ -914,17 +914,17 @@
 ;;==================================================
 ;; browse-kill-ring settings
 ;;==================================================
-(use-package browse-kill-ring
-  :defer 2)
+;; (use-package browse-kill-ring
+;;   :defer 2)
 
-(use-package browse-kill-ring+
-  :load-path "site-lisp"
-  :after browse-kill-ring
-  :config
-  (browse-kill-ring-default-keybindings)
-                                        ;(setq browse-kill-ring-highlight-current-entry t)
-                                        ;(setq browse-kill-ring-highlight-inserted-item t)
-  (setq browse-kill-ring-quit-action 'save-and-restore))
+;; (use-package browse-kill-ring+
+;;   :load-path "site-lisp"
+;;   :after browse-kill-ring
+;;   :config
+;;   (browse-kill-ring-default-keybindings)
+;;                                         ;(setq browse-kill-ring-highlight-current-entry t)
+;;                                         ;(setq browse-kill-ring-highlight-inserted-item t)
+;;   (setq browse-kill-ring-quit-action 'save-and-restore))
 
 (use-package markdown-mode
   :mode (("README\\.md\\'" . gfm-mode)
@@ -1112,10 +1112,11 @@
 ;; smex settings
 ;;==================================================
 
-(use-package amx
-  :after-call pre-command-hook
-  :config
-  (amx-mode +1))
+;; (use-package amx
+;;   :after ivy
+;;   ;;:after-call pre-command-hook
+;;   :config
+;;   (amx-mode +1))
 
 ;;==================================================
 ;; Projectile settings
@@ -1131,6 +1132,7 @@
 
   (setq projectile-indexing-method 'alien)
   (setq projectile-enable-caching t)
+  (setq projectile-completion-system 'ivy)
   (setq projectile-sort-order 'recently-active)
   (when (executable-find "fd")
     (let ((fd-command "fd . --type f --print0"))
@@ -1154,80 +1156,76 @@
   :config
   ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
   (setq dumb-jump-prefer-searcher 'ag))
+
 ;;==================================================
 ;; popup-imenu settings
 ;;==================================================
 
-(use-package popup-imenu
-  :bind ("M-i" . popup-imenu))
+;; (use-package popup-imenu
+;;   :bind ("M-i" . popup-imenu))
 
 ;;==================================================
 ;; company-mode settings
 ;;==================================================
-(use-package company
-  :defer 4
-  :commands company-mode
-  :init
-  (setq company-idle-delay 0.5
-        company-show-numbers t
-        company-dabbrev-downcase nil)
-  :config
-  (global-company-mode))
+;; (use-package company
+;;   :defer 4
+;;   :commands company-mode
+;;   :init
+;;   (setq company-idle-delay 0.5
+;;         company-show-numbers t
+;;         company-dabbrev-downcase nil)
+;;   :config
+;;   (global-company-mode))
 
-(use-package company-terraform
-  :after terraform-mode
-  :config
-  (add-to-list 'company-backends 'company-terraform))
+;; (use-package company-terraform
+;;   :after terraform-mode
+;;   :config
+;;   (add-to-list 'company-backends 'company-terraform))
 
 ;; (use-package company-quickhelp          ; Documentation popups for Company
 ;;   :hook
 ;;   (global-company-mode . company-quickhelp))
 
-(use-package yasnippet
-  :commands yas-hippie-try-expand
-  :init
-  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-  :config
-  (yas-global-mode +1))
-
-(use-package yasnippet-snippets         ; Collection of snippets
-  :after yasnippet)
-
-(use-package flycheck
-  :after-call after-find-file
-  :config
-  (setq flycheck-check-syntax-automatically '(save mode-enabled))
-  (setq flycheck-display-errors-delay 0.25)
-  (global-flycheck-mode))
-
-(use-package flymake-shellcheck
-  :after flycheck
-  :hook (sh-mode . flymake-shellcheck-load))
-
-;; (use-package flycheck-popup-tip
-;;   :after flycheck
+;; (use-package yasnippet
+;;   :commands yas-hippie-try-expand
+;;   :init
+;;   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
 ;;   :config
-;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
+;;   (yas-global-mode +1))
+
+;; (use-package yasnippet-snippets         ; Collection of snippets
+;;   :after yasnippet)
+
+;; (use-package flycheck
+;;   :after-call after-find-file
+;;   :config
+;;   (setq flycheck-check-syntax-automatically '(save mode-enabled))
+;;   (setq flycheck-display-errors-delay 0.25)
+;;   (global-flycheck-mode))
+
+;; (use-package flymake-shellcheck
+;;   :after flycheck
+;;   :hook (sh-mode . flymake-shellcheck-load))
+
+;; ;; (use-package flycheck-popup-tip
+;; ;;   :after flycheck
+;; ;;   :config
+;; ;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
 
 
-(use-package flycheck-posframe
-  :after flycheck
-  :hook
-  (flycheck-mode . flycheck-posframe-mode)
-  :config
-  (setq flycheck-posframe-border-width 2
-        flycheck-posframe-warning-prefix "⚠ "
-        flycheck-posframe-info-prefix "··· "
-        flycheck-posframe-error-prefix "✕ ")
-  (after! company
-    ;; Don't display popups if company is open
-    (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)))
+;; (use-package flycheck-posframe
+;;   :after flycheck
+;;   :hook
+;;   (flycheck-mode . flycheck-posframe-mode)
+;;   :config
+;;   (setq flycheck-posframe-border-width 2
+;;         flycheck-posframe-warning-prefix "⚠ "
+;;         flycheck-posframe-info-prefix "··· "
+;;         flycheck-posframe-error-prefix "✕ ")
+;;   (after! company
+;;     ;; Don't display popups if company is open
+;;     (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)))
 
-
-  ;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
-  ;; (flycheck-posframe-configure-pretty-defaults)
-  ;; (setq flycheck-posframe-border-width 2)
-  ;; (set-face-foreground 'flycheck-posframe-border-face "red"))
 
 ;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
 ;; (flycheck-posframe-configure-pretty-defaults)
@@ -1565,13 +1563,6 @@ all hooks after it are ignored.")
 (add-hook! '(completion-list-mode-hook Man-mode-hook)
            #'hide-mode-line-mode)
 
-;; TODO doom:  better-jumber dtrt-indent smartparens so-long
-;;  pcre2el  auto-revert ace-mc
-;; company ivy workspaces lsp visual-line-mode
-;;
-;; zstd (un)compress
-;;
-
 ;; (use-package persistent-scratch
 ;;   :unless (or (null window-system)
 ;;               noninteractive)
@@ -1614,6 +1605,88 @@ all hooks after it are ignored.")
   :after treemacs magit
   :ensure t)
 
+(use-package flx
+  :defer t                              ; loaded by ivy
+  :init
+  (setq ivy-flx-limit 15000))
+
+(use-package ivy
+  :after-call pre-command-hook
+  :bind (;;("C-x b" . ivy-switch-buffer)
+         ;;("C-x B" . ivy-switch-buffer-other-window)
+         ("C-c C-r" . ivy-resume))
+  :bind (:map ivy-switch-buffer-map
+              ("C-k" . ivy-switch-buffer-kill))
+  :config
+  (setq ivy-use-virtual-buffers t
+        ivy-virtual-abbreviate 'full
+        ivy-fixed-height-minibuffer t
+        ivy-count-format "(%d/%d) "
+        ivy-wrap t
+        ivy-re-builders-alist '((t . ivy--regex-fuzzy))
+        ivy-initial-inputs-alist nil
+        ivy-height 15)
+
+  ;; Highlight each ivy candidate including the following newline, so that it
+  ;; extends to the right edge of the window
+  (setf (alist-get 't ivy-format-functions-alist)
+        #'ivy-format-function-line)
+  (with-eval-after-load 'counsel
+    (setq ivy-initial-inputs-alist nil))
+  (ivy-mode +1))
+
+(use-package counsel
+  :after ivy
+  :bind (("C-x b"    . counsel-switch-buffer)
+         ("C-x B"    . counsel-switch-buffer-other-window)
+         ("C-x C-f"  . counsel-find-file)
+         ("C-x r b"  . counsel-bookmark)
+         ("M-x"      . counsel-M-x)
+         ("M-y"      . counsel-yank-pop)
+         ("M-i"      . counsel-imenu)
+         ("M-s f"    . counsel-file-jump)
+         ("M-s g"    . counsel-rg)
+         ("M-s j"    . counsel-dired-jump)
+         ("C-x f"    . counsel-recentf)
+         ([remap describe-function] . counsel-describe-function)
+         ([remap describe-variable] . counsel-describe-variable))
+  :config
+  (setq counsel-describe-function-function #'helpful-callable
+        counsel-describe-variable-function #'helpful-variable))
+;; ("C-c e l" . counsel-find-library)
+;; ("C-c e q" . counsel-set-variable)
+;; ("C-h e l" . counsel-find-library)
+;; ("C-h e u" . counsel-unicode-char)
+;; ("C-h f"   . counsel-describe-function)
+
+(use-package counsel-projectile
+  :after (counsel projectile)
+  :config
+  (counsel-projectile-mode +1))
+
+(use-package ivy-rich
+  :after ivy
+  :config
+  (ivy-rich-mode 1)
+  (setq ivy-rich-switch-buffer-align-virtual-buffer t
+        ivy-rich-path-style 'abbrev))
+
+(use-package all-the-icons-ivy-rich
+  :after ivy-rich
+  :init
+  (setq all-the-icons-ivy-rich-icon-size 0.75)
+  (all-the-icons-ivy-rich-mode 1))
+
+(use-package restart-emacs
+  :commands restart-emacs)
 
 (when init-file-debug
   (use-package-report))
+
+
+;; TODO doom:  better-jumber dtrt-indent smartparens so-long
+;;  pcre2el  auto-revert ace-mc
+;; company ivy-prescient workspaces lsp visual-line-mode
+;;
+;; zstd (un)compress
+;;
