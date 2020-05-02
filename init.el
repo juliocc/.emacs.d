@@ -139,7 +139,6 @@
              all-the-icons-material
              all-the-icons-alltheicon))
 
-; TODO: nodefer
 (use-package doom-themes
   :init
   :config
@@ -731,15 +730,10 @@
 ;;==================================================
 ;; which-func-mode settings
 ;;==================================================
-(which-function-mode +1)                 ; show me where I'm standing
-
-; puts which-function-mode in the header
-;; (setq-default header-line-format
-;;               '((which-func-mode ("" which-func-format " "))))
-;; (setq mode-line-misc-info
-;;             ;; We remove Which Function Mode from the mode line, because it's mostly
-;;             ;; invisible here anyway.
-;;             (assq-delete-all 'which-func-mode mode-line-misc-info))
+(use-package which-func
+  :defer 5
+  :config
+  (which-function-mode +1))
 
 ;;==================================================
 ;; git and magit settings
@@ -1022,13 +1016,31 @@
 
 ; ibuffer
 (use-package ibuffer
-  :bind ("C-x C-b" . ibuffer))
+  :bind ("C-x C-b" . ibuffer)
+  :config
+  (setq ibuffer-show-empty-filter-groups nil
+        ibuffer-filter-group-name-face '(:inherit (success bold)))
+  (define-ibuffer-column size
+    (:name "Size"
+           :inline t
+           :header-mouse-map ibuffer-size-header-map)
+    (file-size-human-readable (buffer-size))))
 
-; shrink-whitespace
+(use-package ibuffer-projectile
+  :hook (ibuffer . ibuffer-projectile-set-filter-groups)
+  :config
+  (setq ibuffer-projectile-prefix
+        (concat (all-the-icons-octicon
+                 "file-directory"
+                 :face ibuffer-filter-group-name-face
+                 :v-adjust -0.05)
+                " ")))
+
+;; shrink-whitespace
 (use-package shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
-; beacon
+;; beacon
 (use-package beacon
   :defer 2
   :config
@@ -1536,7 +1548,8 @@ all hooks after it are ignored.")
           ("DEPRECATED" font-lock-doc-face bold))))
 
 (use-package highlight-indent-guides
-  :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+  ;;:hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+  :commands highlight-indent-guides-mode
   :init
   (setq highlight-indent-guides-method 'character
         highlight-indent-guides-responsive 'top-edge))
