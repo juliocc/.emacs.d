@@ -94,6 +94,14 @@
   (setq use-package-verbose nil
         use-package-expand-minimally t))
 
+;; (use-package benchmark-init
+;;   :when init-file-debug
+;;   :demand t
+;;   :hook (window-setup . benchmark-init/deactivate))
+
+(use-package dash  :defer t)
+(use-package f     :defer t)
+(use-package s     :defer t)
 
 (use-package jc-doom
   :ensure nil
@@ -140,6 +148,7 @@
              all-the-icons-alltheicon))
 
 (use-package doom-themes
+  ;; :after-call after-init
   :init
   :config
   ;; Global settings (defaults)
@@ -272,6 +281,10 @@
 ;; (setq scroll-conservatively 100000)
 ;; (setq scroll-preserve-screen-position 'always)
 ;; (setq scroll-step 0); what?
+
+;; (use-package display-fill-column-indicator
+;;   :ensure nil
+;;   :hook ((prog-mode conf-mode) . display-fill-column-indicator-mode))
 
 (setq hscroll-margin 2
       hscroll-step 1
@@ -568,6 +581,7 @@
 
 ;; use shift + arrow keys to switch between visible buffers
 (use-package windmove
+  :after-call after-init-hook
   :config
   (windmove-default-keybindings))
 
@@ -937,8 +951,11 @@
 ;;          ("M-Z" . zap-to-char)))
 
 (use-package avy-zap
-  :bind (("M-z" . avy-zap-to-char-dwim)
-         ("M-Z" . avy-zap-up-to-char-dwim)))
+  :bind (("M-Z" . avy-zap-up-to-char-dwim)))
+
+(use-package misc
+  :ensure nil
+  :bind ("M-z" . zap-up-to-char))
 
 (use-package jc-misc
   :ensure nil
@@ -1248,15 +1265,19 @@
              highlight-symbol-occur))
 
 (use-package ssh-config-mode
-  :mode ("/\\.ssh/config\\'" "/known_hosts\\'"))
+  :mode (("/\\.ssh/config\\'"   . ssh-config-mode)
+         ("/known_hosts\\'"     . ssh-known-hosts-mode)
+         ("/authorized_keys\\'" . ssh-authorized-keys-mode)))
 
 (use-package avy
   :bind (("M-g g" . avy-goto-line)
-                                        ;("C-'" . avy-goto-char)
-         ("C-\"" . avy-goto-char-timer))
+         ;; ("C-'" . avy-goto-char)
+         ("C-c C-j" . avy-resume)
+         ("C-c C-n" . avy-next)
+         ("C-c C-p" . avy-prev)
+         ("C-'" . avy-goto-char-timer))
   :config
-  (setq avy-keys
-        '(?c ?a ?s ?d ?e ?f ?h ?w ?y ?j ?k ?l ?n ?m ?v ?r ?u ?p))
+  (setq avy-timeout-seconds 0.25)
   (avy-setup-default))
 
 (use-package ace-window
@@ -1504,9 +1525,17 @@ all hooks after it are ignored.")
         ivy-fixed-height-minibuffer t
         ivy-count-format "(%d/%d) "
         ivy-wrap t
-        ivy-re-builders-alist '((t . ivy--regex-fuzzy))
+        ivy-re-builders-alist
+        '((counsel-rg       . ivy--regex-plus)
+          (swiper           . ivy--regex-plus)
+          (swiper-isearch   . ivy--regex-plus)
+          (t                . ivy--regex-fuzzy))
+        ivy-more-chars-alist
+        '((counsel-rg . 1)
+          (counsel-search . 2)
+          (t . 3))
         ivy-initial-inputs-alist nil
-        ivy-height 15)
+        ivy-height 12)
 
   ;; Highlight each ivy candidate including the following newline, so that it
   ;; extends to the right edge of the window
@@ -1557,6 +1586,22 @@ all hooks after it are ignored.")
   :init
   (setq all-the-icons-ivy-rich-icon-size 0.75)
   (all-the-icons-ivy-rich-mode 1))
+
+(use-package swiper
+  :after ivy
+  :bind (("C-M-s" . swiper-isearch)
+         ("C-M-r" . swiper-isearch-backward)
+         :map swiper-map
+         ("C-y" . yank)
+         ("M-%" . swiper-query-replace)
+         ("C-o" . swiper-isearch-toggle)
+         :map isearch-mode-map
+         ("C-o" . swiper-isearch-toggle)))
+
+(use-package imenu-anywhere
+  :bind ("M-I" . ivy-imenu-anywhere)
+  :init
+  (setq imenu-auto-rescan t))
 
 (use-package restart-emacs
   :commands restart-emacs)
