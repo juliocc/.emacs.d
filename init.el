@@ -8,12 +8,11 @@
       gc-cons-percentage 0.6
       auto-window-vscroll nil)
 
-(add-hook 'after-init-hook
+(add-hook 'emacs-startup-hook
           `(lambda ()
              (setq file-name-handler-alist file-name-handler-alist-old
-                   gc-consq-threshold 1600000
-                   gc-cons-percentage 0.1)
-             (garbage-collect)) t)
+                   gc-cons-threshold (* 128 1024 1024)
+                   gc-cons-percentage 0.1)) t)
 
 ;; In noninteractive sessions, prioritize non-byte-compiled source files to
 ;; prevent the use of stale byte-code. Otherwise, it saves us a little IO time
@@ -109,32 +108,17 @@
 
 (use-package gcmh
   :if jc-interactive-mode
-  :commands gcmh-mode)
-
-(when jc-interactive-mode
-  (add-transient-hook! 'pre-command-hook (gcmh-mode +1))
-  (with-eval-after-load 'gcmh
-    (setq gcmh-idle-delay 10
-          gcmh-high-cons-threshold 16777216
-          gcmh-verbose nil
-          gc-cons-percentage 0.1)
-    (add-hook 'focus-out-hook #'gcmh-idle-garbage-collect)))
-
+  :hook (emacs-startup . gcmh-mode)
+  :hook (focus-out-hook . gcmh-idle-garbage-collect)
+  :config
+  (setq gcmh-idle-delay 10
+        gcmh-high-cons-threshold (* 128 1024 1024)
+        gcmh-low-cons-threshold (* 16 1024 1024)
+        gcmh-verbose t))
 
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
-;; (use-package zenburn-theme
-;;   :config
-;;   (load-theme 'zenburn t))
-;; (use-package sunburn-theme
-;;   :config
-;;   (load-theme 'sunburn t))
-
-;; (use-package spacemacs-theme
-;;   :defer t
-;;   :init
-;;   (load-theme 'spacemacs-dark t))
 
 (use-package hide-mode-line
   :commands hide-mode-line-mode)
@@ -148,7 +132,6 @@
              all-the-icons-alltheicon))
 
 (use-package doom-themes
-  ;; :after-call after-init
   :init
   :config
   ;; Global settings (defaults)
@@ -185,7 +168,6 @@
 
 
 ;; (use-package centaur-tabs
-;;   :after-call after-find-file dired-initial-position-hook
 ;;   :init
 ;;   (setq centaur-tabs-style "bar"
 ;;         centaur-tabs-height 32
@@ -486,10 +468,7 @@
 ;; (fancy-narrow-mode)
 
 (use-package winner
-  :after-call after-init-hook
-  :config
-  (winner-mode +1))
-
+  :hook (after-init . winner-mode))
 
 ;; don't let the cursor go into minibuffer prompt
 (setq minibuffer-prompt-properties
@@ -504,24 +483,23 @@
 
 ;; TODO: nodefer
 (use-package volatile-highlights
-  ;;:after-call after-init-hook
   :defer 5
   :config
   (volatile-highlights-mode +1))
 
 (use-package undo-tree
-  :after-call pre-command-hook
+  :hook (after-init . global-undo-tree-mode)
   :config
   (setq undo-tree-auto-save-history t
         undo-limit 800000
         undo-strong-limit 12000000
         undo-outer-limit 120000000
-        undo-tree-history-directory-alist `((".*" . ,(concat user-emacs-directory "undo-list"))))
-  (global-undo-tree-mode))
+        undo-tree-history-directory-alist
+        `((".*" . ,(concat user-emacs-directory "undo-list")))))
 
 ;; Save a list of recent files visited.
 (use-package recentf
-  :after-call after-find-file
+  :hook (after-init . recentf-mode)
   ;; :bind ("C-x f" . recentf-ido-find-file)
   ;; :commands recentf-open-files
   :config
@@ -533,25 +511,16 @@
   (add-hook! 'dired-mode-hook
     (defun doom--recentf-add-dired-directory-h ()
       "Add dired directory to recentf file list."
-      (recentf-add-file default-directory)))
-
-  ;; (defun recentf-ido-find-file ()
-  ;;   "Find a recent file using Ido."
-  ;;   (interactive)
-  ;;   (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
-  ;;     (when file
-  ;;       (find-file file))))
-  (recentf-mode +1))
+      (recentf-add-file default-directory))))
 
 (setq history-length 1000)
 
 (use-package savehist
-  :after-call post-command-hook
+  :hook (after-init . savehist-mode)
   :config
   (setq savehist-file (expand-file-name ".savehist" user-emacs-directory)
         savehist-save-minibuffer-history t
         savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
-  (savehist-mode +1)
   (add-hook! 'kill-emacs-hook
     (defun doom-unpropertize-kill-ring-h ()
       "Remove text properties from `kill-ring' for a smaller savehist file."
@@ -581,27 +550,24 @@
 
 ;; use shift + arrow keys to switch between visible buffers
 (use-package windmove
-  :after-call after-init-hook
-  :config
-  (windmove-default-keybindings))
+  :hook (after-init-hook . windmove-default-keybindings))
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
 (use-package paren
-  :after-call pre-command-hook
+  :hook (after-init . show-paren-mode)
   :config
   (setq show-paren-delay 0.1
         show-paren-style 'parenthesis
         show-paren-highlight-openparen t
         show-paren-when-point-inside-paren t
-        show-paren-when-point-in-periphery t)
-  (show-paren-mode +1))
+        show-paren-when-point-in-periphery t))
 
 ;; Save point position between sessions
 (use-package saveplace
-  :after-call after-find-file dired-initial-position-hook
+  :ensure nil
+  :hook (after-init . save-place-mode)
   :config
-  (setq save-place-file (expand-file-name ".places" user-emacs-directory))
-  (save-place-mode +1))
+  (setq save-place-file (expand-file-name ".places" user-emacs-directory)))
 
 ;; guide-key setup
 ;; (use-package guide-key
@@ -616,7 +582,7 @@
 ;;   (setq guide-key/popup-window-position 'bottom))
 
 (use-package which-key
-  :after-call pre-command-hook
+  :hook (after-init . which-key-mode)
   :init
   (setq which-key-sort-order #'which-key-prefix-then-key-order
         which-key-sort-uppercase-first nil
@@ -626,8 +592,7 @@
         which-key-side-window-slot -10)
   :config
   (which-key-setup-side-window-bottom)
-  (setq which-key-max-description-length 45)
-  (which-key-mode +1))
+  (setq which-key-max-description-length 45))
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
@@ -869,7 +834,8 @@
 (use-package dired
   :ensure nil
   :bind (("C-x C-j" . dired-jump)
-         ([remap beginning-of-buffer] . dired-back-to-top))
+         (:map dired-mode-map
+               ([remap beginning-of-buffer] . dired-back-to-top)))
   :init
   (setq dired-listing-switches "--time-style long-iso -alhF"
         dired-auto-revert-buffer t
@@ -1088,7 +1054,6 @@
 
 ;; (use-package amx
 ;;   :after ivy
-;;   ;;:after-call pre-command-hook
 ;;   :config
 ;;   (amx-mode +1))
 
@@ -1475,9 +1440,9 @@ all hooks after it are ignored.")
 ;;     (persistent-scratch-setup-default))
 ;;   :commands persistent-scratch-setup-default)
 
-(use-package vterm
-  :hook (vterm-mode . hide-mode-line-mode)
-  :commands vterm)
+;; (use-package vterm
+;;   :hook (vterm-mode . hide-mode-line-mode)
+;;   :commands vterm)
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
@@ -1513,7 +1478,7 @@ all hooks after it are ignored.")
   (setq ivy-flx-limit 15000))
 
 (use-package ivy
-  :after-call pre-command-hook
+  :hook (after-init . ivy-mode)
   :bind (;;("C-x b" . ivy-switch-buffer)
          ;;("C-x B" . ivy-switch-buffer-other-window)
          ("C-c C-r" . ivy-resume))
@@ -1525,6 +1490,8 @@ all hooks after it are ignored.")
         ivy-fixed-height-minibuffer t
         ivy-count-format "(%d/%d) "
         ivy-wrap t
+        ivy-dynamic-exhibit-delay-ms 200
+        ivy-use-selectable-prompt t
         ivy-re-builders-alist
         '((counsel-rg       . ivy--regex-plus)
           (swiper           . ivy--regex-plus)
@@ -1541,9 +1508,9 @@ all hooks after it are ignored.")
   ;; extends to the right edge of the window
   (setf (alist-get 't ivy-format-functions-alist)
         #'ivy-format-function-line)
+
   (with-eval-after-load 'counsel
-    (setq ivy-initial-inputs-alist nil))
-  (ivy-mode +1))
+    (setq ivy-initial-inputs-alist nil)))
 
 (use-package counsel
   :after ivy
