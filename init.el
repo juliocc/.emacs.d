@@ -481,7 +481,6 @@
 ;;   :config
 ;;   (global-highlight-parentheses-mode t))
 
-;; TODO: nodefer
 (use-package volatile-highlights
   :defer 5
   :config
@@ -490,6 +489,11 @@
 (use-package undo-tree
   :hook (after-init . global-undo-tree-mode)
   :config
+  ;; TODO:
+  ;; (defadvice undo-tree-make-history-save-file-name
+  ;;   (after undo-tree activate)
+  ;;   (setq ad-return-value (concat ad-return-value ".gz")))
+  ;; (advice-add #'undo-tree-save-history :around #'doom-shut-up-a)
   (setq undo-tree-auto-save-history t
         undo-limit 800000
         undo-strong-limit 12000000
@@ -1093,13 +1097,17 @@
   (setq dumb-jump-prefer-searcher 'ag))
 
 (use-package company
-  :defer 4
-  :commands company-mode
+  :defer 2
+  :commands (company-mode company-indent-or-complete-common)
   :init
+  (add-hook 'prog-mode-hook
+            #'(lambda ()
+                (local-set-key (kbd "<tab>")
+                               #'company-indent-or-complete-common)))
+  :config
   (setq company-idle-delay 0.5
         company-show-numbers t
         company-dabbrev-downcase nil)
-  :config
   (global-company-mode))
 
 (use-package company-terraform
@@ -1107,9 +1115,22 @@
   :config
   (add-to-list 'company-backends 'company-terraform))
 
-(use-package company-quickhelp
-  :hook
-  (global-company-mode . company-quickhelp))
+;; (use-package company-quickhelp
+;;  :hook
+;;  (global-company-mode . company-quickhelp))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode)
+  :config
+
+  ;; https://github.com/sebastiencs/company-box/issues/44
+  (defun jc/fix-company-scrollbar (orig-fn &rest args)
+    "disable company-box scrollbar"
+    (cl-letf (((symbol-function #'display-buffer-in-side-window)
+               (symbol-function #'ignore)))
+      (apply orig-fn args)))
+
+  (advice-add #'company-box--update-scrollbar :around #'jc/fix-company-scrollbar))
 
 ;; (use-package yasnippet
 ;;   :commands yas-hippie-try-expand
@@ -1572,7 +1593,6 @@ all hooks after it are ignored.")
 
 (when init-file-debug
   (use-package-report))
-
 
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
 ;;  pcre2el  auto-revert ace-mc
