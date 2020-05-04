@@ -550,7 +550,7 @@
 
 ;; use shift + arrow keys to switch between visible buffers
 (use-package windmove
-  :hook (after-init-hook . windmove-default-keybindings))
+  :hook (after-init . windmove-default-keybindings))
 
 ;; show-paren-mode: subtle highlighting of matching parens (global-mode)
 (use-package paren
@@ -1092,27 +1092,24 @@
   ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
   (setq dumb-jump-prefer-searcher 'ag))
 
-;;==================================================
-;; company-mode settings
-;;==================================================
-;; (use-package company
-;;   :defer 4
-;;   :commands company-mode
-;;   :init
-;;   (setq company-idle-delay 0.5
-;;         company-show-numbers t
-;;         company-dabbrev-downcase nil)
-;;   :config
-;;   (global-company-mode))
+(use-package company
+  :defer 4
+  :commands company-mode
+  :init
+  (setq company-idle-delay 0.5
+        company-show-numbers t
+        company-dabbrev-downcase nil)
+  :config
+  (global-company-mode))
 
-;; (use-package company-terraform
-;;   :after terraform-mode
-;;   :config
-;;   (add-to-list 'company-backends 'company-terraform))
+(use-package company-terraform
+  :after (company terraform-mode)
+  :config
+  (add-to-list 'company-backends 'company-terraform))
 
-;; (use-package company-quickhelp          ; Documentation popups for Company
-;;   :hook
-;;   (global-company-mode . company-quickhelp))
+(use-package company-quickhelp
+  :hook
+  (global-company-mode . company-quickhelp))
 
 ;; (use-package yasnippet
 ;;   :commands yas-hippie-try-expand
