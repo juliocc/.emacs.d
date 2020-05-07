@@ -211,8 +211,7 @@
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
 
-; Don't defer screen updates when performing operations
-(setq redisplay-dont-pause t)
+;; (setq redisplay-dont-pause t)
 
 (when window-system
   (setq frame-title-format '(buffer-file-name "%f" ("%b"))
@@ -273,7 +272,7 @@
 ;;   :ensure nil
 ;;   :hook ((prog-mode conf-mode) . display-fill-column-indicator-mode))
 
-(setq hscroll-margin 2
+(setq hscroll-margin 5
       hscroll-step 1
       ;; Emacs spends too much effort recentering the screen if you scroll the
       ;; cursor more than N lines past window edges (where N is the settings of
@@ -281,7 +280,7 @@
       ;; during large-scale scrolling commands. If kept over 100, the window is
       ;; never automatically recentered.
       scroll-conservatively 101
-      scroll-margin 0
+      scroll-margin 2
       scroll-preserve-screen-position t
       ;; Reduce cursor lag by a tiny bit by not auto-adjusting `window-vscroll'
       ;; for tall lines.
@@ -293,7 +292,6 @@
 ;; Remove hscroll-margin in shells, otherwise it causes jumpiness
 (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
 
-
 (when *is-a-mac*
   ;; sane trackpad/mouse scroll settings
   (setq mac-redisplay-dont-reset-vscroll t
@@ -303,20 +301,20 @@
 ;; General settings
 ;;=================================================
 
-(setq mouse-yank-at-point t                  ; mouse pastes at point
-      x-select-enable-clipboard t            ; Allow pasting selection outside of Emacs
-      global-auto-revert-non-file-buffers t  ; auto refresh dired
-      auto-revert-verbose nil                ; and be quiet about it
+(setq mouse-yank-at-point t                 ; mouse pastes at point
+      select-enable-clipboard t          ; Allow pasting selection outside of Emacs
+      global-auto-revert-non-file-buffers t ; auto refresh dired
+      auto-revert-verbose nil               ; and be quiet about it
       eval-expression-print-level nil
-      echo-keystrokes 0.02                    ; Show keystrokes in progress
-      confirm-kill-emacs 'yes-or-no-p        ; ask me before closing
-      history-length 1000                    ; looong history
-      use-dialog-box nil                     ; never show a dialog box
+      echo-keystrokes 0.02                  ; Show keystrokes in progress
+      confirm-kill-emacs 'yes-or-no-p       ; ask me before closing
+      history-length t                      ; looong history
+      use-dialog-box nil                    ; never show a dialog box
       use-file-dialog nil
-      mark-even-if-inactive t                ;
-      enable-recursive-minibuffers t         ; yes, please
-      highlight-nonselected-windows t        ; show region even on inactive windows
-      require-final-newline t                ; end files with a newline
+      mark-even-if-inactive t
+      enable-recursive-minibuffers t        ; yes, please
+      highlight-nonselected-windows t       ; show region even on inactive windows
+      require-final-newline t               ; end files with a newline
       fill-column 80
       compilation-scroll-output t
       grep-highlight-matches t
@@ -328,7 +326,7 @@
       indicate-empty-lines t
       x-underline-at-descent-line t
       idle-update-delay 2
-      next-line-add-newlines nil) ; don't add new lines when scrolling down
+      next-line-add-newlines nil)           ; don't add new lines when scrolling down
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
 ;; indicates misconfiguration (or that the user needs to stop relying on case
@@ -458,8 +456,7 @@
 (use-package image-file
   :defer 5
   :config
-  (auto-image-file-mode 1)
-  (add-hook 'image-mode-hook #'image-transform-reset))
+  (auto-image-file-mode 1))
 
 ;(size-indication-mode +1)                ; display file size
 (delete-selection-mode +1)               ; delete selected text on input
@@ -671,49 +668,7 @@
 (when *is-a-windowed-mac*
   (unbind-key "C-z"))
 
-;; enable electric pairs and indent
-;; (when (fboundp 'electric-pair-mode)
-;;   (electric-pair-mode))
-
-;; (when (eval-when-compile (version< "24.4" emacs-version))
-;;   (electric-indent-mode 1))
-
 (bind-key "RET" #'newline-and-indent)
-
-;;==================================================
-;; ido settings
-;;==================================================
-;; (use-package flx-ido
-;;   :defer 1
-;;   :init
-;;   (setq ido-enable-prefix nil
-;;         ido-enable-flex-matching t
-;;         ido-create-new-buffer 'always
-;;         ido-use-filename-at-point nil
-;;                                         ;ido-max-prospects 10
-;;         ido-max-window-height 10
-;;         ido-save-directory-list-file (expand-file-name ".ido.last" user-emacs-directory)
-;;         ido-auto-merge-work-directories-length -1
-;;         ido-default-file-method 'selected-window
-;;         ido-ignore-extensions t
-;;         ido-file-extensions-order '(".py" ".html" ".css" ".scss" "js"
-;;                                     ".tf" ".md" ".rb" ".org" ".txt"
-;;                                     ".c" ".cpp" ".cxx" ".h" ".hpp")
-;;         ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-;;   ;; (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-;;   (setq ido-use-faces nil)
-;;   :config
-;;   (use-package ido)
-;;   (use-package flx)
-;;   (use-package ido-grid-mode)
-;;   (use-package ido-completing-read+)
-
-;;   (ido-mode +1)
-;;   (ido-everywhere +1)
-;;   (flx-ido-mode +1)
-;;   (ido-grid-mode +1)
-;;   (ido-ubiquitous-mode +1))
-
 
 ;;==================================================
 ;; which-func-mode settings
@@ -842,9 +797,7 @@
 
 (use-package dired
   :ensure nil
-  :bind (("C-x C-j" . dired-jump)
-         (:map dired-mode-map
-               ([remap beginning-of-buffer] . dired-back-to-top)))
+  :bind (("C-x C-j" . dired-jump))
   :init
   (setq dired-listing-switches "--time-style long-iso -alhF"
         dired-auto-revert-buffer t
@@ -853,11 +806,7 @@
         )
   (setq-default diredp-hide-details-initially-flag nil
                 dired-dwim-target t) ; Move files between split pane
-  :config
-  (defun dired-back-to-top ()
-    (interactive)
-    (beginning-of-buffer)
-    (dired-next-line 4)))
+  )
 
 
 (use-package dired-x
@@ -937,6 +886,7 @@
   :commands (chmod+x-this)
   :bind ("M-p" . goto-match-paren))
 
+
 (use-package crux
   :commands crux-find-shell-init-file
   :bind (("C-a" . crux-move-beginning-of-line)
@@ -950,21 +900,20 @@
 
 (use-package jc-windows
   :ensure nil
-  :load-path "site-lisp"
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
-         ("C-2" . split-window-vertically-with-other-buffer)
-         ("C-3" . split-window-horizontally-with-other-buffer)
+         ("C-2"   . split-window-vertically-with-other-buffer)
+         ("C-3"   . split-window-horizontally-with-other-buffer)
          ("S-C-j" . quick-switch-buffer)))
 
-(bind-key "C-1" #'delete-other-windows)
-(bind-key "C-0" #'delete-window)
-
-;; resize windows
-(bind-key "S-C-<left>" #'shrink-window-horizontally)
-(bind-key "S-C-<right>" #'enlarge-window-horizontally)
-(bind-key "S-C-<down>" #'shrink-window)
-(bind-key "S-C-<up>" #'enlarge-window)
+(use-package window
+  :ensure nil
+  :bind (("C-1"         . delete-other-windows)
+         ("C-0"         . delete-window)
+         ("S-C-<left>"  . shrink-window-horizontally)
+         ("S-C-<right>" . enlarge-window-horizontally)
+         ("S-C-<down>"  . shrink-window)
+         ("S-C-<up>"    . enlarge-window)))
 
 ; ibuffer
 (use-package ibuffer
@@ -1477,7 +1426,7 @@ all hooks after it are ignored.")
   :mode "\\.csv\\'")
 
 (use-package ialign
-  :commands ialign-interactive-align)
+  :commands ialign)
 
 (use-package treemacs
   :commands treemacs)
@@ -1507,11 +1456,15 @@ all hooks after it are ignored.")
          ("C-c C-r" . ivy-resume))
   :bind (:map ivy-switch-buffer-map
               ("C-k" . ivy-switch-buffer-kill))
+  :bind (:map ivy-minibuffer-map
+              ("C-j" . ivy-immediate-done)
+              ("RET" . ivy-alt-done))
   :config
   (setq ivy-use-virtual-buffers t
         ivy-virtual-abbreviate 'full
         ivy-fixed-height-minibuffer t
         ivy-count-format "(%d/%d) "
+        ivy-magic-tilde nil
         ivy-wrap t
         ivy-dynamic-exhibit-delay-ms 200
         ivy-use-selectable-prompt t
@@ -1584,9 +1537,9 @@ all hooks after it are ignored.")
          :map swiper-map
          ("C-y" . yank)
          ("M-%" . swiper-query-replace)
-         ("C-o" . swiper-isearch-toggle)
+         ("M-o" . swiper-isearch-toggle)
          :map isearch-mode-map
-         ("C-o" . swiper-isearch-toggle)))
+         ("M-o" . swiper-isearch-toggle)))
 
 (use-package imenu-anywhere
   :bind ("M-I" . ivy-imenu-anywhere)
@@ -1596,11 +1549,18 @@ all hooks after it are ignored.")
 (use-package restart-emacs
   :commands restart-emacs)
 
+(use-package refine
+  :commands refine)
+
+(use-package smartscan
+  :hook (after-init . global-smartscan-mode))
 (when init-file-debug
   (use-package-report))
 
+;; MISC STUFF: snoopy-mode editorconfig
+;;
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
-;;  pcre2el  auto-revert ace-mc
+;;  pcre2el  auto-revert ace-mc miniedit
 ;; company ivy-prescient workspaces lsp visual-line-mode
 ;;
 ;; zstd (un)compress
