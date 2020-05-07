@@ -106,11 +106,6 @@
   :ensure nil
   :load-path "site-lisp")
 
-(use-package jc-doctor
-  :ensure nil
-  :defer 1
-  :config (jc/doctor))
-
 (use-package gcmh
   :if jc-interactive-mode
   :hook (emacs-startup . gcmh-mode)
@@ -850,9 +845,32 @@
 (add-hook 'find-file-not-found-functions #'make-parent-directory)
 
 (use-package markdown-mode
+  :hook (markdown-mode . turn-on-flyspell)
+  :bind (:map markdown-mode-command-map
+              ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode)))
+         ("\\.markdown\\'" . markdown-mode))
+  :init
+  (setq markdown-fontify-code-blocks-natively t
+        markdown-asymmetric-header t
+        markdown-italic-underscore t
+        markdown-content-type "application/xhtml+xml"
+        markdown-css-paths
+        '("https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
+          "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css")
+        markdown-xhtml-header-content
+        (concat "<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>"
+                "<style> body { box-sizing: border-box; max-width: 740px; width: 100%; margin: 40px auto; padding: 0 10px; } </style>"
+                "<script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>"
+                "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>")
+        markdown-open-command (cond (*is-a-mac* "open")
+                                    (t "xdg-open")))
+  )
+
+(use-package grip-mode
+  :commands grip-mode)
+
 
 (use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
@@ -883,8 +901,10 @@
 
 (use-package jc-misc
   :ensure nil
-  :commands (chmod+x-this)
-  :bind ("M-p" . goto-match-paren))
+  :defer 1
+  :commands (chmod+x-this jc/doctor)
+  :bind ("M-p" . goto-match-paren)
+  :config (jc/doctor))
 
 
 (use-package crux
@@ -971,6 +991,11 @@
         ispell-extra-args '("--sug-mode=ultra"
                             "--run-together")))
 
+(use-package flyspell
+  :ensure nil
+  :hook (text-mode . turn-on-flyspell)
+  :commands (turn-on-flyspell flyspell-buffer))
+
 (use-package flyspell-correct
   :after flyspell
   :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
@@ -981,25 +1006,6 @@
 (use-package flyspell-correct-avy-menu
   :after flyspell-correct)
 
-;; (let ((langs '("american" "castellano8")))
-;;   (setq lang-ring (make-ring (length langs)))
-;;   (dolist (elem langs) (ring-insert lang-ring elem)))
-
-;; ;; Todo: Move to autoload
-;; (defun cycle-ispell-languages ()
-;;   (interactive)
-;;   (let ((lang (ring-ref lang-ring -1)))
-;;     (ring-insert lang-ring lang)
-;;     (ispell-change-dictionary lang)
-;;     (flyspell-buffer)
-;;     (message "Spell language changed to %s" lang)))
-
-;; ;; TODO: Move to autoload
-;; (defun flyspell-check-next-highlighted-word ()
-;;   "Custom function to spell check next highlighted word"
-;;   (interactive)
-;;   (flyspell-goto-next-error)
-;;   (ispell-word))
 
 ;; (bind-keys :prefix-map jc-spelling-map
 ;;            :prefix "<f8>"
@@ -1563,11 +1569,15 @@ all hooks after it are ignored.")
 (use-package restart-emacs
   :commands restart-emacs)
 
-(use-package refine
-  :commands refine)
-
 (use-package smartscan
-  :hook (after-init . global-smartscan-mode))
+  :bind (:map smartscan-map
+              ("M-[" . smartscan-symbol-go-backward)
+              ("M-]" . smartscan-symbol-go-forward))
+  :hook (after-init . global-smartscan-mode)
+  :config
+  (unbind-key "M-p" smartscan-map)
+  (unbind-key "M-n" smartscan-map))
+
 (when init-file-debug
   (use-package-report))
 
