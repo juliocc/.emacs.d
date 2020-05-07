@@ -106,6 +106,11 @@
   :ensure nil
   :load-path "site-lisp")
 
+(use-package jc-doctor
+  :ensure nil
+  :defer 1
+  :config (jc/doctor))
+
 (use-package gcmh
   :if jc-interactive-mode
   :hook (emacs-startup . gcmh-mode)
