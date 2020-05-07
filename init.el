@@ -11,7 +11,7 @@
 (add-hook 'emacs-startup-hook
           `(lambda ()
              (setq file-name-handler-alist file-name-handler-alist-old
-                   gc-cons-threshold (* 128 1024 1024)
+                   gc-cons-threshold (* 256 1024 1024)
                    gc-cons-percentage 0.1)) t)
 
 ;; In noninteractive sessions, prioritize non-byte-compiled source files to
@@ -114,11 +114,10 @@
 (use-package gcmh
   :if jc-interactive-mode
   :hook (emacs-startup . gcmh-mode)
-  :hook (focus-out-hook . gcmh-idle-garbage-collect)
   :config
   (setq gcmh-idle-delay 10
-        gcmh-high-cons-threshold (* 128 1024 1024)
-        gcmh-low-cons-threshold (* 16 1024 1024)
+        gcmh-high-cons-threshold (* 256 1024 1024)
+        gcmh-low-cons-threshold (* 64 1024 1024)
         gcmh-verbose t))
 
 ;;==================================================
@@ -699,12 +698,13 @@
          :map magit-status-mode-map
          ("q" . magit-quit-session))
   :config
+
   (use-package git-commit
+    :hook
+    (git-commit-mode . turn-on-flyspell)
+
     :config
     (global-git-commit-mode +1)
-
-    ;; TODO
-    ;; (add-hook 'git-commit-mode-hook 'turn-on-flyspell)
 
     ;; Enforce git commit conventions.
     ;; See https://chris.beams.io/posts/git-commit/
@@ -964,8 +964,22 @@
 ;;==================================================
 ;; ispell
 ;;==================================================
-;; (setq ispell-program-name "aspell" ; use aspell instead of ispell
-;;       ispell-extra-args '("--sug-mode=ultra"))
+(use-package ispell
+  :ensure nil
+  :init
+  (setq ispell-program-name "aspell" ; use aspell instead of ispell
+        ispell-extra-args '("--sug-mode=ultra"
+                            "--run-together")))
+
+(use-package flyspell-correct
+  :after flyspell
+  :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
+
+;; (use-package flyspell-correct-ivy
+;;   :after flyspell-correct)
+
+(use-package flyspell-correct-avy-menu
+  :after flyspell-correct)
 
 ;; (let ((langs '("american" "castellano8")))
 ;;   (setq lang-ring (make-ring (length langs)))
