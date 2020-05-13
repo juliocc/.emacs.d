@@ -727,6 +727,14 @@
     (jump-to-register :magit-fullscreen)))
 
 
+;; (use-package xterm-color
+;;   :defer t)
+
+;; (use-package magit-delta
+;;   :after (magit xterm-color)
+;;   :config
+;;   (magit-delta-mode))
+
 ;;==================================================
 ;; isearch settings
 ;;==================================================
@@ -884,8 +892,8 @@
          ("C-c c a" . mc/edit-beginnings-of-lines)))
 
 (use-package change-inner
-  :bind (("M-I" . change-inner)
-         ("M-O" . change-outer)))
+  :bind (("C-c i" . change-inner)
+         ("C-c o" . change-outer)))
 
 ;; (use-package misc
 ;;   :ensure nil
@@ -1432,9 +1440,9 @@ all hooks after it are ignored.")
 ;;     (persistent-scratch-setup-default))
 ;;   :commands persistent-scratch-setup-default)
 
-;; (use-package vterm
-;;   :hook (vterm-mode . hide-mode-line-mode)
-;;   :commands vterm)
+(use-package vterm
+  :hook (vterm-mode . hide-mode-line-mode)
+  :commands vterm)
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
@@ -1471,8 +1479,8 @@ all hooks after it are ignored.")
 
 (use-package ivy
   :hook (after-init . ivy-mode)
-  :bind (;;("C-x b" . ivy-switch-buffer)
-         ;;("C-x B" . ivy-switch-buffer-other-window)
+  :bind (("C-x b" . ivy-switch-buffer)
+         ("C-x B" . ivy-switch-buffer-other-window)
          ("C-c C-r" . ivy-resume))
   :bind (:map ivy-switch-buffer-map
               ("C-k" . ivy-switch-buffer-kill))
@@ -1510,8 +1518,8 @@ all hooks after it are ignored.")
 
 (use-package counsel
   :after ivy
-  :bind (("C-x b"    . counsel-switch-buffer)
-         ("C-x B"    . counsel-switch-buffer-other-window)
+  :bind (;;("C-x b"    . counsel-switch-buffer)
+         ;;("C-x B"    . counsel-switch-buffer-other-window)
          ("C-x C-f"  . counsel-find-file)
          ("C-x r b"  . counsel-bookmark)
          ("M-x"      . counsel-M-x)
@@ -1523,7 +1531,20 @@ all hooks after it are ignored.")
          ("C-x f"    . counsel-recentf)
          ([remap describe-function] . counsel-describe-function)
          ([remap describe-variable] . counsel-describe-variable))
+  :bind (:map ivy-minibuffer-map
+              ("M-y" . ivy-next-line))
   :config
+
+  (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+    (if (equal major-mode 'vterm-mode)
+        (let ((inhibit-read-only t)
+              (yank-undo-function (lambda (_start _end) (vterm-undo))))
+          (cl-letf (((symbol-function 'insert-for-yank)
+                     (lambda (str) (vterm-send-string str t))))
+            (apply orig-fun args)))
+      (apply orig-fun args)))
+  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+
   (setq counsel-describe-function-function #'helpful-callable
         counsel-describe-variable-function #'helpful-variable))
 ;; ("C-c e l" . counsel-find-library)
@@ -1562,7 +1583,7 @@ all hooks after it are ignored.")
          ("M-o" . swiper-isearch-toggle)))
 
 (use-package imenu-anywhere
-  :bind ("M-I" . ivy-imenu-anywhere)
+  :bind ("M-i" . ivy-imenu-anywhere)
   :init
   (setq imenu-auto-rescan t))
 
@@ -1578,6 +1599,10 @@ all hooks after it are ignored.")
   (unbind-key "M-p" smartscan-map)
   (unbind-key "M-n" smartscan-map))
 
+
+;; (use-package browse-kill-ring
+;;   :hook (after-init . browse-kill-ring-default-keybindings))
+
 (when init-file-debug
   (use-package-report))
 
@@ -1586,6 +1611,6 @@ all hooks after it are ignored.")
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
 ;;  pcre2el  auto-revert ace-mc miniedit
 ;; company ivy-prescient workspaces lsp visual-line-mode
-;;
+;; ivy-occur cousel-mark-ring
 ;; zstd (un)compress
 ;;
