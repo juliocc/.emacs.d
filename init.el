@@ -973,6 +973,9 @@
   :config
   (setq beacon-color "#6F6F6F"
         beacon-blink-when-focused  t)
+  (defun not-display-graphic-p ()
+    (not (display-graphic-p)))
+  (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
   (beacon-mode))
 
 (use-package drag-stuff
@@ -1344,7 +1347,7 @@ all hooks after it are ignored.")
       max-mini-window-height 0.15)
 
 ;; Enable mouse in terminal Emacs
-(add-hook 'tty-setup-hook #'xterm-mouse-mode)
+;; (add-hook 'tty-setup-hook #'xterm-mouse-mode)
 
 (use-package hl-line
   ;; Highlights the current line
