@@ -1,3 +1,0 @@
-[submodule "site-lisp/gl-conf-mode"]
-	path = site-lisp/gl-conf-mode
-	url = https://github.com/llloret/gitolite-emacs.git
