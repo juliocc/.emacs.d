@@ -113,7 +113,7 @@
   (setq gcmh-idle-delay 10
         gcmh-high-cons-threshold (* 256 1024 1024)
         gcmh-low-cons-threshold (* 64 1024 1024)
-        gcmh-verbose t))
+        gcmh-verbose nil))
 
 ;;==================================================
 ;; Appearance settings
@@ -131,7 +131,6 @@
              all-the-icons-alltheicon))
 
 (use-package doom-themes
-  :init
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
@@ -320,6 +319,7 @@
       indicate-empty-lines t
       x-underline-at-descent-line t
       idle-update-delay 2
+      window-combination-resize t
       next-line-add-newlines nil)           ; don't add new lines when scrolling down
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
@@ -424,6 +424,7 @@
         kept-new-versions 6
         kept-old-versions 2
         version-control t         ; use versioned backups
+        create-lockfiles nil
         ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
         auto-save-file-name-transforms `((".*" ,(concat user-emacs-directory "backups/") t))
         backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))))
@@ -1304,19 +1305,12 @@ comment to the line."
 ;; you press ESC/C-g two or three times on some occasions to reach
 ;; `keyboard-quit', but this is much more intuitive.
 
-(defvar doom-escape-hook nil
-  "A hook run when C-g is pressed (or ESC in normal mode, for evil users).
-More specifically, when `doom/escape' is pressed. If any hook returns non-nil,
-all hooks after it are ignored.")
-
 (defun doom/escape ()
   "Run `doom-escape-hook'."
   (interactive)
   (cond ((minibuffer-window-active-p (minibuffer-window))
          ;; quit the minibuffer if open.
          (abort-recursive-edit))
-        ;; Run all escape hooks. If any returns non-nil, then stop there.
-        ((run-hook-with-args-until-success 'doom-escape-hook))
         ;; don't abort macros
         ((or defining-kbd-macro executing-kbd-macro) nil)
         ;; Back to the default
@@ -1491,6 +1485,11 @@ all hooks after it are ignored.")
               ("C-j" . ivy-immediate-done)
               ("RET" . ivy-alt-done))
   :config
+
+  ;; TODO
+  ;; (use-package orderless
+  ;;   :custom (completion-styles '(orderless)))
+
   (setq ivy-use-virtual-buffers t
         ivy-virtual-abbreviate 'full
         ivy-fixed-height-minibuffer t
@@ -1606,14 +1605,29 @@ all hooks after it are ignored.")
 ;; (use-package browse-kill-ring
 ;;   :hook (after-init . browse-kill-ring-default-keybindings))
 
+(use-package clipetty
+  :commands (global-clipetty-mode clipetty-kill-ring-save))
+
+(use-package guru-mode
+  :hook (after-init . guru-global-mode)
+  :config
+  (setq guru-warn-only t))
+
 (when init-file-debug
   (use-package-report))
 
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
-;;  pcre2el  auto-revert ace-mc miniedit
+;;  pcre2el  auto-revert ace-mc miniedit iedit hideshow hydra
 ;; company ivy-prescient workspaces lsp visual-line-mode
 ;; ivy-occur cousel-mark-ring
 ;; zstd (un)compress
 ;;
+
+
+;; (require 'mwheel)
+;; (mouse-wheel-mode t)
+;; (setq display-line-numbers-type 'relative)
+;; orderless
+;; tabs https://andreyorst.gitlab.io/posts/2020-05-10-making-emacs-tabs-look-like-in-atom/
