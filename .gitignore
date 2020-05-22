@@ -30,3 +30,4 @@ flycheck_init.el
 /eshell/
 /network-security.data
 /.cache/
+/.lsp-session-v1

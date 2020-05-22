@@ -318,7 +318,7 @@
       indicate-buffer-boundaries nil
       indicate-empty-lines t
       x-underline-at-descent-line t
-      idle-update-delay 2
+      idle-update-delay 2.0
       window-combination-resize t
       next-line-add-newlines nil)           ; don't add new lines when scrolling down
 
@@ -1015,8 +1015,8 @@
 ;; (use-package flyspell-correct-ivy
 ;;   :after flyspell-correct)
 
-(use-package flyspell-correct-avy-menu
-  :after flyspell-correct)
+;; (use-package flyspell-correct-avy-menu
+;;   :after flyspell-correct)
 
 
 ;; (bind-keys :prefix-map jc-spelling-map
@@ -1592,14 +1592,14 @@ comment to the line."
 (use-package restart-emacs
   :commands restart-emacs)
 
-(use-package smartscan
-  :bind (:map smartscan-map
-              ("M-[" . smartscan-symbol-go-backward)
-              ("M-]" . smartscan-symbol-go-forward))
-  :hook (after-init . global-smartscan-mode)
-  :config
-  (unbind-key "M-p" smartscan-map)
-  (unbind-key "M-n" smartscan-map))
+;; (use-package smartscan
+;;   :bind (:map smartscan-map
+;;               ("M-[" . smartscan-symbol-go-backward)
+;;               ("M-]" . smartscan-symbol-go-forward))
+;;   :hook (after-init . global-smartscan-mode)
+;;   :config
+;;   (unbind-key "M-p" smartscan-map)
+;;   (unbind-key "M-n" smartscan-map))
 
 
 ;; (use-package browse-kill-ring
