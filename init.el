@@ -141,7 +141,8 @@
   ;; (load-theme 'doom-spacegrey t)
   ;; (load-theme 'doom-tomorrow-night t)
   ;; (load-theme 'doom-nord t)
-  (load-theme 'doom-one t)
+  (load-theme 'doom-molokai t)
+  ;; (load-theme 'doom-one t)
   (doom-themes-treemacs-config)
   (doom-themes-visual-bell-config))
 
@@ -189,13 +190,13 @@
   (winum-mode +1))
 
 
-(use-package solaire-mode
-  :hook
-  ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
-  (minibuffer-setup . solaire-mode-in-minibuffer)
-  :config
-  (solaire-global-mode +1)
-  (solaire-mode-swap-bg))
+;; (use-package solaire-mode
+;;   :hook
+;;   ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
+;;   (minibuffer-setup . solaire-mode-in-minibuffer)
+;;   :config
+;;   (solaire-global-mode +1)
+;;   (solaire-mode-swap-bg))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -606,26 +607,25 @@
     (dotimes (i 10)
       (when (= p (point)) ad-do-it))))
 
-
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
-  ; left and right commands are meta
+  ;; left and right commands are meta
   (setq ns-command-modifier 'meta)
   (setq ns-right-command-modifier 'left)
 
-  ; left opt key is super
+  ;; left opt key is super
   (setq ns-alternate-modifier 'super)
-  ; right opt is ignored by emacs (useful for mac-style accent input)
+  ;; right opt is ignored by emacs (useful for mac-style accent input)
   (setq ns-right-alternate-modifier 'none)
 
-  ; left and right controls are control
+  ;; left and right controls are control
   (setq ns-control-modifier 'control)
   (setq ns-right-control-modifier 'left)
 
-  ; function key is hyper
+  ;; function key is hyper
   (setq ns-function-modifier 'hyper)
 
   (setq default-input-method "MacOSX")
@@ -969,15 +969,61 @@
 (use-package shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
-(use-package beacon
-  :defer 2
-  :config
-  (setq beacon-color "#6F6F6F"
-        beacon-blink-when-focused  t)
-  (defun not-display-graphic-p ()
-    (not (display-graphic-p)))
-  (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
-  (beacon-mode))
+;; (use-package beacon
+;;   :defer 2
+;;   :config
+;;   (setq beacon-color "#6F6F6F"
+;;         beacon-blink-when-focused  t)
+;;   (defun not-display-graphic-p ()
+;;     (not (display-graphic-p)))
+;;   (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
+;;   (beacon-mode))
+
+(use-package pulse
+  :ensure nil
+  :custom-face
+  (pulse-highlight-start-face ((t (:inherit region))))
+  (pulse-highlight-face ((t (:inherit region))))
+  :hook (((dumb-jump-after-jump
+           imenu-after-jump) . my/recenter-and-pulse)
+         ((bookmark-after-jump
+           magit-diff-visit-file
+           next-error) . my/recenter-and-pulse-line))
+  :init
+  (with-no-warnings
+    (defun my/pulse-momentary-line (&rest _)
+      "Pulse the current line."
+      (pulse-momentary-highlight-one-line (point)))
+
+    (defun my/pulse-momentary (&rest _)
+      "Pulse the region or the current line."
+      (if (fboundp 'xref-pulse-momentarily)
+          (xref-pulse-momentarily)
+        (my/pulse-momentary-line)))
+
+    (defun my/recenter-and-pulse(&rest _)
+      "Recenter and pulse the region or the current line."
+      (recenter)
+      (my/pulse-momentary))
+
+    (defun my/recenter-and-pulse-line (&rest _)
+      "Recenter and pulse the current line."
+      (recenter)
+      (my/pulse-momentary-line))
+
+    (dolist (cmd '(recenter-top-bottom
+                   other-window windmove-do-window-select
+                   ace-window aw--select-window
+                   pager-page-down pager-page-up
+                   winum-select-window-by-number
+                   ;; treemacs-select-window
+                   symbol-overlay-basic-jump))
+      (advice-add cmd :after #'my/pulse-momentary-line))
+
+    (dolist (cmd '(pop-to-mark-command
+                   pop-global-mark
+                   goto-last-change))
+      (advice-add cmd :after #'my/recenter-and-pulse))))
 
 (use-package drag-stuff
   :hook
@@ -1079,7 +1125,7 @@
          ("M-g x" . dumb-jump-go-prefer-external)
          ("M-g z" . dumb-jump-go-prefer-external-other-window))
   :config
-  ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
+  (setq dumb-jump-selector 'ivy)
   (setq dumb-jump-prefer-searcher 'ag))
 
 (use-package company
@@ -1091,13 +1137,16 @@
                 (local-set-key (kbd "<tab>")
                                #'company-indent-or-complete-common)))
   :config
-  (setq company-idle-delay 0.5
+  (setq company-idle-delay 0.0
         company-show-numbers t
+        company-tooltip-align-annotations t
+        company-minimum-prefix-length 1
         company-dabbrev-downcase nil)
   (global-company-mode))
 
 (use-package company-terraform
   :after (company terraform-mode)
+  :disabled t
   :config
   (add-to-list 'company-backends 'company-terraform))
 
@@ -1357,15 +1406,15 @@ comment to the line."
   (defvar doom--hl-line-mode nil)
 
   (add-hook 'activate-mark-hook
-    (defun doom-disable-hl-line-h ()
-      (when hl-line-mode
-        (setq-local doom--hl-line-mode t)
-        (hl-line-mode -1))))
+            (defun doom-disable-hl-line-h ()
+              (when hl-line-mode
+                (setq-local doom--hl-line-mode t)
+                (hl-line-mode -1))))
 
   (add-hook 'deactivate-mark-hook
-    (defun doom-enable-hl-line-maybe-h ()
-      (when doom--hl-line-mode
-        (hl-line-mode +1)))))
+            (defun doom-enable-hl-line-maybe-h ()
+              (when doom--hl-line-mode
+                (hl-line-mode +1)))))
 
 
 (setq image-animate-loop t)
@@ -1469,10 +1518,10 @@ comment to the line."
   :after treemacs magit
   :ensure t)
 
-(use-package flx
-  :defer t                              ; loaded by ivy
-  :init
-  (setq ivy-flx-limit 15000))
+;; (use-package flx
+;;   :defer t                              ; loaded by ivy
+;;   :init
+;;   (setq ivy-flx-limit 15000))
 
 (use-package ivy
   :hook (after-init . ivy-mode)
@@ -1498,11 +1547,11 @@ comment to the line."
         ivy-wrap t
         ivy-dynamic-exhibit-delay-ms 200
         ivy-use-selectable-prompt t
-        ivy-re-builders-alist
-        '((counsel-rg       . ivy--regex-plus)
-          (swiper           . ivy--regex-plus)
-          (swiper-isearch   . ivy--regex-plus)
-          (t                . ivy--regex-fuzzy))
+        ;; ivy-re-builders-alist
+        ;; '((counsel-rg       . ivy--regex-plus)
+        ;;   (swiper           . ivy--regex-plus)
+        ;;   (swiper-isearch   . ivy--regex-plus)
+        ;;   (t                . ivy--regex-fuzzy))
         ivy-more-chars-alist
         '((counsel-rg . 1)
           (counsel-search . 2)
@@ -1525,7 +1574,7 @@ comment to the line."
          ("C-x C-f"  . counsel-find-file)
          ("C-x r b"  . counsel-bookmark)
          ("M-x"      . counsel-M-x)
-         ("M-y"      . counsel-yank-pop)
+         ;; ("M-y"      . counsel-yank-pop)
          ("M-i"      . counsel-imenu)
          ("M-s f"    . counsel-file-jump)
          ("M-s g"    . counsel-rg)
@@ -1589,6 +1638,22 @@ comment to the line."
   :init
   (setq imenu-auto-rescan t))
 
+(use-package ivy-prescient
+  :after (counsel swiper)
+  :config
+  (setq ivy-prescient-enable-filtering nil
+        prescient-filter-method '(literal initialism fuzzy regexp)
+        ;; prescient-filter-method '(fuzzy)
+        ivy-prescient-retain-classic-highlighting t)
+  (ivy-prescient-mode +1)
+  (prescient-persist-mode +1)
+  (setq ivy-re-builders-alist
+        '((counsel-rg       . ivy--regex-plus)
+          (swiper           . ivy--regex-plus)
+          (swiper-isearch   . ivy--regex-plus)
+          (t                . ivy-prescient-re-builder))))
+
+
 (use-package restart-emacs
   :commands restart-emacs)
 
@@ -1602,8 +1667,8 @@ comment to the line."
 ;;   (unbind-key "M-n" smartscan-map))
 
 
-;; (use-package browse-kill-ring
-;;   :hook (after-init . browse-kill-ring-default-keybindings))
+(use-package browse-kill-ring
+  :hook (after-init . browse-kill-ring-default-keybindings))
 
 (use-package clipetty
   :commands (global-clipetty-mode clipetty-kill-ring-save))
@@ -1616,6 +1681,11 @@ comment to the line."
 (when init-file-debug
   (use-package-report))
 
+(use-package hydra
+  :defer t)
+
+(use-package goto-line-preview
+  :bind ([remap goto-line] . goto-line-preview)
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
