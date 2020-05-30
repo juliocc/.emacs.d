@@ -1685,7 +1685,8 @@ comment to the line."
   :defer t)
 
 (use-package goto-line-preview
-  :bind ([remap goto-line] . goto-line-preview)
+  :bind ([remap goto-line] . goto-line-preview))
+
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
