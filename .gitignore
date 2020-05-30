@@ -31,3 +31,4 @@ flycheck_init.el
 /network-security.data
 /.cache/
 /.lsp-session-v1
+/var/
