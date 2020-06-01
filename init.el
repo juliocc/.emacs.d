@@ -141,8 +141,8 @@
   ;; (load-theme 'doom-spacegrey t)
   ;; (load-theme 'doom-tomorrow-night t)
   ;; (load-theme 'doom-nord t)
-  (load-theme 'doom-molokai t)
-  ;; (load-theme 'doom-one t)
+  ;; (load-theme 'doom-molokai t)
+  (load-theme 'doom-one t)
   (doom-themes-treemacs-config)
   (doom-themes-visual-bell-config))
 
