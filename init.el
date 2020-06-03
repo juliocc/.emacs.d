@@ -607,6 +607,8 @@
     (dotimes (i 10)
       (when (= p (point)) ad-do-it))))
 
+(bind-key "C-S-P" #'pop-to-mark-command)
+
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
@@ -1137,7 +1139,7 @@
                 (local-set-key (kbd "<tab>")
                                #'company-indent-or-complete-common)))
   :config
-  (setq company-idle-delay 0.0
+  (setq company-idle-delay 0.2
         company-show-numbers t
         company-tooltip-align-annotations t
         company-minimum-prefix-length 1
@@ -1678,8 +1680,20 @@ comment to the line."
   :config
   (setq guru-warn-only t))
 
-(when init-file-debug
-  (use-package-report))
+;; (use-package lsp-mode
+;;   :commands (lsp lsp-deferred)
+;;   :hook ((terraform-mode python-mode) . lsp)
+;;   :hook (lsp-mode . lsp-enable-which-key-integration)
+;;   :init
+;;   (setq lsp-keymap-prefix "C-c l"))
+
+;; (use-package lsp-ui
+;;   :commands lsp-ui)
+
+;; (use-package company-lsp
+;;   :after (lsp-mode company)
+;;   :config
+;;   (push 'company-lsp company-backends))
 
 (use-package hydra
   :defer t)
@@ -1690,15 +1704,19 @@ comment to the line."
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
 ;; TODO doom:  better-jumber dtrt-indent smartparens so-long
-;;  pcre2el  auto-revert ace-mc miniedit iedit hideshow hydra
+;;  pcre2el  auto-revert ace-mc miniedit iedit hideshow
 ;; company ivy-prescient workspaces lsp visual-line-mode
-;; ivy-occur cousel-mark-ring
-;; zstd (un)compress
+;; ivy-occur cousel-mark-ring no-littering
+;; zstd (un)compress spell-fu-mode
 ;;
 
+;; hydras: expand, multiple-cursors, avy
 
 ;; (require 'mwheel)
 ;; (mouse-wheel-mode t)
 ;; (setq display-line-numbers-type 'relative)
 ;; orderless
 ;; tabs https://andreyorst.gitlab.io/posts/2020-05-10-making-emacs-tabs-look-like-in-atom/
+
+(when init-file-debug
+  (use-package-report))
