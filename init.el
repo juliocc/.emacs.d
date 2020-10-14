@@ -10,6 +10,8 @@
 
 (add-hook 'emacs-startup-hook
           `(lambda ()
+             (dolist (handler file-name-handler-alist)
+               (add-to-list 'file-name-handler-alist-old handler))
              (setq file-name-handler-alist file-name-handler-alist-old
                    gc-cons-threshold (* 256 1024 1024)
                    gc-cons-percentage 0.1)) t)
@@ -123,6 +125,7 @@
   :commands hide-mode-line-mode)
 
 (use-package all-the-icons
+  :if (display-graphic-p)
   :commands (all-the-icons-octicon
              all-the-icons-faicon
              all-the-icons-fileicon
@@ -190,13 +193,14 @@
   (winum-mode +1))
 
 
-;; (use-package solaire-mode
-;;   :hook
-;;   ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
-;;   (minibuffer-setup . solaire-mode-in-minibuffer)
-;;   :config
-;;   (solaire-global-mode +1)
-;;   (solaire-mode-swap-bg))
+(use-package solaire-mode
+  :hook (change-major-mode . turn-on-solaire-mode)
+  :hook (after-revert . turn-on-solaire-mode)
+  :hook (ediff-prepare-buffer . solaire-mode)
+  :hook (minibuffer-setup . solaire-mode-in-minibuffer)
+  :config
+  (setq solaire-mode-auto-swap-bg t)
+  (solaire-global-mode +1))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -352,21 +356,23 @@
 ;; Disable bidirectional text rendering for a modest performance boost.
 (setq-default bidi-display-reordering 'left-to-right
               bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)  ; Emacs 27 only
 
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(setq hippie-expand-try-functions-list '(try-expand-dabbrev
+(setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
+                                         try-expand-dabbrev
                                          try-expand-dabbrev-all-buffers
-                                         try-expand-dabbrev-from-kill
                                          try-complete-file-name-partially
                                          try-complete-file-name
                                          try-expand-all-abbrevs
                                          try-expand-list
-                                         try-expand-line
+                                         ;;try-expand-line
+                                         try-expand-dabbrev-from-kill
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
-(bind-key "M-s-/" #'hippie-expand)
+(bind-key "M-/" #'hippie-expand)
 
 (use-package helpful
   :commands (helpful--read-symbol
@@ -471,6 +477,7 @@
 ;; don't let the cursor go into minibuffer prompt
 (setq minibuffer-prompt-properties
       '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -643,7 +650,7 @@
 
   ;; set my path manually on mac
   (setenv "LANG" "en_US.UTF-8")
-  (let* ((mypaths '("~/bin" "~/homebrew/bin"))
+  (let* ((mypaths '("~/bin" "~/homebrew/bin" "~/google-cloud-sdk/bin/"))
          (expanded (mapcar 'expand-file-name mypaths)))
     (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
     (setq exec-path (append expanded exec-path))))
@@ -687,9 +694,9 @@
 (use-package gitignore-mode
   :mode ("\\.gitignore\\'" . gitignore-mode))
 
-(use-package gl-conf-mode
-  :load-path "site-lisp/gl-conf-mode"
-  :mode "gitolite\\.conf\\'")
+;; (use-package gl-conf-mode
+;;   :load-path "site-lisp/gl-conf-mode"
+;;   :mode "gitolite\\.conf\\'")
 
 (use-package magit
   :bind (("C-x C-z" . magit-status)
@@ -716,6 +723,8 @@
         magit-no-confirm '(stage-all-changes unstage-all-changes)
         magit-delete-by-moving-to-trash t
         magit-diff-refine-hunk 'all
+        magit-git-executable (executable-find magit-git-executable)
+        magit-revision-insert-related-refs nil
         magit-save-repository-buffers nil)
 
   (defadvice magit-status (around magit-fullscreen activate)
@@ -805,7 +814,7 @@
   :ensure nil
   :bind (("C-x C-j" . dired-jump))
   :init
-  (setq dired-listing-switches "--time-style long-iso -alhF"
+  (setq dired-listing-switches "--time-style long-iso -alhF --group-directories-first"
         dired-auto-revert-buffer t
         dired-hide-details-hide-symlink-targets nil
         dired-recursive-copies 'always
@@ -846,6 +855,7 @@
               ("." . dired-hide-dotfiles-mode)))
 
 (use-package all-the-icons-dired
+  :if (display-graphic-p)
   :hook (dired-mode . all-the-icons-dired-mode))
 
 
@@ -961,12 +971,13 @@
 (use-package ibuffer-projectile
   :hook (ibuffer . ibuffer-projectile-set-filter-groups)
   :config
-  (setq ibuffer-projectile-prefix
-        (concat (all-the-icons-octicon
-                 "file-directory"
-                 :face ibuffer-filter-group-name-face
-                 :v-adjust -0.05)
-                " ")))
+  (when (display-graphic-p)
+    (setq ibuffer-projectile-prefix
+          (concat (all-the-icons-octicon
+                   "file-directory"
+                   :face ibuffer-filter-group-name-face
+                   :v-adjust -0.05)
+                  " "))))
 
 (use-package shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
@@ -1107,6 +1118,7 @@
   (setq projectile-enable-caching t)
   (setq projectile-completion-system 'ivy)
   (setq projectile-sort-order 'recently-active)
+  projectile-globally-ignored-files '(".DS_Store" "TAGS")
   (when (executable-find "fd")
     (let ((fd-command "fd . --type f --print0"))
       (setq projectile-hg-command fd-command)
@@ -1119,16 +1131,26 @@
   (projectile-mode +1)
   (setq projectile-require-project-file nil))
 
+;; (setq projectile-project-root-files-bottom-up
+;;       (append '(".projectile"  ; projectile's root marker
+;;                 ".project"     ; doom project marker
+;;                 ".git")        ; Git VCS root dir
+;;               (when (executable-find "hg")
+;;                 '(".hg"))      ; Mercurial VCS root dir
+;;               (when (executable-find "bzr")
+;;                 '(".bzr")))    ; Bazaar VCS root dir
+;;       ;; This will be filled by other modules. We build this list manually so
+;;       ;; projectile doesn't perform so many file checks every time it resolves
+;;       ;; a project's root -- particularly when a file has no project.
+;;       projectile-project-root-files '()
+;;       projectile-project-root-files-top-down-recurring '("Makefile"))
+
+
+
 (use-package dumb-jump
-  :bind (("M-g o" . dumb-jump-go-other-window)
-         ("M-g j" . dumb-jump-go)
-         ("M-g b" . dumb-jump-back)
-         ("M-g i" . dumb-jump-go-prompt)
-         ("M-g x" . dumb-jump-go-prefer-external)
-         ("M-g z" . dumb-jump-go-prefer-external-other-window))
   :config
   (setq dumb-jump-selector 'ivy)
-  (setq dumb-jump-prefer-searcher 'ag))
+  (setq dumb-jump-prefer-searcher 'rg))
 
 (use-package company
   :defer 2
@@ -1396,7 +1418,8 @@ comment to the line."
 
 (use-package hl-line
   ;; Highlights the current line
-  :hook ((prog-mode text-mode conf-mode) . hl-line-mode)
+  :if (display-graphic-p)
+  :hook ((prog-mode text-mode conf-mode special-mode) . hl-line-mode)
   :config
   ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
   ;; performance boost. I also don't need to see it in other buffers.
@@ -1489,6 +1512,7 @@ comment to the line."
 ;;   :commands persistent-scratch-setup-default)
 
 (use-package vterm
+  :disabled t
   :hook (vterm-mode . hide-mode-line-mode)
   :commands vterm)
 
@@ -1505,12 +1529,20 @@ comment to the line."
   :commands ialign)
 
 (use-package treemacs
+  :init
+  (with-eval-after-load 'winum
+    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+  :config
+  (treemacs-follow-mode t)
+  (treemacs-filewatch-mode t)
+  (treemacs-fringe-indicator-mode t)
+  (pcase (cons (not (null (executable-find "git")))
+               (not (null treemacs-python-executable)))
+    (`(t . t)
+     (treemacs-git-mode 'deferred))
+    (`(t . _)
+     (treemacs-git-mode 'simple)))
   :commands treemacs)
-;; (treemacs-follow-mode t)
-;; (treemacs-filewatch-mode t)
-;; (treemacs-fringe-indicator-mode t)
-;; (treemacs-git-mode 'deferred)
-
 
 (use-package treemacs-projectile
   :after treemacs projectile
@@ -1547,6 +1579,7 @@ comment to the line."
         ivy-count-format "(%d/%d) "
         ivy-magic-tilde nil
         ivy-wrap t
+        ivy-on-del-error-function #'ignore
         ivy-dynamic-exhibit-delay-ms 200
         ivy-use-selectable-prompt t
         ;; ivy-re-builders-alist
@@ -1619,9 +1652,17 @@ comment to the line."
         ivy-rich-path-style 'abbrev))
 
 (use-package all-the-icons-ivy-rich
+  :if (display-graphic-p)
   :after ivy-rich
-  :init
+  :config
   (setq all-the-icons-ivy-rich-icon-size 0.75)
+  (nsubst-if '(ivy-rich-candidate (:width 60))
+             #'(lambda (item)
+                 (and
+                  (listp item)
+                  (eq (length item) 2)
+                  (eq (car item) 'ivy-rich-candidate)))
+             all-the-icons-ivy-rich-display-transformers-list)
   (all-the-icons-ivy-rich-mode 1))
 
 (use-package swiper
@@ -1643,16 +1684,20 @@ comment to the line."
 (use-package ivy-prescient
   :after (counsel swiper)
   :config
-  (setq ivy-prescient-enable-filtering nil
-        prescient-filter-method '(literal initialism fuzzy regexp)
-        ;; prescient-filter-method '(fuzzy)
+  (setq ivy-prescient-enable-filtering t
+        prescient-filter-method '(literal initialism prefix regexp)
+        prescient-sort-length-enable nil
         ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-mode +1)
   (prescient-persist-mode +1)
+  (defun jc-prescient-fuzzy-re-buider (query)
+    (let ((prescient-filter-method '(literal initialism regexp fuzzy)))
+      (ivy-prescient-re-builder query)))
   (setq ivy-re-builders-alist
         '((counsel-rg       . ivy--regex-plus)
           (swiper           . ivy--regex-plus)
           (swiper-isearch   . ivy--regex-plus)
+          (counsel-M-x      . jc-prescient-fuzzy-re-buider)
           (t                . ivy-prescient-re-builder))))
 
 
@@ -1700,6 +1745,37 @@ comment to the line."
 
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
+
+
+;; (use-package tramp
+;;   :ensure nil
+;;   :defer t
+;;   :config
+;;   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+;;   ;; TRAMP gcloud ssh
+;;   (add-to-list 'tramp-methods
+;;                '("gcssh"
+;;                  (tramp-login-program        "gcloud compute ssh")
+;;                  (tramp-login-args           (("%h")))
+;;                  (tramp-async-args           (("-q")))
+;;                  (tramp-remote-shell         "/bin/bash")
+;;                  (tramp-remote-shell-args    ("-c"))
+;;                  (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
+;;                                               ("-o" "UserKnownHostsFile=/dev/null")
+;;                                               ("-o" "StrictHostKeyChecking=no")))
+;;                  (tramp-default-port         22)))
+
+;;   (add-to-list 'tramp-methods
+;;                '("gcsshiap"
+;;                  (tramp-login-program        "gcloud compute ssh --tunnel-through-iap")
+;;                  (tramp-login-args           (("%h")))
+;;                  (tramp-async-args           (("-q")))
+;;                  (tramp-remote-shell         "/bin/bash")
+;;                  (tramp-remote-shell-args    ("-c"))
+;;                  (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
+;;                                               ("-o" "UserKnownHostsFile=/dev/null")
+;;                                               ("-o" "StrictHostKeyChecking=no")))
+;;                  (tramp-default-port         22))))
 
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
