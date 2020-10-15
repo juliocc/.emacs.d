@@ -522,6 +522,9 @@
       "Add dired directory to recentf file list."
       (recentf-add-file default-directory))))
 
+(use-package elec-pair
+  :hook (after-init . electric-pair-mode))
+
 (setq history-length 1000)
 
 (use-package savehist
@@ -640,7 +643,7 @@
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
-  (set-face-font 'default "Source Code Pro 14"))
+  (set-face-font 'default "Inconsolata 15"))
 
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
@@ -1068,6 +1071,7 @@
 (use-package flyspell
   :ensure nil
   :hook (text-mode . turn-on-flyspell)
+  :hook (prog-mode . flyspell-prog-mode)
   :commands (turn-on-flyspell flyspell-buffer))
 
 (use-package flyspell-correct
@@ -1595,7 +1599,7 @@ comment to the line."
           (counsel-search . 2)
           (t . 3))
         ivy-initial-inputs-alist nil
-        ivy-height 12)
+        ivy-height 20)
 
   ;; Highlight each ivy candidate including the following newline, so that it
   ;; extends to the right edge of the window
@@ -1748,6 +1752,9 @@ comment to the line."
 
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
+
+(use-package try
+  :commands try)
 
 ;; (use-package tramp
 ;;   :ensure nil
