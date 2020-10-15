@@ -193,14 +193,14 @@
   (winum-mode +1))
 
 
-(use-package solaire-mode
-  :hook (change-major-mode . turn-on-solaire-mode)
-  :hook (after-revert . turn-on-solaire-mode)
-  :hook (ediff-prepare-buffer . solaire-mode)
-  :hook (minibuffer-setup . solaire-mode-in-minibuffer)
-  :config
-  (setq solaire-mode-auto-swap-bg t)
-  (solaire-global-mode +1))
+;; (use-package solaire-mode
+;;   :hook (change-major-mode . turn-on-solaire-mode)
+;;   :hook (after-revert . turn-on-solaire-mode)
+;;   :hook (ediff-prepare-buffer . solaire-mode)
+;;   :hook (minibuffer-setup . solaire-mode-in-minibuffer)
+;;   :config
+;;   (setq solaire-mode-auto-swap-bg t)
+;;   (solaire-global-mode +1))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -246,7 +246,7 @@
 ;; Show absolute line numbers for narrowed regions makes it easier to tell the
 ;; buffer is narrowed, and where you are, exactly.
 (setq-default display-line-numbers-widen nil)
-                                        ;(global-linum-mode 1)
+;; (global-linum-mode 1)
 (add-hook! '(prog-mode-hook text-mode-hook conf-mode-hook)
            #'display-line-numbers-mode)
 
@@ -659,7 +659,7 @@
 ;; (setq ring-bell-function 'ignore)
 
 (use-package ns-auto-titlebar
-  :defer 10
+  :defer 1
   :if *is-a-windowed-mac*
   :config
   (ns-auto-titlebar-mode +1))
@@ -738,6 +738,9 @@
     (kill-buffer)
     (jump-to-register :magit-fullscreen)))
 
+(use-package git-gutter
+  :hook
+  ((prog-mode text-mode conf-mode) . git-gutter-mode))
 
 ;; (use-package xterm-color
 ;;   :defer t)
@@ -1746,7 +1749,6 @@ comment to the line."
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
 
-
 ;; (use-package tramp
 ;;   :ensure nil
 ;;   :defer t
@@ -1779,20 +1781,15 @@ comment to the line."
 
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
-;; TODO doom:  better-jumber dtrt-indent smartparens so-long
-;;  pcre2el  auto-revert ace-mc miniedit iedit hideshow
-;; company ivy-prescient workspaces lsp visual-line-mode
-;; ivy-occur cousel-mark-ring no-littering
-;; zstd (un)compress spell-fu-mode
+;; TODO doom:  dtrt-indent smartparens so-long
+;;  pcre2el  ace-mc miniedit iedit hideshow
+;; company  workspaces lsp visual-line-mode
+;; ivy-occur cousel-mark-ring
+;;  spell-fu-mode
 ;;
 
 ;; hydras: expand, multiple-cursors, avy
-
-;; (require 'mwheel)
-;; (mouse-wheel-mode t)
-;; (setq display-line-numbers-type 'relative)
-;; orderless
-;; tabs https://andreyorst.gitlab.io/posts/2020-05-10-making-emacs-tabs-look-like-in-atom/
+;; emacs-format-all-the-code
 
 (when init-file-debug
   (use-package-report))
