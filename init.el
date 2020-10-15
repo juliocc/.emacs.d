@@ -743,7 +743,20 @@
 
 (use-package git-gutter
   :hook
-  ((prog-mode text-mode conf-mode) . git-gutter-mode))
+  ((prog-mode text-mode conf-mode) . git-gutter-mode)
+  :init
+  (defhydra hydra-git-gutter
+    (:post
+     (if (window-live-p (git-gutter:popup-buffer-window))
+         (delete-window (git-gutter:popup-buffer-window))))
+    "git hunk"
+    ("p" git-gutter:previous-hunk "previous")
+    ("n" git-gutter:next-hunk "next")
+    ("s" git-gutter:stage-hunk "stage")
+    ("r" git-gutter:revert-hunk "revert")
+    ("m" git-gutter:mark-hunk "mark")
+    ("SPC" git-gutter:popup-hunk "toggle diffinfo")
+    ("q" nil "quit")))
 
 ;; (use-package xterm-color
 ;;   :defer t)
