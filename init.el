@@ -374,6 +374,8 @@
                                          try-complete-lisp-symbol))
 (bind-key "M-/" #'hippie-expand)
 
+(use-package hydra)
+
 (use-package helpful
   :commands (helpful--read-symbol
              helpful-command
@@ -745,18 +747,33 @@
   :hook
   ((prog-mode text-mode conf-mode) . git-gutter-mode)
   :init
-  (defhydra hydra-git-gutter
-    (:post
-     (if (window-live-p (git-gutter:popup-buffer-window))
-         (delete-window (git-gutter:popup-buffer-window))))
-    "git hunk"
-    ("p" git-gutter:previous-hunk "previous")
-    ("n" git-gutter:next-hunk "next")
-    ("s" git-gutter:stage-hunk "stage")
-    ("r" git-gutter:revert-hunk "revert")
-    ("m" git-gutter:mark-hunk "mark")
-    ("SPC" git-gutter:popup-hunk "toggle diffinfo")
-    ("q" nil "quit")))
+  (defhydra hydra-git-gutter (:body-pre (git-gutter-mode 1)
+                                        :hint nil)
+    "
+Git gutter:
+  _j_: next hunk        _s_tage hunk     _q_uit
+  _k_: previous hunk    _r_evert hunk    _Q_uit and deactivate git-gutter
+  ^ ^                   _p_opup hunk
+  _h_: first hunk
+  _l_: last hunk        set start _R_evision
+"
+    ("j" git-gutter:next-hunk)
+    ("k" git-gutter:previous-hunk)
+    ("h" (progn (goto-char (point-min))
+                (git-gutter:next-hunk 1)))
+    ("l" (progn (goto-char (point-min))
+                (git-gutter:previous-hunk 1)))
+    ("s" git-gutter:stage-hunk)
+    ("r" git-gutter:revert-hunk)
+    ("p" git-gutter:popup-hunk)
+    ("R" git-gutter:set-start-revision)
+    ("q" nil :color blue)
+    ("Q" (progn (git-gutter-mode -1)
+                ;; git-gutter-fringe doesn't seem to
+                ;; clear the markup right away
+                (sit-for 0.1)
+                (git-gutter:clear))
+     :color blue)))
 
 ;; (use-package xterm-color
 ;;   :defer t)
@@ -977,7 +994,10 @@
 
 ; ibuffer
 (use-package ibuffer
+  :hook (ibuffer . hydra:ibuffer-main/body)
   :bind ("C-x C-b" . ibuffer)
+  :bind (:map ibuffer-mode-map
+              ("." . hydra:ibuffer-main/body))
   :config
   (setq ibuffer-show-empty-filter-groups nil
         ibuffer-filter-group-name-face '(:inherit (success bold)))
@@ -985,7 +1005,107 @@
     (:name "Size"
            :inline t
            :header-mouse-map ibuffer-size-header-map)
-    (file-size-human-readable (buffer-size))))
+    (file-size-human-readable (buffer-size)))
+  :init
+  (defhydra hydra:ibuffer-main (:color pink :hint nil)
+    "
+  ^Navigation^  |  ^Mark^        |  ^Actions^        |  ^View^
+--^----------^--+--^----^--------+--^-------^--------+--^----^----------
+   _k_:    ʌ    |  _m_: mark     |  _D_: delete      |  _g_: refresh
+  _RET_: visit  |  _u_: unmark   |  _S_: save        |  _s_: sort...
+   _j_:    v    |  _*_: mark...  |  _a_: actions...  |  _/_: filter...
+--^----------^--+--^----^--------+--^-------^--------+--^----^----------
+"
+    ("j" ibuffer-forward-line)
+    ("RET" ibuffer-visit-buffer :color blue)
+    ("k" ibuffer-backward-line)
+
+    ("m" ibuffer-mark-forward)
+    ("u" ibuffer-unmark-forward)
+    ("*" hydra:ibuffer-mark/body :color blue)
+
+    ("D" ibuffer-do-delete)
+    ("S" ibuffer-do-save)
+    ("a" hydra:ibuffer-action/body :color blue)
+
+    ("g" ibuffer-update)
+    ("s" hydra:ibuffer-sort/body :color blue)
+    ("/" hydra:ibuffer-filter/body :color blue)
+
+    ("o" ibuffer-visit-buffer-other-window "other window" :color blue)
+    ("q" nil "toggle hydra" :color blue)
+    ("." nil "toggle hydra" :color blue))
+
+
+  (defhydra hydra:ibuffer-mark (:color teal :columns 5
+                                       :after-exit (hydra:ibuffer-main/body))
+    "Mark"
+    ("*" ibuffer-unmark-all "unmark all")
+    ("M" ibuffer-mark-by-mode "mode")
+    ("m" ibuffer-mark-modified-buffers "modified")
+    ("u" ibuffer-mark-unsaved-buffers "unsaved")
+    ("s" ibuffer-mark-special-buffers "special")
+    ("r" ibuffer-mark-read-only-buffers "read-only")
+    ("/" ibuffer-mark-dired-buffers "dired")
+    ("e" ibuffer-mark-dissociated-buffers "dissociated")
+    ("h" ibuffer-mark-help-buffers "help")
+    ("z" ibuffer-mark-compressed-file-buffers "compressed")
+    ("f" ibuffer-mark-by-file-name-regexp "file name regexp")
+
+    ("b" hydra:ibuffer-main/body "back" :color blue)
+    ("q" hydra:ibuffer-main/body "back" :color blue))
+
+  (defhydra hydra:ibuffer-action (:color teal :columns 4
+                                         :after-exit
+                                         (if (eq major-mode 'ibuffer-mode)
+                                             (hydra:ibuffer-main/body)))
+    "Action"
+    ("A" ibuffer-do-view "view")
+    ("E" ibuffer-do-eval "eval")
+    ("F" ibuffer-do-shell-command-file "shell-command-file")
+    ("I" ibuffer-do-query-replace-regexp "query-replace-regexp")
+    ("H" ibuffer-do-view-other-frame "view-other-frame")
+    ("N" ibuffer-do-shell-command-pipe-replace "shell-cmd-pipe-replace")
+    ("M" ibuffer-do-toggle-modified "toggle-modified")
+    ("O" ibuffer-do-occur "occur")
+    ("P" ibuffer-do-print "print")
+    ("Q" ibuffer-do-query-replace "query-replace")
+    ("R" ibuffer-do-rename-uniquely "rename-uniquely")
+    ("T" ibuffer-do-toggle-read-only "toggle-read-only")
+    ("U" ibuffer-do-replace-regexp "replace-regexp")
+    ("V" ibuffer-do-revert "revert")
+    ("W" ibuffer-do-view-and-eval "view-and-eval")
+    ("X" ibuffer-do-shell-command-pipe "shell-command-pipe")
+
+    ("b" nil "back")
+    ("q" nil "back"))
+
+  (defhydra hydra:ibuffer-sort (:color amaranth :columns 3)
+    "Sort"
+    ("i" ibuffer-invert-sorting "invert")
+    ("a" ibuffer-do-sort-by-alphabetic "alphabetic")
+    ("v" ibuffer-do-sort-by-recency "recently used")
+    ("s" ibuffer-do-sort-by-size "size")
+    ("f" ibuffer-do-sort-by-filename/process "filename")
+    ("m" ibuffer-do-sort-by-major-mode "mode")
+
+    ("b" hydra:ibuffer-main/body "back" :color blue)
+    ("q" hydra:ibuffer-main/body "back" :color blue))
+
+  (defhydra hydra:ibuffer-filter (:color amaranth :columns 4)
+    "Filter"
+    ("m" ibuffer-filter-by-used-mode "mode")
+    ("M" ibuffer-filter-by-derived-mode "derived mode")
+    ("n" ibuffer-filter-by-name "name")
+    ("c" ibuffer-filter-by-content "content")
+    ("e" ibuffer-filter-by-predicate "predicate")
+    ("f" ibuffer-filter-by-filename "filename")
+    (">" ibuffer-filter-by-size-gt "size")
+    ("<" ibuffer-filter-by-size-lt "size")
+    ("/" ibuffer-filter-disable "disable")
+
+    ("b" hydra:ibuffer-main/body "back" :color blue)
+    ("q" hydra:ibuffer-main/body "back" :color blue)))
 
 (use-package ibuffer-projectile
   :hook (ibuffer . ibuffer-projectile-set-filter-groups)
@@ -1760,14 +1880,90 @@ comment to the line."
 ;;   :config
 ;;   (push 'company-lsp company-backends))
 
-(use-package hydra
-  :defer t)
 
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
 
 (use-package try
   :commands try)
+
+(use-package smerge-mode
+  :after hydra
+  :config
+  (defhydra hydra:smerge
+    (:color pink :hint nil :post (smerge-auto-leave))
+    "
+^Move^       ^Keep^               ^Diff^                 ^Other^
+^^-----------^^-------------------^^---------------------^^-------
+_n_ext       _b_ase               _<_: upper/base        _C_ombine
+_p_rev       _u_pper              _=_: upper/lower       _r_esolve
+^^           _l_ower              _>_: base/lower        _k_ill current
+^^           _a_ll                _R_efine
+^^           _RET_: current       _E_diff
+"
+    ("n" smerge-next)
+    ("p" smerge-prev)
+    ("b" smerge-keep-base)
+    ("u" smerge-keep-upper)
+    ("l" smerge-keep-lower)
+    ("a" smerge-keep-all)
+    ("RET" smerge-keep-current)
+    ("\C-m" smerge-keep-current)
+    ("<" smerge-diff-base-upper)
+    ("=" smerge-diff-upper-lower)
+    (">" smerge-diff-base-lower)
+    ("R" smerge-refine)
+    ("E" smerge-ediff)
+    ("C" smerge-combine-with-next)
+    ("r" smerge-resolve)
+    ("k" smerge-kill-current)
+    ("ZZ" (lambda ()
+            (interactive)
+            (save-buffer)
+            (bury-buffer))
+     "Save and bury buffer" :color blue)
+    ("q" nil "cancel" :color blue))
+  :hook (magit-diff-visit-file . (lambda ()
+                                   (when smerge-mode
+                                     (hydra:smerge/body)))))
+
+;; TODO: put inside (usepackage kmacro)
+(defhydra hydra:macro (:hint nil :color pink :pre
+                             (when defining-kbd-macro
+                               (kmacro-end-macro 1)))
+  "
+  ^Create-Cycle^   ^Basic^           ^Insert^        ^Save^         ^Edit^
+╭─────────────────────────────────────────────────────────────────────────╯
+     ^_i_^           [_e_] execute    [_n_] insert    [_b_] name      [_'_] previous
+     ^^↑^^           [_d_] delete     [_t_] set       [_K_] key       [_,_] last
+ _j_ ←   → _l_       [_o_] edit       [_a_] add       [_x_] register
+     ^^↓^^           [_r_] region     [_f_] format    [_B_] defun
+     ^_k_^           [_m_] step
+    ^^   ^^          [_s_] swap
+"
+  ("j" kmacro-start-macro :color blue)
+  ("l" kmacro-end-or-call-macro-repeat)
+  ("i" kmacro-cycle-ring-previous)
+  ("k" kmacro-cycle-ring-next)
+  ("r" apply-macro-to-region-lines)
+  ("d" kmacro-delete-ring-head)
+  ("e" kmacro-end-or-call-macro-repeat)
+  ("o" kmacro-edit-macro-repeat)
+  ("m" kmacro-step-edit-macro)
+  ("s" kmacro-swap-ring)
+  ("n" kmacro-insert-counter)
+  ("t" kmacro-set-counter)
+  ("a" kmacro-add-counter)
+  ("f" kmacro-set-format)
+  ("b" kmacro-name-last-macro)
+  ("K" kmacro-bind-to-key)
+  ("B" insert-kbd-macro)
+  ("x" kmacro-to-register)
+  ("'" kmacro-edit-macro)
+  ("," edit-kbd-macro)
+  ("q" nil :color blue))
+
+(bind-key "C-x C-k h" #'hydra:macro/body)
 
 ;; (use-package tramp
 ;;   :ensure nil
