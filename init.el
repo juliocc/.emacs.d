@@ -1327,7 +1327,6 @@ Git gutter:
 (use-package company-box
   :hook (company-mode . company-box-mode)
   :config
-
   ;; https://github.com/sebastiencs/company-box/issues/44
   (defun jc/fix-company-scrollbar (orig-fn &rest args)
     "disable company-box scrollbar"
@@ -1470,9 +1469,10 @@ Git gutter:
   (avy-setup-default))
 
 (use-package ace-window
+  :after avy
   :bind ([remap other-window] . ace-window)
   :config
-  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
   (setq aw-dispatch-always nil))
 
 (use-package expand-region
@@ -1932,48 +1932,40 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
             (save-buffer)
             (bury-buffer))
      "Save and bury buffer" :color blue)
-    ("q" nil "cancel" :color blue))
-  :hook (magit-diff-visit-file . (lambda ()
-                                   (when smerge-mode
-                                     (hydra:smerge/body)))))
+    ("q" nil "cancel" :color blue)))
 
-;; TODO: put inside (usepackage kmacro)
-(defhydra hydra:macro (:hint nil :color pink :pre
-                             (when defining-kbd-macro
-                               (kmacro-end-macro 1)))
-  "
-  ^Create-Cycle^   ^Basic^           ^Insert^        ^Save^         ^Edit^
-╭─────────────────────────────────────────────────────────────────────────╯
-     ^_i_^           [_e_] execute    [_n_] insert    [_b_] name      [_'_] previous
-     ^^↑^^           [_d_] delete     [_t_] set       [_K_] key       [_,_] last
- _j_ ←   → _l_       [_o_] edit       [_a_] add       [_x_] register
-     ^^↓^^           [_r_] region     [_f_] format    [_B_] defun
-     ^_k_^           [_m_] step
-    ^^   ^^          [_s_] swap
+(use-package kmacro
+  :ensure nil
+  :bind ("C-x r h" . hydra:rectangle/body)
+  :config
+  (defhydra hydra:rectangle (:body-pre (rectangle-mark-mode 1)
+                                       :color pink
+                                       :hint nil
+                                       :post (deactivate-mark))
+    "
+  ^_k_^       _w_ copy      _o_pen       _N_umber-lines
+_h_   _l_     _y_ank        _t_ype       _e_xchange-point
+  ^_j_^       _d_ kill      _c_lear      _r_eset-region-mark
+^^^^          _u_ndo        _q_ quit     ^ ^
 "
-  ("j" kmacro-start-macro :color blue)
-  ("l" kmacro-end-or-call-macro-repeat)
-  ("i" kmacro-cycle-ring-previous)
-  ("k" kmacro-cycle-ring-next)
-  ("r" apply-macro-to-region-lines)
-  ("d" kmacro-delete-ring-head)
-  ("e" kmacro-end-or-call-macro-repeat)
-  ("o" kmacro-edit-macro-repeat)
-  ("m" kmacro-step-edit-macro)
-  ("s" kmacro-swap-ring)
-  ("n" kmacro-insert-counter)
-  ("t" kmacro-set-counter)
-  ("a" kmacro-add-counter)
-  ("f" kmacro-set-format)
-  ("b" kmacro-name-last-macro)
-  ("K" kmacro-bind-to-key)
-  ("B" insert-kbd-macro)
-  ("x" kmacro-to-register)
-  ("'" kmacro-edit-macro)
-  ("," edit-kbd-macro)
-  ("q" nil :color blue))
+    ("k" rectangle-previous-line)
+    ("j" rectangle-next-line)
+    ("h" rectangle-backward-char)
+    ("l" rectangle-forward-char)
+    ("d" kill-rectangle)                    ;; C-x r k
+    ("y" yank-rectangle)                    ;; C-x r y
+    ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+    ("o" open-rectangle)                    ;; C-x r o
+    ("t" string-rectangle)                  ;; C-x r t
+    ("c" clear-rectangle)                   ;; C-x r c
+    ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+    ("N" rectangle-number-lines)            ;; C-x r N
+    ("r" (if (region-active-p)
+             (deactivate-mark)
+           (rectangle-mark-mode 1)))
+    ("u" undo nil)
+    ("q" nil)))
 
-(bind-key "C-x C-k h" #'hydra:macro/body)
 
 ;; (use-package tramp
 ;;   :ensure nil
