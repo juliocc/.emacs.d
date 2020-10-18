@@ -47,7 +47,10 @@
       initial-scratch-message nil)
 
 ;; Keep emacs custom-settings in separate file
-(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(eval-and-compile
+  (defun emacs-path (path)
+    (expand-file-name path user-emacs-directory)))
+(setq custom-file (emacs-path "custom.el"))
 (load custom-file)
 
 ;;==================================================
@@ -306,7 +309,7 @@
       eval-expression-print-level nil
       echo-keystrokes 0.02                  ; Show keystrokes in progress
       confirm-kill-emacs 'yes-or-no-p       ; ask me before closing
-      history-length t                      ; looong history
+      history-length 2000                   ; looong history
       use-dialog-box nil                    ; never show a dialog box
       use-file-dialog nil
       mark-even-if-inactive t
@@ -361,18 +364,23 @@
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
-                                         try-expand-dabbrev
-                                         try-expand-dabbrev-all-buffers
-                                         try-complete-file-name-partially
-                                         try-complete-file-name
-                                         try-expand-all-abbrevs
-                                         try-expand-list
-                                         ;;try-expand-line
-                                         try-expand-dabbrev-from-kill
-                                         try-complete-lisp-symbol-partially
-                                         try-complete-lisp-symbol))
-(bind-key "M-/" #'hippie-expand)
+(use-package hippie-exp
+  :ensure nil
+  :bind (("M-/"   . hippie-expand)
+         ("C-M-/" . dabbrev-completion))
+  :init
+  (setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
+                                           try-expand-dabbrev
+                                           try-expand-dabbrev-all-buffers
+                                           try-complete-file-name-partially
+                                           try-complete-file-name
+                                           try-expand-all-abbrevs
+                                           try-expand-list
+                                           ;;try-expand-line
+                                           try-expand-dabbrev-from-kill
+                                           try-complete-lisp-symbol-partially
+                                           try-complete-lisp-symbol)))
+
 
 (use-package hydra)
 
@@ -435,8 +443,8 @@
         version-control t         ; use versioned backups
         create-lockfiles nil
         ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
-        auto-save-file-name-transforms `((".*" ,(concat user-emacs-directory "backups/") t))
-        backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))))
+        auto-save-file-name-transforms `((".*" ,(emacs-path "backups") t))
+        backup-directory-alist `(("." . ,(emacs-path "backups")))))
 
 
 ;; create the autosave dir if necessary, since emacs won't.
@@ -515,7 +523,7 @@
   ;; :commands recentf-open-files
   :config
   (setq recentf-max-saved-items 500
-        recentf-save-file (expand-file-name ".recentf" user-emacs-directory)
+        recentf-save-file (emacs-path ".recentf")
         recentf-auto-cleanup 'never
         recentf-max-menu-items 0
         recentf-exclude '("/tmp/" "/ssh:"))
@@ -527,12 +535,10 @@
 (use-package elec-pair
   :hook (after-init . electric-pair-mode))
 
-(setq history-length 1000)
-
 (use-package savehist
   :hook (after-init . savehist-mode)
   :config
-  (setq savehist-file (expand-file-name ".savehist" user-emacs-directory)
+  (setq savehist-file (emacs-path ".savehist")
         savehist-save-minibuffer-history t
         savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
   (add-hook! 'kill-emacs-hook
@@ -581,7 +587,7 @@
   :ensure nil
   :hook (after-init . save-place-mode)
   :config
-  (setq save-place-file (expand-file-name ".places" user-emacs-directory)))
+  (setq save-place-file (emacs-path ".places")))
 
 ;; guide-key setup
 ;; (use-package guide-key
@@ -1331,12 +1337,13 @@ Git gutter:
 
   (advice-add #'company-box--update-scrollbar :around #'jc/fix-company-scrollbar))
 
-;; (use-package yasnippet
-;;   :commands yas-hippie-try-expand
-;;   :init
-;;   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-;;   :config
-;;   (yas-global-mode +1))
+(use-package yasnippet
+  :hook (prog-mode . yas-minor-mode)
+  :commands yas-hippie-try-expand
+  :init
+  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
+  :config
+  (yas-load-directory (emacs-path "snippets")))
 
 ;; (use-package yasnippet-snippets         ; Collection of snippets
 ;;   :after yasnippet)
@@ -1494,7 +1501,7 @@ comment to the line."
 ;;==================================================
 
 (setq jc-local-settings
-      (expand-file-name "jc-local.el" user-emacs-directory))
+      (emacs-path "jc-local.el"))
 
 (if (file-exists-p jc-local-settings)
     (load-file jc-local-settings))
@@ -1889,6 +1896,9 @@ comment to the line."
 
 (use-package smerge-mode
   :after hydra
+  :hook (magit-diff-visit-file . (lambda ()
+                                   (when smerge-mode
+                                     (hydra:smerge/body))))
   :config
   (defhydra hydra:smerge
     (:color pink :hint nil :post (smerge-auto-leave))
