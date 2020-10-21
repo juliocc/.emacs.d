@@ -1337,7 +1337,7 @@ Git gutter:
   (advice-add #'company-box--update-scrollbar :around #'jc/fix-company-scrollbar))
 
 (use-package yasnippet
-  :hook (prog-mode . yas-minor-mode)
+  :hook ((prog-mode text-mode) . yas-minor-mode)
   :commands yas-hippie-try-expand
   :init
   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)

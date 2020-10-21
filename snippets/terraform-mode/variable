@@ -5,7 +5,7 @@
 variable "${1:name}" {
   description = "$2"
   type = ${3:string}
-  default = ${4:""}
-}
+  ${4:default = ${5:""
+  }}}
 
 $0
