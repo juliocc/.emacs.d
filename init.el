@@ -1967,35 +1967,37 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
     ("q" nil)))
 
 
-;; (use-package tramp
-;;   :ensure nil
-;;   :defer t
-;;   :config
-;;   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-;;   ;; TRAMP gcloud ssh
-;;   (add-to-list 'tramp-methods
-;;                '("gcssh"
-;;                  (tramp-login-program        "gcloud compute ssh")
-;;                  (tramp-login-args           (("%h")))
-;;                  (tramp-async-args           (("-q")))
-;;                  (tramp-remote-shell         "/bin/bash")
-;;                  (tramp-remote-shell-args    ("-c"))
-;;                  (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-;;                                               ("-o" "UserKnownHostsFile=/dev/null")
-;;                                               ("-o" "StrictHostKeyChecking=no")))
-;;                  (tramp-default-port         22)))
+(use-package tramp
+  :ensure nil
+  :defer t
+  :config
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  ;; TRAMP gcloud ssh
+  (add-to-list 'tramp-methods
+               '("iap"
+                 (tramp-login-program        "gcloud compute ssh --tunnel-through-iap")
+                 (tramp-login-args           (("%h")))
+                 (tramp-async-args           (("-q")))
+                 (tramp-remote-shell         "/bin/bash")
+                 (tramp-remote-shell-args    ("-c"))
+                 (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
+                                              ("-o" "UserKnownHostsFile=/dev/null")
+                                              ("-o" "StrictHostKeyChecking=no")))
+                 (tramp-default-port         22))))
 
-;;   (add-to-list 'tramp-methods
-;;                '("gcsshiap"
-;;                  (tramp-login-program        "gcloud compute ssh --tunnel-through-iap")
-;;                  (tramp-login-args           (("%h")))
-;;                  (tramp-async-args           (("-q")))
-;;                  (tramp-remote-shell         "/bin/bash")
-;;                  (tramp-remote-shell-args    ("-c"))
-;;                  (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-;;                                               ("-o" "UserKnownHostsFile=/dev/null")
-;;                                               ("-o" "StrictHostKeyChecking=no")))
-;;                  (tramp-default-port         22))))
+;; (add-to-list 'tramp-methods
+;;              '("gcssh"
+;;                (tramp-login-program        "gcloud compute ssh")
+;;                (tramp-login-args           (("%h")))
+;;                (tramp-async-args           (("-q")))
+;;                (tramp-remote-shell         "/bin/bash")
+;;                (tramp-remote-shell-args    ("-c"))
+;;                (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
+;;                                             ("-o" "UserKnownHostsFile=/dev/null")
+;;                                             ("-o" "StrictHostKeyChecking=no")))
+;;                (tramp-default-port         22)))
+
+
 
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
