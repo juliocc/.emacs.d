@@ -13,7 +13,7 @@
              (dolist (handler file-name-handler-alist)
                (add-to-list 'file-name-handler-alist-old handler))
              (setq file-name-handler-alist file-name-handler-alist-old
-                   gc-cons-threshold (* 256 1024 1024)
+                   gc-cons-threshold (* 32 1024 1024)
                    gc-cons-percentage 0.1)) t)
 
 ;; In noninteractive sessions, prioritize non-byte-compiled source files to
@@ -116,8 +116,8 @@
   :hook (emacs-startup . gcmh-mode)
   :config
   (setq gcmh-idle-delay 10
-        gcmh-high-cons-threshold (* 256 1024 1024)
-        gcmh-low-cons-threshold (* 64 1024 1024)
+        gcmh-high-cons-threshold (* 64 1024 1024)
+        gcmh-low-cons-threshold (* 32 1024 1024)
         gcmh-verbose nil))
 
 ;;==================================================
