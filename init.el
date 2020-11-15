@@ -533,7 +533,9 @@
       (recentf-add-file default-directory))))
 
 (use-package elec-pair
-  :hook (after-init . electric-pair-mode))
+  :hook (after-init . electric-pair-mode)
+  :config
+  (setq electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit))
 
 (use-package savehist
   :hook (after-init . savehist-mode)
@@ -1459,13 +1461,13 @@ Git gutter:
 
 (use-package avy
   :bind (("M-g g" . avy-goto-line)
-         ;; ("C-'" . avy-goto-char)
          ("C-c C-j" . avy-resume)
          ("C-c C-n" . avy-next)
          ("C-c C-p" . avy-prev)
-         ("C-'" . avy-goto-char-timer))
+         ("C-'" . avy-goto-char)
+         ("C-\"" . avy-goto-char-timer))
   :config
-  (setq avy-timeout-seconds 0.25)
+  (setq avy-timeout-seconds 0.4)
   (avy-setup-default))
 
 (use-package ace-window
@@ -1476,7 +1478,10 @@ Git gutter:
   (setq aw-dispatch-always nil))
 
 (use-package expand-region
-  :bind ("C-=" . er/expand-region))
+  :bind (("C-=" . er/expand-region)
+         ("C-c I" . er/mark-inside-pairs)
+         ("C-c O" . er/mark-outside-pairs)
+         ("C-c '" . er/mark-inside-quotes)))
 
 (use-package rainbow-mode
   :hook (css-mode html-mode))
