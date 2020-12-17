@@ -633,7 +633,7 @@
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME"))
-  (set-face-font 'default "Inconsolata 15"))
+  (set-face-font 'default "Iosevka SS09 18"))
 
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
@@ -1108,15 +1108,15 @@ Git gutter:
 (use-package shrink-whitespace
   :bind ("M-SPC" . shrink-whitespace))
 
-;; (use-package beacon
-;;   :defer 2
-;;   :config
-;;   (setq beacon-color "#6F6F6F"
-;;         beacon-blink-when-focused  t)
-;;   (defun not-display-graphic-p ()
-;;     (not (display-graphic-p)))
-;;   (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
-;;   (beacon-mode))
+(use-package beacon
+  :defer 2
+  :config
+  (setq beacon-color "#6F6F6F"
+        beacon-blink-when-focused  t)
+  (defun not-display-graphic-p ()
+    (not (display-graphic-p)))
+  (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
+  (beacon-mode))
 
 (use-package pulse
   :ensure nil
