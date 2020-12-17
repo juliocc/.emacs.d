@@ -171,30 +171,10 @@
                 (hide-mode-line-mode))))
   (doom-modeline-mode))
 
-
-;; (use-package centaur-tabs
-;;   :init
-;;   (setq centaur-tabs-style "bar"
-;;         centaur-tabs-height 32
-;;         centaur-tabs-gray-out-icons 'buffer
-;;         centaur-tabs-set-icons t
-;;         centaur-tabs-set-bar 'under
-;;         centaur-tabs-set-close-button t
-;;         centaur-tabs-icon-scale-factor 0.7
-;;         centaur-tabs-close-button "✕"
-;;         centaur-tabs-show-navigation-buttons nil
-;;         centaur-tabs-set-modified-marker nil
-;;         centaur-tabs-modified-marker "⬤")
-;;   :config
-;;   (centaur-tabs-headline-match)
-;;   (centaur-tabs-mode +1)
-;;   (after! undo-tree (add-hook 'undo-tree-visualizer-mode-hook #'centaur-tabs-local-mode)))
-
 (use-package winum
   :defer 3
   :config
   (winum-mode +1))
-
 
 ;; (use-package solaire-mode
 ;;   :hook (change-major-mode . turn-on-solaire-mode)
@@ -930,8 +910,7 @@ Git gutter:
                 "<script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>"
                 "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>")
         markdown-open-command (cond (*is-a-mac* "open")
-                                    (t "xdg-open")))
-  )
+                                    (t "xdg-open"))))
 
 (use-package grip-mode
   :commands grip-mode)
@@ -1235,25 +1214,6 @@ Git gutter:
 ;;            ("n" . flyspell-check-next-highlighted-word)
 ;;            ("c" . cycle-ispell-languages))
 
-;;==================================================
-;; mark customizations
-;;==================================================
-(use-package jc-marks
-  :ensure nil
-  :commands exchange-point-and-mark-no-activate
-  :bind (("C-`" . push-mark-no-activate)
-         ("M-`" . jump-to-mark)))
-
-
-;;==================================================
-;; smex settings
-;;==================================================
-
-;; (use-package amx
-;;   :after ivy
-;;   :config
-;;   (amx-mode +1))
-
 (use-package projectile
   :bind-keymap ("C-c p" . projectile-command-map)
   :config
@@ -1309,7 +1269,7 @@ Git gutter:
                 (local-set-key (kbd "<tab>")
                                #'company-indent-or-complete-common)))
   :config
-  (setq company-idle-delay 0.2
+  (setq company-idle-delay 0.6
         company-show-numbers t
         company-tooltip-align-annotations t
         company-minimum-prefix-length 1
@@ -1467,7 +1427,7 @@ Git gutter:
          ("C-'" . avy-goto-char)
          ("C-\"" . avy-goto-char-timer))
   :config
-  (setq avy-timeout-seconds 0.4)
+  (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
 
 (use-package ace-window
@@ -1799,6 +1759,22 @@ comment to the line."
 (use-package ivy-rich
   :after ivy
   :config
+
+  (defvar ivy-rich--ivy-switch-buffer-cache
+    (make-hash-table :test 'equal))
+
+  (define-advice ivy-rich--ivy-switch-buffer-transformer
+      (:around (old-fn x) cache)
+    (let ((ret (gethash x ivy-rich--ivy-switch-buffer-cache)))
+      (unless ret
+        (setq ret (funcall old-fn x))
+        (puthash x ret ivy-rich--ivy-switch-buffer-cache))
+      ret))
+
+  (define-advice +ivy/switch-buffer
+      (:before (&rest _) ivy-rich-reset-cache)
+    (clrhash ivy-rich--ivy-switch-buffer-cache))
+
   (ivy-rich-mode 1)
   (setq ivy-rich-switch-buffer-align-virtual-buffer t
         ivy-rich-path-style 'abbrev))
