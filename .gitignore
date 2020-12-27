@@ -32,3 +32,4 @@ flycheck_init.el
 /.cache/
 /.lsp-session-v1
 /var/
+/snippets/markdown-mode/

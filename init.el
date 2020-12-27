@@ -1760,20 +1760,32 @@ comment to the line."
   :after ivy
   :config
 
-  (defvar ivy-rich--ivy-switch-buffer-cache
+  ;; -- fix https://github.com/Yevgnen/ivy-rich/issues/87
+  (defvar ek/ivy-rich-cache
     (make-hash-table :test 'equal))
 
-  (define-advice ivy-rich--ivy-switch-buffer-transformer
-      (:around (old-fn x) cache)
-    (let ((ret (gethash x ivy-rich--ivy-switch-buffer-cache)))
-      (unless ret
-        (setq ret (funcall old-fn x))
-        (puthash x ret ivy-rich--ivy-switch-buffer-cache))
-      ret))
+  (defun ek/ivy-rich-cache-lookup (delegate candidate)
+    (let ((result (gethash candidate ek/ivy-rich-cache)))
+      (unless result
+        (setq result (funcall delegate candidate))
+        (puthash candidate result ek/ivy-rich-cache))
+      result))
 
-  (define-advice +ivy/switch-buffer
-      (:before (&rest _) ivy-rich-reset-cache)
-    (clrhash ivy-rich--ivy-switch-buffer-cache))
+  (defun ek/ivy-rich-cache-reset ()
+    (clrhash ek/ivy-rich-cache))
+
+  (defun ek/ivy-rich-cache-rebuild ()
+    (mapc (lambda (buffer)
+            (ivy-rich--ivy-switch-buffer-transformer (buffer-name buffer)))
+          (buffer-list)))
+
+  (defun ek/ivy-rich-cache-rebuild-trigger ()
+    (ek/ivy-rich-cache-reset)
+    (run-with-idle-timer 1 nil 'ek/ivy-rich-cache-rebuild))
+
+  (advice-add 'ivy-rich--ivy-switch-buffer-transformer :around 'ek/ivy-rich-cache-lookup)
+  (advice-add 'ivy-switch-buffer :after 'ek/ivy-rich-cache-rebuild-trigger)
+  ;; --
 
   (ivy-rich-mode 1)
   (setq ivy-rich-switch-buffer-align-virtual-buffer t
