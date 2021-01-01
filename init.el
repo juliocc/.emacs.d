@@ -1,25 +1,16 @@
 (defvar file-name-handler-alist-old file-name-handler-alist)
 
-(setq package-enable-at-startup nil
-      file-name-handler-alist nil
-      inhibit-compacting-font-caches t
-      message-log-max 16384
-      gc-cons-threshold most-positive-fixnum
-      gc-cons-percentage 0.6
-      auto-window-vscroll nil)
+(setq file-name-handler-alist nil
+      gc-cons-threshold most-positive-fixnum)
 
 (add-hook 'emacs-startup-hook
-          `(lambda ()
-             (dolist (handler file-name-handler-alist)
-               (add-to-list 'file-name-handler-alist-old handler))
-             (setq file-name-handler-alist file-name-handler-alist-old
-                   gc-cons-threshold (* 32 1024 1024)
-                   gc-cons-percentage 0.1)) t)
+          (lambda ()
+            (dolist (handler file-name-handler-alist)
+              (add-to-list 'file-name-handler-alist-old handler))
+            (setq file-name-handler-alist file-name-handler-alist-old) t))
 
-;; In noninteractive sessions, prioritize non-byte-compiled source files to
-;; prevent the use of stale byte-code. Otherwise, it saves us a little IO time
-;; to skip the mtime checks on every *.elc file.
-(setq load-prefer-newer noninteractive)
+(setq load-prefer-newer noninteractive
+      inhibit-compacting-font-caches t)
 
 ;; Put this file in register e for easy access
 (set-register ?e `(file . ,user-init-file))
@@ -27,14 +18,22 @@
 ;;==================================================
 ;; Setup basic stuff
 ;;==================================================
-
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
-(defvar jc-interactive-mode (not noninteractive)
-  "If non-nil, Emacs is in interactive mode.")
+(defvar jc-interactive-mode (not noninteractive))
+(defvar jc-debug init-file-debug)
 
-;; Turn off mouse interface early in startup to avoid momentary display
-(unless *is-a-windowed-mac* ; hide menu if not in Mac
+(if jc-debug
+    (setq use-package-verbose t
+          use-package-expand-minimally nil
+          use-package-compute-statistics t
+          garbage-collection-messages t
+          message-log-max 16384
+          debug-on-error t)
+  (setq use-package-verbose nil
+        use-package-expand-minimally t))
+
+(unless *is-a-windowed-mac*
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1)))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
@@ -87,16 +86,8 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-(if init-file-debug
-    (setq use-package-verbose t
-          use-package-expand-minimally nil
-          use-package-compute-statistics t
-          debug-on-error t)
-  (setq use-package-verbose nil
-        use-package-expand-minimally t))
-
 ;; (use-package benchmark-init
-;;   :when init-file-debug
+;;   :when jc-debug
 ;;   :demand t
 ;;   :hook (window-setup . benchmark-init/deactivate))
 
@@ -123,13 +114,12 @@
   :load-path "site-lisp")
 
 (use-package gcmh
-  :if jc-interactive-mode
   :hook (emacs-startup . gcmh-mode)
   :config
   (setq gcmh-idle-delay 10
-        gcmh-high-cons-threshold (* 64 1024 1024)
-        gcmh-low-cons-threshold (* 32 1024 1024)
-        gcmh-verbose nil))
+        gcmh-high-cons-threshold (* 32 1024 1024)
+        gcmh-low-cons-threshold (* 16 1024 1024)
+        gcmh-verbose jc-debug))
 
 ;;==================================================
 ;; Appearance settings
@@ -208,8 +198,8 @@
 (when window-system
   (setq frame-title-format '(buffer-file-name "%f" ("%b"))
         icon-title-format frame-title-format)
-  (tooltip-mode nil)
-  (blink-cursor-mode nil))
+  (tooltip-mode -1)
+  (blink-cursor-mode -1))
 
 ;; Set default font
 ;(if (find-font (font-spec :name "Fira Code"))
@@ -294,7 +284,7 @@
 ;;=================================================
 
 (setq mouse-yank-at-point t                 ; mouse pastes at point
-      select-enable-clipboard t          ; Allow pasting selection outside of Emacs
+      select-enable-clipboard t             ; Allow pasting selection outside of Emacs
       global-auto-revert-non-file-buffers t ; auto refresh dired
       auto-revert-verbose nil               ; and be quiet about it
       eval-expression-print-level nil
@@ -335,7 +325,6 @@
 
 
 (setq-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) show-trailing-whitespace t)
-;(setq-default visible-bell t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
 (setq-default word-wrap t)
@@ -1263,9 +1252,9 @@ Git gutter:
   :commands (company-mode company-indent-or-complete-common)
   :init
   (add-hook 'prog-mode-hook
-            #'(lambda ()
-                (local-set-key (kbd "<tab>")
-                               #'company-indent-or-complete-common)))
+            (lambda ()
+              (local-set-key (kbd "<tab>")
+                             #'company-indent-or-complete-common)))
   :config
   (setq company-idle-delay 0.6
         company-show-numbers t
@@ -1502,7 +1491,6 @@ comment to the line."
 ;; from resizing it to exact dimensions, and looks weird.
 (setq window-resize-pixelwise t
       frame-resize-pixelwise t)
-
 
 ;; The native border "consumes" a pixel of the fringe on righter-most splits,
 ;; `window-divider' does not. Available since Emacs 25.1.
