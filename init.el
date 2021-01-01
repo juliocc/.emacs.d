@@ -465,9 +465,9 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-;; (use-package highlight-parentheses
-;;   :config
-;;   (global-highlight-parentheses-mode t))
+(use-package highlight-parentheses
+  :config
+  (global-highlight-parentheses-mode t))
 
 (use-package volatile-highlights
   :defer 5
@@ -672,7 +672,7 @@
          ("\\.gitmodules\\'" . gitconfig-mode)))
 
 (use-package gitignore-mode
-  :mode ("\\.gitignore\\'" . gitignore-mode))
+  :mode "\\.gitignore\\'")
 
 ;; (use-package gl-conf-mode
 ;;   :load-path "site-lisp/gl-conf-mode"
@@ -1942,7 +1942,6 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
     ("u" undo nil)
     ("q" nil)))
 
-
 (use-package tramp
   :ensure nil
   :defer t
@@ -1960,6 +1959,34 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
                                               ("-o" "UserKnownHostsFile=/dev/null")
                                               ("-o" "StrictHostKeyChecking=no")))
                  (tramp-default-port         22))))
+
+(use-package color-identifiers-mode
+  :commands color-identifiers-mode)
+
+(use-package py-isort
+  :commands py-isort-buffer)
+
+(use-package blacken
+  :hook (python-mode . blacken-mode)
+  :commands blacken-mode blacken-buffer)
+
+(use-package keypression
+  :commands keypression-mode)
+
+(use-package command-log-mode
+  :commands command-log-mode)
+
+(use-package focus
+  :commands focus-mode
+  :config
+  (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
+
+(use-package dimmer
+  :commands dimmer-mode
+  :config
+  (setq dimmer-fraction 0.1)
+  (dimmer-configure-which-key)
+  (dimmer-configure-magit))
 
 ;; (add-to-list 'tramp-methods
 ;;              '("gcssh"
