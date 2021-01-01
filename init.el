@@ -102,12 +102,7 @@
         custom-file (no-littering-expand-etc-file-name "custom.el"))
 
   (when (file-exists-p custom-file)
-    (load-file custom-file))
-
-  ;; no-littering changes default snippets directory, so i changed it back.
-  ;; (add-to-list 'yas-snippet-dirs
-  ;;              (expand-file-name "snippets" user-emacs-directory))
-  )
+    (load-file custom-file)))
 
 (use-package jc-doom
   :ensure nil
@@ -245,10 +240,6 @@
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
-
-;; (setq scroll-conservatively 100000)
-;; (setq scroll-preserve-screen-position 'always)
-;; (setq scroll-step 0); what?
 
 ;; (use-package display-fill-column-indicator
 ;;   :ensure nil
@@ -750,9 +741,6 @@ Git gutter:
                 (git-gutter:clear))
      :color blue)))
 
-;; (use-package xterm-color
-;;   :defer t)
-
 ;; (use-package magit-delta
 ;;   :after (magit xterm-color)
 ;;   :config
@@ -918,11 +906,6 @@ Git gutter:
   :bind (("C-c i" . change-inner)
          ("C-c o" . change-outer)))
 
-;; (use-package misc
-;;   :ensure nil
-;;   :bind (("M-z" . zap-up-to-char)
-;;          ("M-Z" . zap-to-char)))
-
 (use-package avy-zap
   :bind (("M-Z" . avy-zap-up-to-char-dwim)))
 
@@ -936,7 +919,6 @@ Git gutter:
   :commands (chmod+x-this jc/doctor)
   :bind ("M-p" . goto-match-paren)
   :config (jc/doctor))
-
 
 (use-package crux
   :commands crux-find-shell-init-file
@@ -1191,7 +1173,6 @@ Git gutter:
 ;; (use-package flyspell-correct-avy-menu
 ;;   :after flyspell-correct)
 
-
 ;; (bind-keys :prefix-map jc-spelling-map
 ;;            :prefix "<f8>"
 ;;            ("<f8>" . ispell-word)
@@ -1243,6 +1224,9 @@ Git gutter:
 
 
 (use-package dumb-jump
+  :commands dumb-jump-xref-activate dumb-jump-go dumb-jump-back dumb-jump-quick-look
+  :init
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
   (setq dumb-jump-selector 'ivy)
   (setq dumb-jump-prefer-searcher 'rg))
@@ -1290,9 +1274,6 @@ Git gutter:
   :commands yas-hippie-try-expand
   :init
   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand))
-
-;; (use-package yasnippet-snippets         ; Collection of snippets
-;;   :after yasnippet)
 
 ;; (use-package flycheck
 ;;   :after-call after-find-file
@@ -1377,12 +1358,6 @@ Git gutter:
 (use-package js2-mode
   :mode "\\.js\\'")
 
-;;==================================================
-;; jump-char
-;;==================================================
-
-;; NOTE: keep this after loading ido, otherwise M-m won't work inside
-;; ido
 ;; (use-package jump-char
 ;;   :config
 ;;   :bind (("M-m" . jump-char-forward)
@@ -1446,10 +1421,7 @@ comment to the line."
     (setq deactivate-mark nil)))
 
 
-;;==================================================
-;; require additional local settings (if they exist)
-;;==================================================
-
+;; load additional local settings (if they exist)
 (use-package jc-local
   :ensure nil
   :load-path "site-lisp"
@@ -1458,7 +1430,6 @@ comment to the line."
 (use-package server
   :if window-system
   :hook (after-init . server-start))
-
 
 ;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
 ;; do-what-I-mean. It serves four purposes (in order):
@@ -1561,25 +1532,15 @@ comment to the line."
   :config
   (setq hl-todo-highlight-punctuation ":"
         hl-todo-keyword-faces
-        `(;; For things that need to be done, just not today.
-          ("TODO" warning bold)
-          ;; For problems that will become bigger problems later if not
-          ;; fixed ASAP.
+        `(("TODO" warning bold)
           ("FIXME" error bold)
-          ;; For tidbits that are unconventional and not intended uses of the
-          ;; constituent parts, and may break in a future update.
           ("HACK" font-lock-constant-face bold)
-          ;; For things that were done hastily and/or hasn't been thoroughly
-          ;; tested. It may not even be necessary!
           ("REVIEW" font-lock-keyword-face bold)
-          ;; For especially important gotchas with a given implementation,
-          ;; directed at another user other than the author.
           ("NOTE" success bold)
-          ;; For things that just gotta go and will soon be gone.
           ("DEPRECATED" font-lock-doc-face bold))))
 
 (use-package highlight-indent-guides
-  ;;:hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+  :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
   :commands highlight-indent-guides-mode
   :init
   (setq highlight-indent-guides-method 'character
@@ -1595,16 +1556,6 @@ comment to the line."
 
 (add-hook! '(completion-list-mode-hook Man-mode-hook)
            #'hide-mode-line-mode)
-
-;; (use-package persistent-scratch
-;;   :unless (or (null window-system)
-;;               noninteractive)
-;;   :defer 5
-;;   :config
-;;   (persistent-scratch-autosave-mode)
-;;   (with-demoted-errors "Error: %S"
-;;     (persistent-scratch-setup-default))
-;;   :commands persistent-scratch-setup-default)
 
 (use-package vterm
   :disabled t
