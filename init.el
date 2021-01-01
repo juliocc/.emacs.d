@@ -46,12 +46,9 @@
       initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
 
-;; Keep emacs custom-settings in separate file
 (eval-and-compile
   (defun emacs-path (path)
     (expand-file-name path user-emacs-directory)))
-(setq custom-file (emacs-path "custom.el"))
-(load custom-file)
 
 ;;==================================================
 ;; Setup package management tools
@@ -103,9 +100,23 @@
 ;;   :demand t
 ;;   :hook (window-setup . benchmark-init/deactivate))
 
-(use-package dash  :defer t)
-(use-package f     :defer t)
-(use-package s     :defer t)
+(use-package no-littering
+  :config
+  (with-eval-after-load 'recentf
+    (add-to-list 'recentf-exclude no-littering-var-directory)
+    (add-to-list 'recentf-exclude no-littering-etc-directory))
+
+  (setq auto-save-file-name-transforms
+        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
+        custom-file (no-littering-expand-etc-file-name "custom.el"))
+
+  (when (file-exists-p custom-file)
+    (load-file custom-file))
+
+  ;; no-littering changes default snippets directory, so i changed it back.
+  ;; (add-to-list 'yas-snippet-dirs
+  ;;              (expand-file-name "snippets" user-emacs-directory))
+  )
 
 (use-package jc-doom
   :ensure nil
@@ -416,24 +427,17 @@
 (use-package files
   :ensure nil
   :init
-  (setq backup-by-copying t            ; don't clobber symlinks
-        delete-old-versions t          ; delete old backups
+  (setq backup-by-copying t
+        delete-old-versions t
         kept-new-versions 6
         kept-old-versions 2
-        version-control t         ; use versioned backups
-        create-lockfiles nil
-        ;; Put autosave files (ie #foo#) and backup files (ie foo~) in ~/.emacs.d/.
-        auto-save-file-name-transforms `((".*" ,(emacs-path "backups") t))
-        backup-directory-alist `(("." . ,(emacs-path "backups")))))
+        version-control t
+        create-lockfiles nil))
 
-
-;; create the autosave dir if necessary, since emacs won't.
-(make-directory "~/.emacs.d/autosaves/" t)
-
-;; UTF-8 everything please
-(when (fboundp 'set-charset-priority)
-  (set-charset-priority 'unicode))
-(setq locale-coding-system 'utf-8)
+  ;; UTF-8 everything please
+  (when (fboundp 'set-charset-priority)
+    (set-charset-priority 'unicode))
+  (setq locale-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
@@ -492,9 +496,7 @@
   (setq undo-tree-auto-save-history t
         undo-limit 800000
         undo-strong-limit 12000000
-        undo-outer-limit 120000000
-        undo-tree-history-directory-alist
-        `((".*" . ,(concat user-emacs-directory "undo-list")))))
+        undo-outer-limit 120000000))
 
 ;; Save a list of recent files visited.
 (use-package recentf
@@ -503,7 +505,6 @@
   ;; :commands recentf-open-files
   :config
   (setq recentf-max-saved-items 500
-        recentf-save-file (emacs-path ".recentf")
         recentf-auto-cleanup 'never
         recentf-max-menu-items 0
         recentf-exclude '("/tmp/" "/ssh:"))
@@ -520,8 +521,7 @@
 (use-package savehist
   :hook (after-init . savehist-mode)
   :config
-  (setq savehist-file (emacs-path ".savehist")
-        savehist-save-minibuffer-history t
+  (setq savehist-save-minibuffer-history t
         savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
   (add-hook! 'kill-emacs-hook
     (defun doom-unpropertize-kill-ring-h ()
@@ -567,9 +567,7 @@
 ;; Save point position between sessions
 (use-package saveplace
   :ensure nil
-  :hook (after-init . save-place-mode)
-  :config
-  (setq save-place-file (emacs-path ".places")))
+  :hook (after-init . save-place-mode))
 
 ;; guide-key setup
 ;; (use-package guide-key
@@ -1302,9 +1300,7 @@ Git gutter:
   :hook ((prog-mode text-mode) . yas-minor-mode)
   :commands yas-hippie-try-expand
   :init
-  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-  :config
-  (yas-load-directory (emacs-path "snippets")))
+  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand))
 
 ;; (use-package yasnippet-snippets         ; Collection of snippets
 ;;   :after yasnippet)
@@ -1465,11 +1461,10 @@ comment to the line."
 ;; require additional local settings (if they exist)
 ;;==================================================
 
-(setq jc-local-settings
-      (emacs-path "jc-local.el"))
-
-(if (file-exists-p jc-local-settings)
-    (load-file jc-local-settings))
+(use-package jc-local
+  :ensure nil
+  :load-path "site-lisp"
+  :if (file-exists-p (emacs-path "site-lisp/jc-local.el")))
 
 (use-package server
   :if window-system
