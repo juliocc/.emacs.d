@@ -379,6 +379,8 @@
        (lambda (button)
          (helpful-variable (button-get button 'apropos-symbol)))))))
 
+(setq nobreak-char-display 0)
+
 (use-package whitespace-cleanup-mode
   :hook (after-init . global-whitespace-cleanup-mode))
 
