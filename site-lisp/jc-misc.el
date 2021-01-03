@@ -26,7 +26,7 @@
 
 (defun jc/doctor ()
   (dolist (exe '("rg" "ag" "fd" "git" "terraform" "aspell"
-                 "grip" "markdown"))
+                 "grip" "markdown" "black" "isort"))
     (unless (executable-find exe)
       (display-warning 'jc/doctor
                        (format "Can't find %s" exe)))))
