@@ -1692,54 +1692,54 @@ comment to the line."
   :config
   (counsel-projectile-mode +1))
 
-(use-package ivy-rich
-  :after ivy
-  :config
-
-  ;; -- fix https://github.com/Yevgnen/ivy-rich/issues/87
-  (defvar ek/ivy-rich-cache
-    (make-hash-table :test 'equal))
-
-  (defun ek/ivy-rich-cache-lookup (delegate candidate)
-    (let ((result (gethash candidate ek/ivy-rich-cache)))
-      (unless result
-        (setq result (funcall delegate candidate))
-        (puthash candidate result ek/ivy-rich-cache))
-      result))
-
-  (defun ek/ivy-rich-cache-reset ()
-    (clrhash ek/ivy-rich-cache))
-
-  (defun ek/ivy-rich-cache-rebuild ()
-    (mapc (lambda (buffer)
-            (ivy-rich--ivy-switch-buffer-transformer (buffer-name buffer)))
-          (buffer-list)))
-
-  (defun ek/ivy-rich-cache-rebuild-trigger ()
-    (ek/ivy-rich-cache-reset)
-    (run-with-idle-timer 1 nil 'ek/ivy-rich-cache-rebuild))
-
-  (advice-add 'ivy-rich--ivy-switch-buffer-transformer :around 'ek/ivy-rich-cache-lookup)
-  (advice-add 'ivy-switch-buffer :after 'ek/ivy-rich-cache-rebuild-trigger)
-  ;; --
-
-  (ivy-rich-mode 1)
-  (setq ivy-rich-switch-buffer-align-virtual-buffer t
-        ivy-rich-path-style 'abbrev))
-
-(use-package all-the-icons-ivy-rich
-  :if (display-graphic-p)
-  :after ivy-rich
-  :config
-  (setq all-the-icons-ivy-rich-icon-size 0.75)
-  (nsubst-if '(ivy-rich-candidate (:width 60))
-             #'(lambda (item)
-                 (and
-                  (listp item)
-                  (eq (length item) 2)
-                  (eq (car item) 'ivy-rich-candidate)))
-             all-the-icons-ivy-rich-display-transformers-list)
-  (all-the-icons-ivy-rich-mode 1))
+;; (use-package ivy-rich
+;;   :after ivy
+;;   :config
+;;
+;;   ;; -- fix https://github.com/Yevgnen/ivy-rich/issues/87
+;;   (defvar ek/ivy-rich-cache
+;;     (make-hash-table :test 'equal))
+;;
+;;   (defun ek/ivy-rich-cache-lookup (delegate candidate)
+;;     (let ((result (gethash candidate ek/ivy-rich-cache)))
+;;       (unless result
+;;         (setq result (funcall delegate candidate))
+;;         (puthash candidate result ek/ivy-rich-cache))
+;;       result))
+;;
+;;   (defun ek/ivy-rich-cache-reset ()
+;;     (clrhash ek/ivy-rich-cache))
+;;
+;;   (defun ek/ivy-rich-cache-rebuild ()
+;;     (mapc (lambda (buffer)
+;;             (ivy-rich--ivy-switch-buffer-transformer (buffer-name buffer)))
+;;           (buffer-list)))
+;;
+;;   (defun ek/ivy-rich-cache-rebuild-trigger ()
+;;     (ek/ivy-rich-cache-reset)
+;;     (run-with-idle-timer 1 nil 'ek/ivy-rich-cache-rebuild))
+;;
+;;   (advice-add 'ivy-rich--ivy-switch-buffer-transformer :around 'ek/ivy-rich-cache-lookup)
+;;   (advice-add 'ivy-switch-buffer :after 'ek/ivy-rich-cache-rebuild-trigger)
+;;   ;; --
+;;
+;;   (ivy-rich-mode 1)
+;;   (setq ivy-rich-switch-buffer-align-virtual-buffer t
+;;         ivy-rich-path-style 'abbrev))
+;;
+;; (use-package all-the-icons-ivy-rich
+;;   :if (display-graphic-p)
+;;   :after ivy-rich
+;;   :config
+;;   (setq all-the-icons-ivy-rich-icon-size 0.75)
+;;   (nsubst-if '(ivy-rich-candidate (:width 60))
+;;              #'(lambda (item)
+;;                  (and
+;;                   (listp item)
+;;                   (eq (length item) 2)
+;;                   (eq (car item) 'ivy-rich-candidate)))
+;;              all-the-icons-ivy-rich-display-transformers-list)
+;;   (all-the-icons-ivy-rich-mode 1))
 
 (use-package swiper
   :after ivy
