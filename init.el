@@ -1522,181 +1522,176 @@ comment to the line."
   :after treemacs magit
   :ensure t)
 
-;; (use-package flx
-;;   :defer t                              ; loaded by ivy
-;;   :init
-;;   (setq ivy-flx-limit 15000))
+;; (use-package ivy
+;;   :hook (after-init . ivy-mode)
+;;   :bind (("C-x b" . ivy-switch-buffer)
+;;          ("C-x B" . ivy-switch-buffer-other-window)
+;;          ("C-c C-r" . ivy-resume))
+;;   :bind (:map ivy-switch-buffer-map
+;;               ("C-k" . ivy-switch-buffer-kill))
+;;   :bind (:map ivy-minibuffer-map
+;;               ("C-j" . ivy-immediate-done)
+;;               ("RET" . ivy-alt-done))
+;;   :config
 
-(use-package ivy
-  :hook (after-init . ivy-mode)
-  :bind (("C-x b" . ivy-switch-buffer)
-         ("C-x B" . ivy-switch-buffer-other-window)
-         ("C-c C-r" . ivy-resume))
-  :bind (:map ivy-switch-buffer-map
-              ("C-k" . ivy-switch-buffer-kill))
-  :bind (:map ivy-minibuffer-map
-              ("C-j" . ivy-immediate-done)
-              ("RET" . ivy-alt-done))
-  :config
+;;   ;; TODO
+;;   ;; (use-package orderless
+;;   ;;   :custom (completion-styles '(orderless)))
 
-  ;; TODO
-  ;; (use-package orderless
-  ;;   :custom (completion-styles '(orderless)))
+;;   (setq ivy-use-virtual-buffers t
+;;         ivy-virtual-abbreviate 'full
+;;         ivy-fixed-height-minibuffer t
+;;         ivy-count-format "(%d/%d) "
+;;         ivy-magic-tilde nil
+;;         ivy-wrap t
+;;         ivy-on-del-error-function #'ignore
+;;         ivy-dynamic-exhibit-delay-ms 200
+;;         ivy-use-selectable-prompt t
+;;         ;; ivy-re-builders-alist
+;;         ;; '((counsel-rg       . ivy--regex-plus)
+;;         ;;   (swiper           . ivy--regex-plus)
+;;         ;;   (swiper-isearch   . ivy--regex-plus)
+;;         ;;   (t                . ivy--regex-fuzzy))
+;;         ivy-more-chars-alist
+;;         '((counsel-rg . 1)
+;;           (counsel-search . 2)
+;;           (t . 3))
+;;         ivy-initial-inputs-alist nil
+;;         ivy-height 20)
 
-  (setq ivy-use-virtual-buffers t
-        ivy-virtual-abbreviate 'full
-        ivy-fixed-height-minibuffer t
-        ivy-count-format "(%d/%d) "
-        ivy-magic-tilde nil
-        ivy-wrap t
-        ivy-on-del-error-function #'ignore
-        ivy-dynamic-exhibit-delay-ms 200
-        ivy-use-selectable-prompt t
-        ;; ivy-re-builders-alist
-        ;; '((counsel-rg       . ivy--regex-plus)
-        ;;   (swiper           . ivy--regex-plus)
-        ;;   (swiper-isearch   . ivy--regex-plus)
-        ;;   (t                . ivy--regex-fuzzy))
-        ivy-more-chars-alist
-        '((counsel-rg . 1)
-          (counsel-search . 2)
-          (t . 3))
-        ivy-initial-inputs-alist nil
-        ivy-height 20)
+;;   ;; Highlight each ivy candidate including the following newline, so that it
+;;   ;; extends to the right edge of the window
+;;   (setf (alist-get 't ivy-format-functions-alist)
+;;         #'ivy-format-function-line)
 
-  ;; Highlight each ivy candidate including the following newline, so that it
-  ;; extends to the right edge of the window
-  (setf (alist-get 't ivy-format-functions-alist)
-        #'ivy-format-function-line)
+;;   (with-eval-after-load 'counsel
+;;     (setq ivy-initial-inputs-alist nil)))
 
-  (with-eval-after-load 'counsel
-    (setq ivy-initial-inputs-alist nil)))
-
-(use-package counsel
-  :after ivy
-  :bind (;;("C-x b"    . counsel-switch-buffer)
-         ;;("C-x B"    . counsel-switch-buffer-other-window)
-         ("C-x C-f"  . counsel-find-file)
-         ("C-x r b"  . counsel-bookmark)
-         ("M-x"      . counsel-M-x)
-         ;; ("M-y"      . counsel-yank-pop)
-         ("M-i"      . counsel-imenu)
-         ("M-s f"    . counsel-file-jump)
-         ("M-s g"    . counsel-rg)
-         ("M-s j"    . counsel-dired-jump)
-         ("C-x f"    . counsel-recentf)
-         ([remap describe-function] . counsel-describe-function)
-         ([remap describe-variable] . counsel-describe-variable))
-  :bind (:map ivy-minibuffer-map
-              ("M-y" . ivy-next-line))
-  :config
-
-  (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
-    (if (equal major-mode 'vterm-mode)
-        (let ((inhibit-read-only t)
-              (yank-undo-function (lambda (_start _end) (vterm-undo))))
-          (cl-letf (((symbol-function 'insert-for-yank)
-                     (lambda (str) (vterm-send-string str t))))
-            (apply orig-fun args)))
-      (apply orig-fun args)))
-  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
-
-  (setq counsel-describe-function-function #'helpful-callable
-        counsel-describe-variable-function #'helpful-variable))
-;; ("C-c e l" . counsel-find-library)
-;; ("C-c e q" . counsel-set-variable)
-;; ("C-h e l" . counsel-find-library)
-;; ("C-h e u" . counsel-unicode-char)
-;; ("C-h f"   . counsel-describe-function)
-
-(use-package counsel-projectile
-  :after (counsel projectile)
-  :config
-  (counsel-projectile-mode +1))
-
-;; (use-package ivy-rich
+;; (use-package counsel
 ;;   :after ivy
+;;   :bind (;;("C-x b"    . counsel-switch-buffer)
+;;          ;;("C-x B"    . counsel-switch-buffer-other-window)
+;;          ("C-x C-f"  . counsel-find-file)
+;;          ("C-x r b"  . counsel-bookmark)
+;;          ("M-x"      . counsel-M-x)
+;;          ;; ("M-y"      . counsel-yank-pop)
+;;          ("M-i"      . counsel-imenu)
+;;          ("M-s f"    . counsel-file-jump)
+;;          ("M-s g"    . counsel-rg)
+;;          ("M-s j"    . counsel-dired-jump)
+;;          ("C-x f"    . counsel-recentf)
+;;          ([remap describe-function] . counsel-describe-function)
+;;          ([remap describe-variable] . counsel-describe-variable))
+;;   :bind (:map ivy-minibuffer-map
+;;               ("M-y" . ivy-next-line))
 ;;   :config
-;;
-;;   ;; -- fix https://github.com/Yevgnen/ivy-rich/issues/87
-;;   (defvar ek/ivy-rich-cache
-;;     (make-hash-table :test 'equal))
-;;
-;;   (defun ek/ivy-rich-cache-lookup (delegate candidate)
-;;     (let ((result (gethash candidate ek/ivy-rich-cache)))
-;;       (unless result
-;;         (setq result (funcall delegate candidate))
-;;         (puthash candidate result ek/ivy-rich-cache))
-;;       result))
-;;
-;;   (defun ek/ivy-rich-cache-reset ()
-;;     (clrhash ek/ivy-rich-cache))
-;;
-;;   (defun ek/ivy-rich-cache-rebuild ()
-;;     (mapc (lambda (buffer)
-;;             (ivy-rich--ivy-switch-buffer-transformer (buffer-name buffer)))
-;;           (buffer-list)))
-;;
-;;   (defun ek/ivy-rich-cache-rebuild-trigger ()
-;;     (ek/ivy-rich-cache-reset)
-;;     (run-with-idle-timer 1 nil 'ek/ivy-rich-cache-rebuild))
-;;
-;;   (advice-add 'ivy-rich--ivy-switch-buffer-transformer :around 'ek/ivy-rich-cache-lookup)
-;;   (advice-add 'ivy-switch-buffer :after 'ek/ivy-rich-cache-rebuild-trigger)
-;;   ;; --
-;;
-;;   (ivy-rich-mode 1)
-;;   (setq ivy-rich-switch-buffer-align-virtual-buffer t
-;;         ivy-rich-path-style 'abbrev))
-;;
-;; (use-package all-the-icons-ivy-rich
-;;   :if (display-graphic-p)
-;;   :after ivy-rich
+
+;;   (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+;;     (if (equal major-mode 'vterm-mode)
+;;         (let ((inhibit-read-only t)
+;;               (yank-undo-function (lambda (_start _end) (vterm-undo))))
+;;           (cl-letf (((symbol-function 'insert-for-yank)
+;;                      (lambda (str) (vterm-send-string str t))))
+;;             (apply orig-fun args)))
+;;       (apply orig-fun args)))
+;;   (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+
+;;   (setq counsel-describe-function-function #'helpful-callable
+;;         counsel-describe-variable-function #'helpful-variable))
+;; ;; ("C-c e l" . counsel-find-library)
+;; ;; ("C-c e q" . counsel-set-variable)
+;; ;; ("C-h e l" . counsel-find-library)
+;; ;; ("C-h e u" . counsel-unicode-char)
+;; ;; ("C-h f"   . counsel-describe-function)
+
+;; (use-package counsel-projectile
+;;   :after (counsel projectile)
 ;;   :config
-;;   (setq all-the-icons-ivy-rich-icon-size 0.75)
-;;   (nsubst-if '(ivy-rich-candidate (:width 60))
-;;              #'(lambda (item)
-;;                  (and
-;;                   (listp item)
-;;                   (eq (length item) 2)
-;;                   (eq (car item) 'ivy-rich-candidate)))
-;;              all-the-icons-ivy-rich-display-transformers-list)
-;;   (all-the-icons-ivy-rich-mode 1))
+;;   (counsel-projectile-mode +1))
 
-(use-package swiper
-  :after ivy
-  :bind (("C-M-s" . swiper-isearch)
-         ("C-M-r" . swiper-isearch-backward)
-         :map swiper-map
-         ("C-y" . yank)
-         ("M-%" . swiper-query-replace)
-         ("M-o" . swiper-isearch-toggle)
-         :map isearch-mode-map
-         ("M-o" . swiper-isearch-toggle)))
+;; ;; (use-package ivy-rich
+;; ;;   :after ivy
+;; ;;   :config
+;; ;;
+;; ;;   ;; -- fix https://github.com/Yevgnen/ivy-rich/issues/87
+;; ;;   (defvar ek/ivy-rich-cache
+;; ;;     (make-hash-table :test 'equal))
+;; ;;
+;; ;;   (defun ek/ivy-rich-cache-lookup (delegate candidate)
+;; ;;     (let ((result (gethash candidate ek/ivy-rich-cache)))
+;; ;;       (unless result
+;; ;;         (setq result (funcall delegate candidate))
+;; ;;         (puthash candidate result ek/ivy-rich-cache))
+;; ;;       result))
+;; ;;
+;; ;;   (defun ek/ivy-rich-cache-reset ()
+;; ;;     (clrhash ek/ivy-rich-cache))
+;; ;;
+;; ;;   (defun ek/ivy-rich-cache-rebuild ()
+;; ;;     (mapc (lambda (buffer)
+;; ;;             (ivy-rich--ivy-switch-buffer-transformer (buffer-name buffer)))
+;; ;;           (buffer-list)))
+;; ;;
+;; ;;   (defun ek/ivy-rich-cache-rebuild-trigger ()
+;; ;;     (ek/ivy-rich-cache-reset)
+;; ;;     (run-with-idle-timer 1 nil 'ek/ivy-rich-cache-rebuild))
+;; ;;
+;; ;;   (advice-add 'ivy-rich--ivy-switch-buffer-transformer :around 'ek/ivy-rich-cache-lookup)
+;; ;;   (advice-add 'ivy-switch-buffer :after 'ek/ivy-rich-cache-rebuild-trigger)
+;; ;;   ;; --
+;; ;;
+;; ;;   (ivy-rich-mode 1)
+;; ;;   (setq ivy-rich-switch-buffer-align-virtual-buffer t
+;; ;;         ivy-rich-path-style 'abbrev))
+;; ;;
+;; ;; (use-package all-the-icons-ivy-rich
+;; ;;   :if (display-graphic-p)
+;; ;;   :after ivy-rich
+;; ;;   :config
+;; ;;   (setq all-the-icons-ivy-rich-icon-size 0.75)
+;; ;;   (nsubst-if '(ivy-rich-candidate (:width 60))
+;; ;;              #'(lambda (item)
+;; ;;                  (and
+;; ;;                   (listp item)
+;; ;;                   (eq (length item) 2)
+;; ;;                   (eq (car item) 'ivy-rich-candidate)))
+;; ;;              all-the-icons-ivy-rich-display-transformers-list)
+;; ;;   (all-the-icons-ivy-rich-mode 1))
 
-(use-package imenu-anywhere
-  :bind ("M-i" . ivy-imenu-anywhere)
-  :init
-  (setq imenu-auto-rescan t))
+;; (use-package swiper
+;;   :after ivy
+;;   :bind (("C-M-s" . swiper-isearch)
+;;          ("C-M-r" . swiper-isearch-backward)
+;;          :map swiper-map
+;;          ("C-y" . yank)
+;;          ("M-%" . swiper-query-replace)
+;;          ("M-o" . swiper-isearch-toggle)
+;;          :map isearch-mode-map
+;;          ("M-o" . swiper-isearch-toggle)))
 
-(use-package ivy-prescient
-  :after (counsel swiper)
-  :config
-  (setq ivy-prescient-enable-filtering t
-        prescient-filter-method '(literal initialism prefix regexp)
-        prescient-sort-length-enable nil
-        ivy-prescient-retain-classic-highlighting t)
-  (ivy-prescient-mode +1)
-  (prescient-persist-mode +1)
-  (defun jc-prescient-fuzzy-re-buider (query)
-    (let ((prescient-filter-method '(literal initialism regexp fuzzy)))
-      (ivy-prescient-re-builder query)))
-  (setq ivy-re-builders-alist
-        '((counsel-rg       . ivy--regex-plus)
-          (swiper           . ivy--regex-plus)
-          (swiper-isearch   . ivy--regex-plus)
-          (counsel-M-x      . jc-prescient-fuzzy-re-buider)
-          (t                . ivy-prescient-re-builder))))
+;; (use-package imenu-anywhere
+;;   :bind ("M-i" . ivy-imenu-anywhere)
+;;   :init
+;;   (setq imenu-auto-rescan t))
+
+;; (use-package ivy-prescient
+;;   :after (counsel swiper)
+;;   :config
+;;   (setq ivy-prescient-enable-filtering t
+;;         prescient-filter-method '(literal initialism prefix regexp)
+;;         prescient-sort-length-enable nil
+;;         ivy-prescient-retain-classic-highlighting t)
+;;   (ivy-prescient-mode +1)
+;;   (prescient-persist-mode +1)
+;;   (defun jc-prescient-fuzzy-re-buider (query)
+;;     (let ((prescient-filter-method '(literal initialism regexp fuzzy)))
+;;       (ivy-prescient-re-builder query)))
+;;   (setq ivy-re-builders-alist
+;;         '((counsel-rg       . ivy--regex-plus)
+;;           (swiper           . ivy--regex-plus)
+;;           (swiper-isearch   . ivy--regex-plus)
+;;           (counsel-M-x      . jc-prescient-fuzzy-re-buider)
+;;           (t                . ivy-prescient-re-builder))))
 
 
 (use-package restart-emacs
@@ -1817,24 +1812,6 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
     ("u" undo nil)
     ("q" nil)))
 
-(use-package tramp
-  :ensure nil
-  :defer t
-  :config
-  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
-  ;; TRAMP gcloud ssh
-  (add-to-list 'tramp-methods
-               '("iap"
-                 (tramp-login-program        "gcloud compute ssh --tunnel-through-iap")
-                 (tramp-login-args           (("%h")))
-                 (tramp-async-args           (("-q")))
-                 (tramp-remote-shell         "/bin/bash")
-                 (tramp-remote-shell-args    ("-c"))
-                 (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-                                              ("-o" "UserKnownHostsFile=/dev/null")
-                                              ("-o" "StrictHostKeyChecking=no")))
-                 (tramp-default-port         22))))
-
 (use-package color-identifiers-mode
   :commands color-identifiers-mode)
 
@@ -1863,19 +1840,86 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   (dimmer-configure-which-key)
   (dimmer-configure-magit))
 
-;; (add-to-list 'tramp-methods
-;;              '("gcssh"
-;;                (tramp-login-program        "gcloud compute ssh")
-;;                (tramp-login-args           (("%h")))
-;;                (tramp-async-args           (("-q")))
-;;                (tramp-remote-shell         "/bin/bash")
-;;                (tramp-remote-shell-args    ("-c"))
-;;                (tramp-gw-args              (("-o" "GlobalKnownHostsFile=/dev/null")
-;;                                             ("-o" "UserKnownHostsFile=/dev/null")
-;;                                             ("-o" "StrictHostKeyChecking=no")))
-;;                (tramp-default-port         22)))
+(use-package selectrum-prescient
+  :commands selectrum-prescient-mode
+  :config
+  (setq prescient-filter-method '(literal regexp fuzzy)))
 
+(use-package marginalia
+  :commands marginalia-mode
+  :bind (:map minibuffer-local-map ("C-M-a" . marginalia-cycle))
+  :config
+  (advice-add #'marginalia-cycle :after
+              (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
+  (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
+(use-package embark
+  :bind (("C-S-a" . embark-act)
+         :map minibuffer-local-map
+         ("C-S-a" . embark-act-noexit))
+  :config
+  (setq embark-action-indicator
+        (lambda (map)
+          (which-key--show-keymap "Embark" map nil nil 'no-paging)
+          #'which-key--hide-popup-ignore-command)
+        embark-become-indicator embark-action-indicator)
+  :init
+  (defun refresh-selectrum ()
+    (setq selectrum--previous-input-string nil))
+  (add-hook 'embark-pre-action-hook #'refresh-selectrum))
+
+(use-package selectrum
+  :bind ("C-c C-r" . selectrum-repeat)
+  :commands selectrum-mode
+  :init
+  (setq selectrum-num-candidates-displayed 15
+        selectrum-fix-minibuffer-height nil
+        selectrum-extend-current-candidate-highlight t
+        selectrum-show-indices t)
+  (selectrum-mode +1)
+  (selectrum-prescient-mode +1)
+  (prescient-persist-mode +1)
+  (marginalia-mode +1))
+
+(use-package consult
+  :bind (;; ("C-x M-:" . consult-complex-command)
+         ;; ("C-c h" . consult-history)
+         ;; ("C-c m" . consult-mode-command)
+         ;; ("C-x 5 b" . consult-buffer-other-frame)
+         ;; ("M-g g" . consult-goto-line)
+         ;; ("M-g M-g" . consult-goto-line)
+         ;; ("M-y" . consult-yank-pop)
+         ("C-x b" . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x r x" . consult-register)
+         ("C-x r b" . consult-bookmark)
+         ("M-g o" . consult-outline)
+         ("M-g l" . consult-line)
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g r" . consult-git-grep)
+         ("M-g f" . consult-find)
+         ("M-i" . consult-project-imenu)
+         ("M-g e" . consult-error)
+         ("M-s m" . consult-multi-occur)
+         ("<help> a" . consult-apropos))
+  :init
+  (fset 'multi-occur #'consult-multi-occur)
+  :config
+  (setq consult-preview-buffer nil)
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
+  ;; (setq consult-narrow-key "<") ;; (kbd "C-+")
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  ;; (setq consult-view-open-function #'bookmark-jump
+  ;;       consult-view-list-function #'bookmark-view-names)
+  (consult-preview-mode))
+
+;; Enable Consult-Selectrum integration.
+;; This package should be installed if Selectrum is used.
+(use-package consult-selectrum
+  :after selectrum
+  :demand t)
 
 ;; MISC STUFF: snoopy-mode editorconfig
 ;;
