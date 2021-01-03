@@ -93,14 +93,9 @@
 
 (use-package no-littering
   :config
-  (with-eval-after-load 'recentf
-    (add-to-list 'recentf-exclude no-littering-var-directory)
-    (add-to-list 'recentf-exclude no-littering-etc-directory))
-
   (setq auto-save-file-name-transforms
         `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
         custom-file (no-littering-expand-etc-file-name "custom.el"))
-
   (when (file-exists-p custom-file)
     (load-file custom-file)))
 
@@ -217,7 +212,7 @@
 ;; Put fringe on the side
 (if (fboundp 'fringe-mode) (fringe-mode))
 
-(global-font-lock-mode +1)               ; just in case
+(global-font-lock-mode +1)
 
 ;; Explicitly define a width to reduce computation
 (setq-default display-line-numbers-width 3)
@@ -488,8 +483,13 @@
   :config
   (setq recentf-max-saved-items 500
         recentf-auto-cleanup 'never
-        recentf-max-menu-items 0
-        recentf-exclude '("/tmp/" "/ssh:"))
+        recentf-max-menu-items 0)
+
+  (dolist (path `("/tmp/" "/private/var" "/ssh:" "/iap:"
+                  ,no-littering-var-directory
+                  ,no-littering-etc-directory))
+    (add-to-list 'recentf-exclude path))
+
   (add-hook! 'dired-mode-hook
     (defun doom--recentf-add-dired-directory-h ()
       "Add dired directory to recentf file list."
@@ -550,18 +550,6 @@
 (use-package saveplace
   :ensure nil
   :hook (after-init . save-place-mode))
-
-;; guide-key setup
-;; (use-package guide-key
-;;   :config
-;;   (setq guide-key/guide-key-sequence '("C-x r" "C-x 4" "C-x v" "C-x 8"
-;;                                        "C-x C-k" "<f8>" "C-c !" "M-s"
-;;                                        "C-x n" "C-c p"))
-;;   (add-hook 'dired-mode-hook
-;;             (lambda () (guide-key/add-local-guide-key-sequence "%")))
-;;   (guide-key-mode 1)
-;;   (setq guide-key/recursive-key-sequence-flag t)
-;;   (setq guide-key/popup-window-position 'bottom))
 
 (use-package which-key
   :hook (after-init . which-key-mode)
@@ -743,15 +731,6 @@ Git gutter:
                 (git-gutter:clear))
      :color blue)))
 
-;; (use-package magit-delta
-;;   :after (magit xterm-color)
-;;   :config
-;;   (magit-delta-mode))
-
-;;==================================================
-;; isearch settings
-;;==================================================
-
 ;; use regexp isearch by default
 (bind-key [remap isearch-forward] #'isearch-forward-regexp)
 (bind-key [remap isearch-backward] #'isearch-backward-regexp)
@@ -782,34 +761,20 @@ Git gutter:
   ;; show number of matches while searching
   (global-anzu-mode +1))
 
-;;==================================================
-;; elisp
-;;==================================================
 (use-package highlight-quoted
   :hook (emacs-lisp-mode . highlight-quoted-mode))
 
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
-;;==================================================
-;; ediff
-;;==================================================
-
 (after! ediff
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
 
-;;==================================================
-;; scss-mode settings
-;;==================================================
 ;; (use-package scss-mode
 ;;   :config
 ;;   (setq scss-compile-at-save nil))
-
-;;==================================================
-;; Dired settings
-;;==================================================
 
 (use-package dired
   :ensure nil
@@ -821,9 +786,7 @@ Git gutter:
         dired-recursive-copies 'always
         )
   (setq-default diredp-hide-details-initially-flag nil
-                dired-dwim-target t) ; Move files between split pane
-  )
-
+                dired-dwim-target t))
 
 (use-package dired-x
   :ensure nil
@@ -891,7 +854,6 @@ Git gutter:
 
 (use-package grip-mode
   :commands grip-mode)
-
 
 (use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
@@ -1149,9 +1111,6 @@ Git gutter:
   :config
   (whole-line-or-region-global-mode +1))
 
-;;==================================================
-;; ispell
-;;==================================================
 (use-package ispell
   :ensure nil
   :init
@@ -1168,21 +1127,6 @@ Git gutter:
 (use-package flyspell-correct
   :after flyspell
   :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
-
-;; (use-package flyspell-correct-ivy
-;;   :after flyspell-correct)
-
-;; (use-package flyspell-correct-avy-menu
-;;   :after flyspell-correct)
-
-;; (bind-keys :prefix-map jc-spelling-map
-;;            :prefix "<f8>"
-;;            ("<f8>" . ispell-word)
-;;            ("m" . flyspell-mode)
-;;            ("b" . flyspell-buffer)
-;;            ("p" . flyspell-check-previous-highlighted-word)
-;;            ("n" . flyspell-check-next-highlighted-word)
-;;            ("c" . cycle-ispell-languages))
 
 (use-package projectile
   :bind-keymap ("C-c p" . projectile-command-map)
@@ -1208,22 +1152,6 @@ Git gutter:
       (setq projectile-generic-command fd-command)))
   (projectile-mode +1)
   (setq projectile-require-project-file nil))
-
-;; (setq projectile-project-root-files-bottom-up
-;;       (append '(".projectile"  ; projectile's root marker
-;;                 ".project"     ; doom project marker
-;;                 ".git")        ; Git VCS root dir
-;;               (when (executable-find "hg")
-;;                 '(".hg"))      ; Mercurial VCS root dir
-;;               (when (executable-find "bzr")
-;;                 '(".bzr")))    ; Bazaar VCS root dir
-;;       ;; This will be filled by other modules. We build this list manually so
-;;       ;; projectile doesn't perform so many file checks every time it resolves
-;;       ;; a project's root -- particularly when a file has no project.
-;;       projectile-project-root-files '()
-;;       projectile-project-root-files-top-down-recurring '("Makefile"))
-
-
 
 (use-package dumb-jump
   :commands dumb-jump-xref-activate dumb-jump-go dumb-jump-back dumb-jump-quick-look
@@ -1293,7 +1221,6 @@ Git gutter:
 ;; ;;   :config
 ;; ;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
 
-
 ;; (use-package flycheck-posframe
 ;;   :after flycheck
 ;;   :hook
@@ -1312,11 +1239,6 @@ Git gutter:
 ;; (flycheck-posframe-configure-pretty-defaults)
 ;; (setq flycheck-posframe-border-width 2)
 ;; (set-face-foreground 'flycheck-posframe-border-face "red"))
-
-
-;;==================================================
-;; wgrep
-;;==================================================
 
 (use-package wgrep
   :commands wgrep-change-to-wgrep-mode)
@@ -1471,9 +1393,8 @@ comment to the line."
       window-divider-default-bottom-width 1
       window-divider-default-right-width 1)
 (add-hook 'window-setup-hook #'window-divider-mode)
-                                        ;(window-divider-mode t)
 
- ;; Favor vertical splits over horizontal ones. Screens are usually wide.
+;; Favor vertical splits over horizontal ones. Screens are usually wide.
 (setq split-width-threshold 160
       split-height-threshold nil)
 
@@ -1542,6 +1463,7 @@ comment to the line."
           ("DEPRECATED" font-lock-doc-face bold))))
 
 (use-package highlight-indent-guides
+  :disabled
   :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
   :commands highlight-indent-guides-mode
   :init
@@ -1966,6 +1888,8 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
 
 ;; hydras: expand, multiple-cursors, avy
 ;; emacs-format-all-the-code
+
+;; use-package seq: init -> config
 
 (when init-file-debug
   (use-package-report))
