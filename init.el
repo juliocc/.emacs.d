@@ -218,9 +218,6 @@
 ;; quickly self-correct.
 (setq fast-but-imprecise-scrolling t)
 
-;; (setq jit-lock-defer-time 0    ; only defer while processing input
-;;       jit-lock-stealth-time 2) ; fontify the rest of the buffer after a delay
-
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
@@ -1858,17 +1855,19 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   (add-hook 'embark-pre-action-hook #'refresh-selectrum))
 
 (use-package selectrum
+  :hook (after-init . jccb/selectrum-setup)
   :bind ("C-c C-r" . selectrum-repeat)
   :commands selectrum-mode
   :init
+  (defun jccb/selectrum-setup ()
+    (selectrum-mode +1)
+    (selectrum-prescient-mode +1)
+    (prescient-persist-mode +1)
+    (marginalia-mode +1))
   (setq selectrum-num-candidates-displayed 15
         selectrum-fix-minibuffer-height nil
         selectrum-extend-current-candidate-highlight t
-        selectrum-show-indices t)
-  (selectrum-mode +1)
-  (selectrum-prescient-mode +1)
-  (prescient-persist-mode +1)
-  (marginalia-mode +1))
+        selectrum-show-indices t))
 
 (use-package consult
   :bind (;; ("C-x M-:" . consult-complex-command)
