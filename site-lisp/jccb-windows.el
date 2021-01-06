@@ -48,4 +48,4 @@ Call a second time to restore the original window configuration."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
-(provide 'jc-windows)
+(provide 'jccb-windows)

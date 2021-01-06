@@ -31,4 +31,4 @@
       (display-warning 'jc/doctor
                        (format "Can't find %s" exe)))))
 
-(provide 'jc-misc)
+(provide 'jccb-misc)

@@ -20,10 +20,10 @@
 ;;==================================================
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
-(defvar jc-interactive-mode (not noninteractive))
-(defvar jc-debug init-file-debug)
+(defvar jccb/interactive-mode (not noninteractive))
+(defvar jccb/debug init-file-debug)
 
-(if jc-debug
+(if jccb/debug
     (setq use-package-verbose t
           use-package-expand-minimally nil
           use-package-compute-statistics t
@@ -37,6 +37,8 @@
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1)))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+(if (fboundp 'tooltip-mode) (tooltip-mode -1))
+(if (fboundp 'fringe-mode) (fringe-mode 10))
 
 ;; Less noise at startup. The dashboard/empty scratch buffer is good enough.
 (setq inhibit-startup-message t
@@ -60,7 +62,8 @@
 (setq package-enable-at-startup nil
       package-archives
       '(("gnu"   . "https://elpa.gnu.org/packages/")
-        ("melpa" . "https://melpa.org/packages/"))
+        ("melpa" . "https://melpa.org/packages/")
+        ("org"   . "https://orgmode.org/elpa/"))
       gnutls-verify-error t
       tls-checktrust t
       gnutls-min-prime-bits 3072
@@ -87,9 +90,13 @@
 (setq use-package-always-ensure t)
 
 ;; (use-package benchmark-init
-;;   :when jc-debug
+;;   :when jccb/debug
 ;;   :demand t
 ;;   :hook (window-setup . benchmark-init/deactivate))
+
+
+;; (use-package org-plus-contrib
+;;   :pin org)
 
 (use-package no-littering
   :config
@@ -99,7 +106,7 @@
   (when (file-exists-p custom-file)
     (load-file custom-file)))
 
-(use-package jc-doom
+(use-package jccb-doom
   :ensure nil
   :load-path "site-lisp")
 
@@ -109,7 +116,7 @@
   (setq gcmh-idle-delay 10
         gcmh-high-cons-threshold (* 32 1024 1024)
         gcmh-low-cons-threshold (* 16 1024 1024)
-        gcmh-verbose jc-debug))
+        gcmh-verbose jccb/debug))
 
 ;;==================================================
 ;; Appearance settings
@@ -129,19 +136,14 @@
 
 (use-package doom-themes
   :config
-  ;; Global settings (defaults)
   (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
         doom-themes-enable-italic nil
         doom-one-brighter-modeline nil
         doom-themes-treemacs-theme "doom-colors")
-  ;; (load-theme 'doom-opera t)
-  ;; (load-theme 'doom-spacegrey t)
-  ;; (load-theme 'doom-tomorrow-night t)
-  ;; (load-theme 'doom-nord t)
-  ;; (load-theme 'doom-molokai t)
   (load-theme 'doom-one t)
   (doom-themes-treemacs-config)
-  (doom-themes-visual-bell-config))
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config))
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
@@ -149,6 +151,7 @@
   :hook (doom-modeline-mode . column-number-mode)   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 2
+        doom-modeline-height 15
         doom-modeline-enable-word-count t)
   (unless after-init-time
     ;; prevent flash of unstyled modeline at startup
@@ -183,35 +186,21 @@
 (setq default-frame-alist '((cursor-type . (bar . 2))))
 (setq-default frame-background-mode 'dark)
 
-;; (setq redisplay-dont-pause t)
-
 (when window-system
   (setq frame-title-format '(buffer-file-name "%f" ("%b"))
         icon-title-format frame-title-format)
-  (tooltip-mode -1)
   (blink-cursor-mode -1))
 
-;; Set default font
-;(if (find-font (font-spec :name "Fira Code"))
-;;    (set-default-font "Fira Code 13")
-; (message "Can't find font"))
-
-;; Other good fonts. Test text: ()[]l1t  O0o Ilegal1 = O0
-;; (set-face-font 'default "Envy Code R 13")
-;; (set-face-font 'default "ProggyCleanTT Nerd Font Complete 12")
-;; (set-face-font 'default "gohufont")
-;; (set-face-font 'default "Consolas 14")
-;; (set-face-font 'default "Source Code Pro 14")
-;; (set-face-font 'default "Droid Sans Mono Dotted 10")
-;; (set-face-font 'default "Anonymous Pro 14")
-;; (set-face-font 'default "Liberation Mono 10")
-;; (set-face-font 'default "Ubuntu Mono 11")
-;; (set-face-font 'default "MonteCarlo")
-;; (set-face-font 'default "Inconsolata 16")
-
-;; Put fringe on the side
-(if (fboundp 'fringe-mode) (fringe-mode))
-
+(set-face-attribute 'default nil
+                    :font "Iosevka SS09"
+                    :height 200)
+(set-face-attribute 'fixed-pitch nil
+                    :font "Iosevka SS09"
+                    :height 200)
+;; (set-face-attribute 'variable-pitch nil
+;;                     :font "Verdana"
+;;                     :height 160
+;;                     :weight 'regular)
 (global-font-lock-mode +1)
 
 ;; Explicitly define a width to reduce computation
@@ -295,7 +284,9 @@
       x-underline-at-descent-line t
       idle-update-delay 2.0
       window-combination-resize t
-      next-line-add-newlines nil)           ; don't add new lines when scrolling down
+      next-line-add-newlines nil            ; don't add new lines when scrolling down
+      kill-read-only-ok t
+      kill-do-not-save-duplicates t)
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
 ;; indicates misconfiguration (or that the user needs to stop relying on case
@@ -359,6 +350,8 @@
   :bind (([remap describe-command]  . #'helpful-command)
          ([remap describe-key]      . #'helpful-key)
          ([remap describe-symbol]   . #'helpful-symbol)
+         ([remap describe-function] . #'helpful-function)
+         ([remap describe-variable] . #'helpful-variable)
          ("C-h ." . helpful-at-point))
   :init
   (after! apropos
@@ -585,23 +578,18 @@
   ;; left and right commands are meta
   (setq ns-command-modifier 'meta)
   (setq ns-right-command-modifier 'left)
-
   ;; left opt key is super
   (setq ns-alternate-modifier 'super)
   ;; right opt is ignored by emacs (useful for mac-style accent input)
   (setq ns-right-alternate-modifier 'none)
-
   ;; left and right controls are control
   (setq ns-control-modifier 'control)
   (setq ns-right-control-modifier 'left)
-
   ;; function key is hyper
   (setq ns-function-modifier 'hyper)
-
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
-  (setq default-directory (getenv "HOME"))
-  (set-face-font 'default "Iosevka SS09 18"))
+  (setq default-directory (getenv "HOME")))
 
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
@@ -648,7 +636,7 @@
 ;;==================================================
 
 (use-package gitconfig-mode
-  :mode (("\\.gitconfig\\'" . gitconfig-mode)
+  :mode (("\\.gitconfig\\'"  . gitconfig-mode)
          ("\\.git/config\\'" . gitconfig-mode)
          ("\\.gitmodules\\'" . gitconfig-mode)))
 
@@ -737,7 +725,7 @@ Git gutter:
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
-(use-package jc-search
+(use-package jccb-search
   :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :bind (:map isearch-mode-map
@@ -857,14 +845,14 @@ Git gutter:
 
 (use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
-         ("C->" . mc/mark-next-like-this)
-         ("C-<" . mc/mark-previous-like-this)
-         ("C-c C-<" . mc/mark-all-like-this)
-         ("C-c c r" . set-rectangular-region-anchor)
-         ("C-c c t" . mc/mark-sgml-tag-pair)
-         ("C-c c c" . mc/edit-lines)
-         ("C-c c e" . mc/edit-ends-of-lines)
-         ("C-c c a" . mc/edit-beginnings-of-lines)))
+         ("C->"           . mc/mark-next-like-this)
+         ("C-<"           . mc/mark-previous-like-this)
+         ("C-c C-<"       . mc/mark-all-like-this)
+         ("C-c c r"       . set-rectangular-region-anchor)
+         ("C-c c t"       . mc/mark-sgml-tag-pair)
+         ("C-c c c"       . mc/edit-lines)
+         ("C-c c e"       . mc/edit-ends-of-lines)
+         ("C-c c a"       . mc/edit-beginnings-of-lines)))
 
 (use-package change-inner
   :bind (("C-c i" . change-inner)
@@ -877,7 +865,7 @@ Git gutter:
   :ensure nil
   :bind ("M-z" . zap-up-to-char))
 
-(use-package jc-misc
+(use-package jccb-misc
   :ensure nil
   :defer 1
   :commands (chmod+x-this jc/doctor)
@@ -895,7 +883,7 @@ Git gutter:
   (crux-with-region-or-buffer untabify)
   (crux-reopen-as-root-mode +1))
 
-(use-package jc-windows
+(use-package jccb-windows
   :ensure nil
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
@@ -1051,51 +1039,51 @@ Git gutter:
   (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
   (beacon-mode))
 
-(use-package pulse
-  :ensure nil
-  :custom-face
-  (pulse-highlight-start-face ((t (:inherit region))))
-  (pulse-highlight-face ((t (:inherit region))))
-  :hook (((dumb-jump-after-jump
-           imenu-after-jump) . my/recenter-and-pulse)
-         ((bookmark-after-jump
-           magit-diff-visit-file
-           next-error) . my/recenter-and-pulse-line))
-  :init
-  (with-no-warnings
-    (defun my/pulse-momentary-line (&rest _)
-      "Pulse the current line."
-      (pulse-momentary-highlight-one-line (point)))
+;; (use-package pulse
+;;   :ensure nil
+;;   :custom-face
+;;   (pulse-highlight-start-face ((t (:inherit region))))
+;;   (pulse-highlight-face ((t (:inherit region))))
+;;   :hook (((dumb-jump-after-jump
+;;            imenu-after-jump) . my/recenter-and-pulse)
+;;          ((bookmark-after-jump
+;;            magit-diff-visit-file
+;;            next-error) . my/recenter-and-pulse-line))
+;;   :init
+;;   (with-no-warnings
+;;     (defun my/pulse-momentary-line (&rest _)
+;;       "Pulse the current line."
+;;       (pulse-momentary-highlight-one-line (point)))
 
-    (defun my/pulse-momentary (&rest _)
-      "Pulse the region or the current line."
-      (if (fboundp 'xref-pulse-momentarily)
-          (xref-pulse-momentarily)
-        (my/pulse-momentary-line)))
+;;     (defun my/pulse-momentary (&rest _)
+;;       "Pulse the region or the current line."
+;;       (if (fboundp 'xref-pulse-momentarily)
+;;           (xref-pulse-momentarily)
+;;         (my/pulse-momentary-line)))
 
-    (defun my/recenter-and-pulse(&rest _)
-      "Recenter and pulse the region or the current line."
-      (recenter)
-      (my/pulse-momentary))
+;;     (defun my/recenter-and-pulse(&rest _)
+;;       "Recenter and pulse the region or the current line."
+;;       (recenter)
+;;       (my/pulse-momentary))
 
-    (defun my/recenter-and-pulse-line (&rest _)
-      "Recenter and pulse the current line."
-      (recenter)
-      (my/pulse-momentary-line))
+;;     (defun my/recenter-and-pulse-line (&rest _)
+;;       "Recenter and pulse the current line."
+;;       (recenter)
+;;       (my/pulse-momentary-line))
 
-    (dolist (cmd '(recenter-top-bottom
-                   other-window windmove-do-window-select
-                   ace-window aw--select-window
-                   pager-page-down pager-page-up
-                   winum-select-window-by-number
-                   ;; treemacs-select-window
-                   symbol-overlay-basic-jump))
-      (advice-add cmd :after #'my/pulse-momentary-line))
+;;     (dolist (cmd '(recenter-top-bottom
+;;                    other-window windmove-do-window-select
+;;                    ace-window aw--select-window
+;;                    pager-page-down pager-page-up
+;;                    winum-select-window-by-number
+;;                    ;; treemacs-select-window
+;;                    symbol-overlay-basic-jump))
+;;       (advice-add cmd :after #'my/pulse-momentary-line))
 
-    (dolist (cmd '(pop-to-mark-command
-                   pop-global-mark
-                   goto-last-change))
-      (advice-add cmd :after #'my/recenter-and-pulse))))
+;;     (dolist (cmd '(pop-to-mark-command
+;;                    pop-global-mark
+;;                    goto-last-change))
+;;       (advice-add cmd :after #'my/recenter-and-pulse))))
 
 (use-package drag-stuff
   :hook
@@ -1304,12 +1292,12 @@ Git gutter:
          ("/authorized_keys\\'" . ssh-authorized-keys-mode)))
 
 (use-package avy
-  :bind (("M-g g" . avy-goto-line)
+  :bind (("M-g g"   . avy-goto-line)
          ("C-c C-j" . avy-resume)
          ("C-c C-n" . avy-next)
          ("C-c C-p" . avy-prev)
-         ("C-'" . avy-goto-char)
-         ("C-\"" . avy-goto-char-timer))
+         ("C-'"     . avy-goto-char)
+         ("C-\""    . avy-goto-char-timer))
   :config
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
@@ -1346,10 +1334,10 @@ comment to the line."
 
 
 ;; load additional local settings (if they exist)
-(use-package jc-local
+(use-package jccb-local
   :ensure nil
   :load-path "site-lisp"
-  :if (file-exists-p (emacs-path "site-lisp/jc-local.el")))
+  :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
 (use-package server
   :if window-system
@@ -1843,7 +1831,8 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
 (use-package selectrum-prescient
   :commands selectrum-prescient-mode
   :config
-  (setq prescient-filter-method '(literal regexp fuzzy)))
+  (setq prescient-filter-method '(literal regexp fuzzy))
+  (setq prescient-history-length 1000))
 
 (use-package marginalia
   :commands marginalia-mode
@@ -1883,30 +1872,31 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
 
 (use-package consult
   :bind (;; ("C-x M-:" . consult-complex-command)
-         ;; ("C-c h" . consult-history)
-         ;; ("C-c m" . consult-mode-command)
+         ;; ("C-c h"   . consult-history)
+         ;; ("C-c m"   . consult-mode-command)
          ;; ("C-x 5 b" . consult-buffer-other-frame)
-         ;; ("M-g g" . consult-goto-line)
+         ;; ("M-g g"   . consult-goto-line)
          ;; ("M-g M-g" . consult-goto-line)
-         ;; ("M-y" . consult-yank-pop)
-         ("C-x b" . consult-buffer)
-         ("C-x 4 b" . consult-buffer-other-window)
-         ("C-x r x" . consult-register)
-         ("C-x r b" . consult-bookmark)
-         ("M-g o" . consult-outline)
-         ("M-g l" . consult-line)
-         ("M-g m" . consult-mark)
-         ("M-g k" . consult-global-mark)
-         ("M-g r" . consult-git-grep)
-         ("M-g f" . consult-find)
-         ("M-i" . consult-project-imenu)
-         ("M-g e" . consult-error)
-         ("M-s m" . consult-multi-occur)
+         ;; ("M-y"     . consult-yank-pop)
+         ("C-x b"    . consult-buffer)
+         ("C-x 4 b"  . consult-buffer-other-window)
+         ("C-x r x"  . consult-register)
+         ("C-x r b"  . consult-bookmark)
+         ("M-g o"    . consult-outline)
+         ("M-g l"    . consult-line)
+         ("M-g m"    . consult-mark)
+         ("M-g k"    . consult-global-mark)
+         ("M-g r"    . consult-git-grep)
+         ("M-g f"    . consult-find)
+         ("M-i"      . consult-project-imenu)
+         ("M-g e"    . consult-error)
+         ("M-s m"    . consult-multi-occur)
          ("<help> a" . consult-apropos))
   :init
   (fset 'multi-occur #'consult-multi-occur)
   :config
   (setq consult-preview-buffer nil)
+  (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root)
   ;; (setq consult-narrow-key "<") ;; (kbd "C-+")
@@ -1915,23 +1905,62 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   ;;       consult-view-list-function #'bookmark-view-names)
   (consult-preview-mode))
 
-;; Enable Consult-Selectrum integration.
-;; This package should be installed if Selectrum is used.
 (use-package consult-selectrum
   :after selectrum
   :demand t)
 
-;; MISC STUFF: snoopy-mode editorconfig
-;;
-;; TODO doom:  dtrt-indent smartparens so-long
-;;  pcre2el  ace-mc miniedit iedit hideshow
-;; company  workspaces lsp visual-line-mode
-;; ivy-occur cousel-mark-ring
-;;  spell-fu-mode
-;;
+(use-package org
+  :ensure org-plus-contrib
+  :pin org
+  :bind (("<f12> a" . org-agenda)
+         ("<f12> c" . org-capture)
+         ("<f12> l" . org-store-link))
+  :config
+  ;; (dolist (face '((org-level-1 . 1.2)
+  ;;                 (org-level-2 . 1.1)
+  ;;                 (org-level-3 . 1.05)
+  ;;                 (org-level-4 . 1.0)
+  ;;                 (org-level-5 . 1.1)
+  ;;                 (org-level-6 . 1.1)
+  ;;                 (org-level-7 . 1.1)
+  ;;                 (org-level-8 . 1.1)))
+  ;;   (set-face-attribute (car face) nil :height (cdr face)))
+  ;; (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+  ;; (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+  ;; (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+  ;; (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  ;; (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
+  (setq org-directory "~/org/")
+  (setq org-default-notes-file "~/org/notes.org")
+  (setq org-agenda-files (list org-directory))
+  (setq org-refile-targets '((nil :maxlevel . 2)
+                             (org-agenda-files :maxlevel . 2)))
+  (setq org-outline-path-complete-in-steps nil)
+  (setq org-refile-use-outline-path 'file)
+  (setq org-todo-keywords
+        (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+                (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))))
+  (setq org-tag-alist '(("work" . ?w)
+                        ("personal" . ?p)
+                        ("learn" . ?l)
+                        (:startgroup . nil)
+                        ("soon" . ?s) ("sometime" . ?f)
+                        (:endgroup . nil)))
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+  (setq org-special-ctrl-a/e t
+        org-special-ctrl-k t)
+  (setq org-use-fast-todo-selection t)
+  (setq org-agenda-start-with-log-mode t)
+  (setq org-log-done 'time)
+  (setq org-log-into-drawer t))
 
-;; hydras: expand, multiple-cursors, avy
-;; emacs-format-all-the-code
+;; (use-package org-superstar
+;;   :after org
+;;   :hook (org-mode . org-superstart-mode))
 
 ;; use-package seq: init -> config
 

@@ -184,5 +184,4 @@ This is a wrapper around `eval-after-load' that:
   (with-silent-modifications
     (ansi-color-apply-on-region compilation-filter-start (point))))
 
-(provide 'jc-doom)
-;;; jc-doom.el ends here
+(provide 'jccb-doom)
