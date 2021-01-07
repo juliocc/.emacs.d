@@ -138,12 +138,12 @@
   :hook (doom-modeline-mode . column-number-mode)   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 2
-        doom-modeline-height 15
         doom-modeline-enable-word-count t)
   (unless after-init-time
     ;; prevent flash of unstyled modeline at startup
     (setq-default mode-line-format nil))
   :config
+
   (add-hook 'magit-mode-hook
             (lambda ()
               "Show minimal modeline in magit-status buffer, no modeline elsewhere."
@@ -1012,7 +1012,7 @@ Git gutter:
                   " "))))
 
 (use-package shrink-whitespace
-  :bind ("M-SPC" . shrink-whitespace))
+  :bind ("M-\\" . shrink-whitespace))
 
 (use-package beacon
   :defer 2
@@ -1896,9 +1896,13 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
 (use-package org
   :ensure org-plus-contrib
   :pin org
-  :bind (("<f12> a" . org-agenda)
-         ("<f12> c" . org-capture)
-         ("<f12> l" . org-store-link))
+  :bind (("<f12> a"     . org-agenda)
+         ("<f12> c"     . org-capture)
+         ("<f12> <f12>" . (lambda () (interactive) (org-capture nil "t")))
+         ("<f12> w"     . (lambda () (interactive) (org-agenda nil "w")))
+         ("<f12> l"     . org-store-link))
+  :init
+  (setq org-modules '(org-habit))
   :config
   ;; (dolist (face '((org-level-1 . 1.2)
   ;;                 (org-level-2 . 1.1)
@@ -1918,6 +1922,7 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   ;; (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
+  (org-load-modules-maybe t)
   (setq org-directory "~/org/")
   (setq org-default-notes-file "~/org/notes.org")
   (setq org-agenda-files (list org-directory))
@@ -1926,14 +1931,26 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path 'file)
   (setq org-todo-keywords
-        (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
-                (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))))
+        (quote ((sequence "IN-PROGRESS(p)" "NEXT(n)" "TODO(t)" "|" "DONE(d)")
+                (sequence "SOMETIME(f)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)"))))
+  (setq org-todo-keyword-faces
+        `(("TODO"        . ,(doom-color 'yellow))
+          ("IN-PROGRESS" . ,(doom-color 'orange))
+          ("NEXT"        . ,(doom-color 'red))
+          ("SOMETIME"    . ,(doom-color 'base7))
+          ("WAITING"     . ,(doom-color 'base6))
+          ("HOLD"        . ,(doom-color 'base5))
+          ("DONE"        . ,(doom-color 'green))
+          ("CANCELED"    . ,(doom-color 'green))))
+
   (setq org-tag-alist '(("work" . ?w)
                         ("personal" . ?p)
-                        ("learn" . ?l)
-                        (:startgroup . nil)
-                        ("soon" . ?s) ("sometime" . ?f)
-                        (:endgroup . nil)))
+                        ("learn" . ?l)))
+  (setq org-agenda-custom-commands
+        `(("w" tags-todo "work"
+           ((org-agenda-sorting-strategy '(todo-state-up priority-down))))
+          ("l" tags-todo "-work"
+           ((org-agenda-sorting-strategy '(todo-state-up priority-down))))))
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   (setq org-special-ctrl-a/e t
         org-special-ctrl-k t)
