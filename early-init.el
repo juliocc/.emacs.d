@@ -8,8 +8,8 @@
 ;; (push '(tool-bar-lines . 0) default-frame-alist)
 ;; (push '(vertical-scroll-bars) default-frame-alist)
 
-(setq initial-frame-alist '((width . 170)
-                            (height . 56)
+(setq initial-frame-alist '((width . 250)
+                            (height . 100)
                             (tool-bar-lines . 0)
                             (left-fringe . 0)
                             (right-fringe . 0)

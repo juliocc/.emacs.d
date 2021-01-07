@@ -89,15 +89,6 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; (use-package benchmark-init
-;;   :when jccb/debug
-;;   :demand t
-;;   :hook (window-setup . benchmark-init/deactivate))
-
-
-;; (use-package org-plus-contrib
-;;   :pin org)
-
 (use-package no-littering
   :config
   (setq auto-save-file-name-transforms
@@ -105,10 +96,6 @@
         custom-file (no-littering-expand-etc-file-name "custom.el"))
   (when (file-exists-p custom-file)
     (load-file custom-file)))
-
-(use-package jccb-doom
-  :ensure nil
-  :load-path "site-lisp")
 
 (use-package gcmh
   :hook (emacs-startup . gcmh-mode)
@@ -203,15 +190,15 @@
 ;;                     :weight 'regular)
 (global-font-lock-mode +1)
 
-;; Explicitly define a width to reduce computation
-(setq-default display-line-numbers-width 3)
-
-;; Show absolute line numbers for narrowed regions makes it easier to tell the
-;; buffer is narrowed, and where you are, exactly.
-(setq-default display-line-numbers-widen nil)
-;; (global-linum-mode 1)
-(add-hook! '(prog-mode-hook text-mode-hook conf-mode-hook)
-           #'display-line-numbers-mode)
+(use-package display-line-numbers
+  :ensure nil
+  :hook ((prog-mode text-mode conf-mode) . display-line-numbers-mode)
+  :config
+  ;; Explicitly define a width to reduce computation
+  (setq-default display-line-numbers-width 3)
+  ;; Show absolute line numbers for narrowed regions makes it easier to tell the
+  ;; buffer is narrowed, and where you are, exactly.
+  (setq-default display-line-numbers-widen nil))
 
 ;; More performant rapid scrolling over unfontified regions. May cause brief
 ;; spells of inaccurate syntax highlighting right after scrolling, which should
@@ -244,8 +231,10 @@
       mouse-wheel-progressive-speed nil)  ; don't accelerate scrolling
 
 ;; Remove hscroll-margin in shells, otherwise it causes jumpiness
-(setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
-
+(dolist (hook '(eshell-mode-hook term-mode-hook))
+  (add-hook hook (lambda () (setq hscroll-margin 0
+                                  hscroll-step 0
+                                  scroll-margin 0))))
 (when *is-a-mac*
   ;; sane trackpad/mouse scroll settings
   (setq mac-redisplay-dont-reset-vscroll t
@@ -297,8 +286,6 @@
 ;; Make apropos omnipotent. It's more useful this way.
 (setq apropos-do-all t)
 
-
-(setq-hook! '(prog-mode-hook text-mode-hook conf-mode-hook) show-trailing-whitespace t)
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
 (setq-default word-wrap t)
@@ -351,7 +338,7 @@
          ([remap describe-variable] . #'helpful-variable)
          ("C-h ." . helpful-at-point))
   :init
-  (after! apropos
+  (with-eval-after-load 'apropos
     ;; patch apropos buttons to call helpful instead of help
     (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
       (button-type-put
@@ -375,20 +362,23 @@
   (setq show-trailing-whitespace nil))
 
 ;; But don't show trailing whitespace in SQLi, inf-ruby etc.
-(add-hook! '(special-mode-hook
-             Info-mode-hook
-             term-mode-hook
-             ido-minibuffer-setup-hook
-             comint-mode-hook
-             compilation-mode-hook
-             isearch-mode-hook
-             minibuffer-setup-hook)
-           #'sanityinc/no-trailing-whitespace)
+(dolist (hook '(special-mode-hook
+                Info-mode-hook
+                term-mode-hook
+                comint-mode-hook
+                compilation-mode-hook
+                isearch-mode-hook
+                minibuffer-setup-hook))
+  (add-hook hook #'sanityinc/no-trailing-whitespace))
+
+(dolist (hook '(prog-mode-hook text-mode-hook conf-mode-hook))
+  (add-hook hook (lambda () (setq show-trailing-whitespace t))))
+
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
-  (remq 'process-kill-buffer-query-function
-         kill-buffer-query-functions))
+      (remq 'process-kill-buffer-query-function
+            kill-buffer-query-functions))
 
 ;; Backup settings
 (use-package files
@@ -480,10 +470,9 @@
                   ,no-littering-etc-directory))
     (add-to-list 'recentf-exclude path))
 
-  (add-hook! 'dired-mode-hook
-    (defun doom--recentf-add-dired-directory-h ()
-      "Add dired directory to recentf file list."
-      (recentf-add-file default-directory))))
+  (add-hook 'dired-mode-hook
+            (defun doom--recentf-add-dired-directory-h ()
+              (recentf-add-file default-directory))))
 
 (use-package elec-pair
   :hook (after-init . electric-pair-mode)
@@ -495,13 +484,12 @@
   :config
   (setq savehist-save-minibuffer-history t
         savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
-  (add-hook! 'kill-emacs-hook
-    (defun doom-unpropertize-kill-ring-h ()
-      "Remove text properties from `kill-ring' for a smaller savehist file."
-      (setq kill-ring (cl-loop for item in kill-ring
-                               if (stringp item)
-                               collect (substring-no-properties item)
-                               else if item collect it)))))
+  (add-hook 'kill-emacs-hook
+            (defun doom-unpropertize-kill-ring-h ()
+              (setq kill-ring (cl-loop for item in kill-ring
+                                       if (stringp item)
+                                       collect (substring-no-properties item)
+                                       else if item collect it)))))
 
 ;; Never ever use tabs
 (setq-default indent-tabs-mode nil)
@@ -661,7 +649,7 @@
     ;; See https://chris.beams.io/posts/git-commit/
     (setq git-commit-summary-max-length 50
           git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
-    (setq-hook! 'git-commit-mode-hook fill-column 72))
+    (add-hook 'git-commit-mode-hook (lambda () (setq fill-column 72))))
 
   (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
 
@@ -752,7 +740,7 @@ Git gutter:
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
-(after! ediff
+(with-eval-after-load 'ediff
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
@@ -1276,7 +1264,9 @@ Git gutter:
   :mode "requirements\\.txt\\'")
 
 (use-package paradox
-  :commands paradox-list-packages)
+  :commands paradox-list-packages
+  :config
+  (setq paradox-column-width-package 40))
 
 (use-package highlight-symbol
   :commands (highlight-symbol
@@ -1455,16 +1445,8 @@ comment to the line."
   (setq highlight-indent-guides-method 'character
         highlight-indent-guides-responsive 'top-edge))
 
-(after! compile
-  (setq compilation-always-kill t       ; kill compilation process before starting another
-        compilation-ask-about-save nil  ; save all buffers on `compile'
-        compilation-scroll-output 'first-error)
-  ;; Handle ansi codes in compilation buffer
-  (add-hook 'compilation-filter-hook #'doom-apply-ansi-color-to-compilation-buffer-h))
-
-
-(add-hook! '(completion-list-mode-hook Man-mode-hook)
-           #'hide-mode-line-mode)
+;; (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
+(add-hook 'Man-mode-hook #'hide-mode-line-mode)
 
 (use-package vterm
   :disabled t
@@ -1907,6 +1889,9 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
 (use-package consult-selectrum
   :after selectrum
   :demand t)
+
+;; (use-package org-plus-contrib
+;;   :pin org)
 
 (use-package org
   :ensure org-plus-contrib
