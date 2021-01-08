@@ -1931,7 +1931,7 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path 'file)
   (setq org-todo-keywords
-        (quote ((sequence "IN-PROGRESS(p)" "NEXT(n)" "TODO(t)" "|" "DONE(d)")
+        (quote ((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(p!)" "|" "DONE(d!)")
                 (sequence "SOMETIME(f)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)"))))
   (setq org-todo-keyword-faces
         `(("TODO"        . ,(doom-color 'yellow))
@@ -1946,11 +1946,33 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   (setq org-tag-alist '(("work" . ?w)
                         ("personal" . ?p)
                         ("learn" . ?l)))
+
+  (setq jccb/org-todo-sort-order '("NEXT"
+                                   "IN-PROGRESS"
+                                   "TODO"
+                                   "WAITING"
+                                   "HOLD"
+                                   "SOMETIME"
+                                   "DONE"
+                                   "CANCELED"))
+  (defun jccb/org-sort (a b)
+    (when-let ((state-a (get-text-property 14 'todo-state a))
+               (state-b (get-text-property 14 'todo-state b))
+               (cmp (--map (cl-position-if (lambda (x)
+                                             (equal x it))
+                                           jccb/org-todo-sort-order)
+                           (list state-a state-b))))
+      (cond ((apply '> cmp) 1)
+            ((apply '< cmp) -1)
+            (t nil))))
+
   (setq org-agenda-custom-commands
         `(("w" tags-todo "work"
-           ((org-agenda-sorting-strategy '(todo-state-up priority-down))))
+           ((org-agenda-cmp-user-defined #'jccb/org-sort)
+            (org-agenda-sorting-strategy '(user-defined-up priority-down))))
           ("l" tags-todo "-work"
-           ((org-agenda-sorting-strategy '(todo-state-up priority-down))))))
+           ((org-agenda-cmp-user-defined #'jccb/org-sort)
+            (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   (setq org-special-ctrl-a/e t
         org-special-ctrl-k t)
