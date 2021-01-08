@@ -1900,6 +1900,7 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
          ("<f12> c"     . org-capture)
          ("<f12> <f12>" . (lambda () (interactive) (org-capture nil "t")))
          ("<f12> w"     . (lambda () (interactive) (org-agenda nil "w")))
+         ("<f12> SPC"     . (lambda () (interactive) (org-agenda nil " ")))
          ("<f12> l"     . org-store-link))
   :init
   (setq org-modules '(org-habit))
@@ -1941,7 +1942,11 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
           ("WAITING"     . ,(doom-color 'base6))
           ("HOLD"        . ,(doom-color 'base5))
           ("DONE"        . ,(doom-color 'green))
-          ("CANCELED"    . ,(doom-color 'green))))
+          ("CANCELED"    . ,(doom-color 'green)))
+        org-priority-faces
+        `((?A . ,(doom-color 'base8))
+          (?B . ,(doom-color 'base7))
+          (?C . ,(doom-color 'base6))))
 
   (setq org-tag-alist '(("work" . ?w)
                         ("personal" . ?p)
@@ -1965,14 +1970,18 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
             (t nil))))
-
+  (setq org-agenda-cmp-user-defined #'jccb/org-sort)
   (setq org-agenda-custom-commands
-        `(("w" tags-todo "work"
-           ((org-agenda-cmp-user-defined #'jccb/org-sort)
-            (org-agenda-sorting-strategy '(user-defined-up priority-down))))
+        '(("w" tags-todo "work"
+           ((org-agenda-sorting-strategy '(user-defined-up priority-down))))
+          (" " "Agenda"
+           ((agenda " " nil)
+            (tags-todo "work"
+                       ((org-agenda-overriding-header "Tasks")
+                        (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))
           ("l" tags-todo "-work"
-           ((org-agenda-cmp-user-defined #'jccb/org-sort)
-            (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
+           ((org-agenda-sorting-strategy '(user-defined-up priority-down))))))
+  (setq org-agenda-span 14)
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   (setq org-special-ctrl-a/e t
         org-special-ctrl-k t)
