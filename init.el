@@ -1111,7 +1111,7 @@ Git gutter:
 
   (setq projectile-indexing-method 'alien)
   (setq projectile-enable-caching t)
-  (setq projectile-completion-system 'ivy)
+  (setq projectile-completion-system 'auto)
   (setq projectile-sort-order 'recently-active)
   projectile-globally-ignored-files '(".DS_Store" "TAGS")
   (when (executable-find "fd")
@@ -1131,7 +1131,7 @@ Git gutter:
   :init
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
-  (setq dumb-jump-selector 'ivy)
+  (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
 (use-package company
