@@ -322,9 +322,6 @@
                                            try-complete-lisp-symbol-partially
                                            try-complete-lisp-symbol)))
 
-
-(use-package hydra)
-
 (use-package helpful
   :commands (helpful--read-symbol
              helpful-command
@@ -391,10 +388,10 @@
         version-control t
         create-lockfiles nil))
 
-  ;; UTF-8 everything please
-  (when (fboundp 'set-charset-priority)
-    (set-charset-priority 'unicode))
-  (setq locale-coding-system 'utf-8)
+;; UTF-8 everything please
+(when (fboundp 'set-charset-priority)
+  (set-charset-priority 'unicode))
+(setq locale-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
@@ -411,9 +408,9 @@
   :config
   (auto-image-file-mode 1))
 
-;(size-indication-mode +1)                ; display file size
+;; (size-indication-mode +1)                ; display file size
 (delete-selection-mode +1)               ; delete selected text on input
-;(global-subword-mode 1)
+;; (global-subword-mode 1)
 (global-auto-revert-mode +1)             ; auto reload files if changed outside emacs
 (auto-compression-mode +1)               ; open compressed files a la dired
 (transient-mark-mode +1)
@@ -504,7 +501,7 @@
 (use-package uniquify
   :ensure nil
   :init
-  ;(setq uniquify-buffer-name-style 'forward)
+  ;; (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
   (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
@@ -602,7 +599,7 @@
   :if *is-a-mac*
   :commands reveal-in-osx-finder)
 
-; Stop C-z from minimizing windows under OS X
+;; Stop C-z from minimizing windows under OS X
 (when *is-a-windowed-mac*
   (unbind-key "C-z"))
 
@@ -673,36 +670,7 @@
     (jump-to-register :magit-fullscreen)))
 
 (use-package git-gutter
-  :hook
-  ((prog-mode text-mode conf-mode) . git-gutter-mode)
-  :init
-  (defhydra hydra-git-gutter (:body-pre (git-gutter-mode 1)
-                                        :hint nil)
-    "
-Git gutter:
-  _j_: next hunk        _s_tage hunk     _q_uit
-  _k_: previous hunk    _r_evert hunk    _Q_uit and deactivate git-gutter
-  ^ ^                   _p_opup hunk
-  _h_: first hunk
-  _l_: last hunk        set start _R_evision
-"
-    ("j" git-gutter:next-hunk)
-    ("k" git-gutter:previous-hunk)
-    ("h" (progn (goto-char (point-min))
-                (git-gutter:next-hunk 1)))
-    ("l" (progn (goto-char (point-min))
-                (git-gutter:previous-hunk 1)))
-    ("s" git-gutter:stage-hunk)
-    ("r" git-gutter:revert-hunk)
-    ("p" git-gutter:popup-hunk)
-    ("R" git-gutter:set-start-revision)
-    ("q" nil :color blue)
-    ("Q" (progn (git-gutter-mode -1)
-                ;; git-gutter-fringe doesn't seem to
-                ;; clear the markup right away
-                (sit-for 0.1)
-                (git-gutter:clear))
-     :color blue)))
+  :hook ((prog-mode text-mode conf-mode) . git-gutter-mode))
 
 ;; use regexp isearch by default
 (bind-key [remap isearch-forward] #'isearch-forward-regexp)
@@ -740,7 +708,12 @@ Git gutter:
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
-(with-eval-after-load 'ediff
+;; (with-eval-after-load 'ediff
+;;   )
+
+(use-package ediff
+  :ensure nil
+  :config
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
@@ -887,10 +860,7 @@ Git gutter:
 
 ; ibuffer
 (use-package ibuffer
-  :hook (ibuffer . hydra:ibuffer-main/body)
   :bind ("C-x C-b" . ibuffer)
-  :bind (:map ibuffer-mode-map
-              ("." . hydra:ibuffer-main/body))
   :config
   (setq ibuffer-show-empty-filter-groups nil
         ibuffer-filter-group-name-face '(:inherit (success bold)))
@@ -898,107 +868,7 @@ Git gutter:
     (:name "Size"
            :inline t
            :header-mouse-map ibuffer-size-header-map)
-    (file-size-human-readable (buffer-size)))
-  :init
-  (defhydra hydra:ibuffer-main (:color pink :hint nil)
-    "
-  ^Navigation^  |  ^Mark^        |  ^Actions^        |  ^View^
---^----------^--+--^----^--------+--^-------^--------+--^----^----------
-   _k_:    ʌ    |  _m_: mark     |  _D_: delete      |  _g_: refresh
-  _RET_: visit  |  _u_: unmark   |  _S_: save        |  _s_: sort...
-   _j_:    v    |  _*_: mark...  |  _a_: actions...  |  _/_: filter...
---^----------^--+--^----^--------+--^-------^--------+--^----^----------
-"
-    ("j" ibuffer-forward-line)
-    ("RET" ibuffer-visit-buffer :color blue)
-    ("k" ibuffer-backward-line)
-
-    ("m" ibuffer-mark-forward)
-    ("u" ibuffer-unmark-forward)
-    ("*" hydra:ibuffer-mark/body :color blue)
-
-    ("D" ibuffer-do-delete)
-    ("S" ibuffer-do-save)
-    ("a" hydra:ibuffer-action/body :color blue)
-
-    ("g" ibuffer-update)
-    ("s" hydra:ibuffer-sort/body :color blue)
-    ("/" hydra:ibuffer-filter/body :color blue)
-
-    ("o" ibuffer-visit-buffer-other-window "other window" :color blue)
-    ("q" nil "toggle hydra" :color blue)
-    ("." nil "toggle hydra" :color blue))
-
-
-  (defhydra hydra:ibuffer-mark (:color teal :columns 5
-                                       :after-exit (hydra:ibuffer-main/body))
-    "Mark"
-    ("*" ibuffer-unmark-all "unmark all")
-    ("M" ibuffer-mark-by-mode "mode")
-    ("m" ibuffer-mark-modified-buffers "modified")
-    ("u" ibuffer-mark-unsaved-buffers "unsaved")
-    ("s" ibuffer-mark-special-buffers "special")
-    ("r" ibuffer-mark-read-only-buffers "read-only")
-    ("/" ibuffer-mark-dired-buffers "dired")
-    ("e" ibuffer-mark-dissociated-buffers "dissociated")
-    ("h" ibuffer-mark-help-buffers "help")
-    ("z" ibuffer-mark-compressed-file-buffers "compressed")
-    ("f" ibuffer-mark-by-file-name-regexp "file name regexp")
-
-    ("b" hydra:ibuffer-main/body "back" :color blue)
-    ("q" hydra:ibuffer-main/body "back" :color blue))
-
-  (defhydra hydra:ibuffer-action (:color teal :columns 4
-                                         :after-exit
-                                         (if (eq major-mode 'ibuffer-mode)
-                                             (hydra:ibuffer-main/body)))
-    "Action"
-    ("A" ibuffer-do-view "view")
-    ("E" ibuffer-do-eval "eval")
-    ("F" ibuffer-do-shell-command-file "shell-command-file")
-    ("I" ibuffer-do-query-replace-regexp "query-replace-regexp")
-    ("H" ibuffer-do-view-other-frame "view-other-frame")
-    ("N" ibuffer-do-shell-command-pipe-replace "shell-cmd-pipe-replace")
-    ("M" ibuffer-do-toggle-modified "toggle-modified")
-    ("O" ibuffer-do-occur "occur")
-    ("P" ibuffer-do-print "print")
-    ("Q" ibuffer-do-query-replace "query-replace")
-    ("R" ibuffer-do-rename-uniquely "rename-uniquely")
-    ("T" ibuffer-do-toggle-read-only "toggle-read-only")
-    ("U" ibuffer-do-replace-regexp "replace-regexp")
-    ("V" ibuffer-do-revert "revert")
-    ("W" ibuffer-do-view-and-eval "view-and-eval")
-    ("X" ibuffer-do-shell-command-pipe "shell-command-pipe")
-
-    ("b" nil "back")
-    ("q" nil "back"))
-
-  (defhydra hydra:ibuffer-sort (:color amaranth :columns 3)
-    "Sort"
-    ("i" ibuffer-invert-sorting "invert")
-    ("a" ibuffer-do-sort-by-alphabetic "alphabetic")
-    ("v" ibuffer-do-sort-by-recency "recently used")
-    ("s" ibuffer-do-sort-by-size "size")
-    ("f" ibuffer-do-sort-by-filename/process "filename")
-    ("m" ibuffer-do-sort-by-major-mode "mode")
-
-    ("b" hydra:ibuffer-main/body "back" :color blue)
-    ("q" hydra:ibuffer-main/body "back" :color blue))
-
-  (defhydra hydra:ibuffer-filter (:color amaranth :columns 4)
-    "Filter"
-    ("m" ibuffer-filter-by-used-mode "mode")
-    ("M" ibuffer-filter-by-derived-mode "derived mode")
-    ("n" ibuffer-filter-by-name "name")
-    ("c" ibuffer-filter-by-content "content")
-    ("e" ibuffer-filter-by-predicate "predicate")
-    ("f" ibuffer-filter-by-filename "filename")
-    (">" ibuffer-filter-by-size-gt "size")
-    ("<" ibuffer-filter-by-size-lt "size")
-    ("/" ibuffer-filter-disable "disable")
-
-    ("b" hydra:ibuffer-main/body "back" :color blue)
-    ("q" hydra:ibuffer-main/body "back" :color blue)))
+    (file-size-human-readable (buffer-size))))
 
 (use-package ibuffer-projectile
   :hook (ibuffer . ibuffer-projectile-set-filter-groups)
@@ -1127,7 +997,7 @@ Git gutter:
   (setq projectile-require-project-file nil))
 
 (use-package dumb-jump
-  :commands dumb-jump-xref-activate dumb-jump-go dumb-jump-back dumb-jump-quick-look
+  :commands dumb-jump-xref-activate
   :init
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
@@ -1359,7 +1229,7 @@ comment to the line."
 
 ;; Don't resize windows & frames in steps; it's prohibitive to prevent the user
 ;; from resizing it to exact dimensions, and looks weird.
-(setq window-resize-pixelwise t
+(setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
       frame-resize-pixelwise t)
 
 ;; The native border "consumes" a pixel of the fringe on righter-most splits,
@@ -1707,78 +1577,6 @@ comment to the line."
 (use-package try
   :commands try)
 
-(use-package smerge-mode
-  :after hydra
-  :hook (magit-diff-visit-file . (lambda ()
-                                   (when smerge-mode
-                                     (hydra:smerge/body))))
-  :config
-  (defhydra hydra:smerge
-    (:color pink :hint nil :post (smerge-auto-leave))
-    "
-^Move^       ^Keep^               ^Diff^                 ^Other^
-^^-----------^^-------------------^^---------------------^^-------
-_n_ext       _b_ase               _<_: upper/base        _C_ombine
-_p_rev       _u_pper              _=_: upper/lower       _r_esolve
-^^           _l_ower              _>_: base/lower        _k_ill current
-^^           _a_ll                _R_efine
-^^           _RET_: current       _E_diff
-"
-    ("n" smerge-next)
-    ("p" smerge-prev)
-    ("b" smerge-keep-base)
-    ("u" smerge-keep-upper)
-    ("l" smerge-keep-lower)
-    ("a" smerge-keep-all)
-    ("RET" smerge-keep-current)
-    ("\C-m" smerge-keep-current)
-    ("<" smerge-diff-base-upper)
-    ("=" smerge-diff-upper-lower)
-    (">" smerge-diff-base-lower)
-    ("R" smerge-refine)
-    ("E" smerge-ediff)
-    ("C" smerge-combine-with-next)
-    ("r" smerge-resolve)
-    ("k" smerge-kill-current)
-    ("ZZ" (lambda ()
-            (interactive)
-            (save-buffer)
-            (bury-buffer))
-     "Save and bury buffer" :color blue)
-    ("q" nil "cancel" :color blue)))
-
-(use-package kmacro
-  :ensure nil
-  :bind ("C-x r h" . hydra:rectangle/body)
-  :config
-  (defhydra hydra:rectangle (:body-pre (rectangle-mark-mode 1)
-                                       :color pink
-                                       :hint nil
-                                       :post (deactivate-mark))
-    "
-  ^_k_^       _w_ copy      _o_pen       _N_umber-lines
-_h_   _l_     _y_ank        _t_ype       _e_xchange-point
-  ^_j_^       _d_ kill      _c_lear      _r_eset-region-mark
-^^^^          _u_ndo        _q_ quit     ^ ^
-"
-    ("k" rectangle-previous-line)
-    ("j" rectangle-next-line)
-    ("h" rectangle-backward-char)
-    ("l" rectangle-forward-char)
-    ("d" kill-rectangle)                    ;; C-x r k
-    ("y" yank-rectangle)                    ;; C-x r y
-    ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-    ("o" open-rectangle)                    ;; C-x r o
-    ("t" string-rectangle)                  ;; C-x r t
-    ("c" clear-rectangle)                   ;; C-x r c
-    ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-    ("N" rectangle-number-lines)            ;; C-x r N
-    ("r" (if (region-active-p)
-             (deactivate-mark)
-           (rectangle-mark-mode 1)))
-    ("u" undo nil)
-    ("q" nil)))
-
 (use-package color-identifiers-mode
   :commands color-identifiers-mode)
 
@@ -1840,7 +1638,7 @@ _h_   _l_     _y_ank        _t_ype       _e_xchange-point
   :hook (after-init . jccb/selectrum-setup)
   :bind ("C-c C-r" . selectrum-repeat)
   :commands selectrum-mode
-  :init
+  :config
   (defun jccb/selectrum-setup ()
     (selectrum-mode +1)
     (selectrum-prescient-mode +1)
