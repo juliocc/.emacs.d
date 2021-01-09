@@ -1694,15 +1694,19 @@ comment to the line."
 (use-package org
   :ensure org-plus-contrib
   :pin org
+  :commands org-agenda org-capture
   :bind (("<f12> a"     . org-agenda)
          ("<f12> c"     . org-capture)
-         ("<f12> <f12>" . (lambda () (interactive) (org-capture nil "t")))
-         ("<f12> w"     . (lambda () (interactive) (org-agenda nil "w")))
-         ("<f12> SPC"     . (lambda () (interactive) (org-agenda nil " ")))
+         ("<f12> <f12>" . jccb/capture-task)
+         ("<f12> w"     . jccb/org-agenda-work)
+         ("<f12> p"     . jccb/org-agenda-personal)
          ("<f12> l"     . org-store-link))
   :init
   (setq org-modules '(org-habit))
   :config
+  (defun jccb/capture-task () (interactive) (org-capture nil "t"))
+  (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
+  (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
   ;; (dolist (face '((org-level-1 . 1.2)
   ;;                 (org-level-2 . 1.1)
   ;;                 (org-level-3 . 1.05)
@@ -1722,6 +1726,9 @@ comment to the line."
   ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
   (org-load-modules-maybe t)
+  (setq org-habit-graph-column 50)
+  (setq org-habit-show-habits-only-for-today nil)
+  (setq org-habit-show-all-today nil)
   (setq org-directory "~/org/")
   (setq org-default-notes-file "~/org/notes.org")
   (setq org-agenda-files (list org-directory))
@@ -1770,15 +1777,16 @@ comment to the line."
             (t nil))))
   (setq org-agenda-cmp-user-defined #'jccb/org-sort)
   (setq org-agenda-custom-commands
-        '(("w" tags-todo "work"
-           ((org-agenda-sorting-strategy '(user-defined-up priority-down))))
-          (" " "Agenda"
-           ((agenda " " nil)
-            (tags-todo "work"
+        '(("w" "Work Agenda"
+           ((agenda "" nil)
+            (tags-todo "work-habit"
                        ((org-agenda-overriding-header "Tasks")
                         (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))
-          ("l" tags-todo "-work"
-           ((org-agenda-sorting-strategy '(user-defined-up priority-down))))))
+          ("p" "Personal Agenda"
+           ((agenda "" nil)
+            (tags-todo "-work-habit"
+                       ((org-agenda-overriding-header "Tasks")
+                        (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))))
   (setq org-agenda-span 14)
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   (setq org-special-ctrl-a/e t
