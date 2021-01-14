@@ -463,6 +463,7 @@
         recentf-max-menu-items 0)
 
   (dolist (path `("/tmp/" "/private/var" "/ssh:" "/iap:"
+                  ,package-user-dir
                   ,no-littering-var-directory
                   ,no-littering-etc-directory))
     (add-to-list 'recentf-exclude path))
@@ -630,10 +631,13 @@
 ;;   :mode "gitolite\\.conf\\'")
 
 (use-package magit
+  :after selectrum
   :bind (("C-x C-z" . magit-status)
          :map magit-status-mode-map
          ("q" . magit-quit-session))
   :config
+
+  (setq magit-completing-read-function #'selectrum-completing-read)
 
   (use-package git-commit
     :hook
@@ -971,6 +975,9 @@
   :after flyspell
   :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
 
+(use-package ripgrep
+  :commands ripgrep-regexp)
+
 (use-package projectile
   :bind-keymap ("C-c p" . projectile-command-map)
   :config
@@ -1015,9 +1022,11 @@
   :config
   (setq company-idle-delay 0.6
         company-show-numbers t
+        company-tooltip-limit 20
         company-tooltip-align-annotations t
         company-minimum-prefix-length 1
         company-dabbrev-downcase nil)
+
   (global-company-mode))
 
 (use-package company-terraform
@@ -1624,15 +1633,40 @@ comment to the line."
          :map minibuffer-local-map
          ("C-S-a" . embark-act-noexit))
   :config
+  (defun refresh-selectrum ()
+    (setq selectrum--previous-input-string nil))
+  (add-hook 'embark-pre-action-hook #'refresh-selectrum)
+
   (setq embark-action-indicator
         (lambda (map)
           (which-key--show-keymap "Embark" map nil nil 'no-paging)
           #'which-key--hide-popup-ignore-command)
         embark-become-indicator embark-action-indicator)
-  :init
-  (defun refresh-selectrum ()
-    (setq selectrum--previous-input-string nil))
-  (add-hook 'embark-pre-action-hook #'refresh-selectrum))
+
+  (defun current-candidate+category ()
+    (when selectrum-active-p
+      (cons (selectrum--get-meta 'category)
+            (selectrum-get-current-candidate))))
+
+  (add-hook 'embark-target-finders #'current-candidate+category)
+
+  (defun current-candidates+category ()
+    (when selectrum-active-p
+      (cons (selectrum--get-meta 'category)
+            (selectrum-get-current-candidates
+             ;; Pass relative file names for dired.
+             minibuffer-completing-file-name))))
+
+  (add-hook 'embark-candidate-collectors #'current-candidates+category)
+  ;; No unnecessary computation delay after injection.
+  (add-hook 'embark-setup-hook #'selectrum-set-selected-candidate))
+
+;; (use-package orderless
+;;   :config
+;;   (setq orderless-matching-styles '(;orderless-literal
+;;                                     orderless-initialism
+;;                                     orderless-regexp
+;;                                     orderless-flex))
 
 (use-package selectrum
   :hook (after-init . jccb/selectrum-setup)
@@ -1642,6 +1676,8 @@ comment to the line."
   (defun jccb/selectrum-setup ()
     (selectrum-mode +1)
     (selectrum-prescient-mode +1)
+    ;;(setq selectrum-refine-candidates-function #'orderless-filter)
+    ;;(setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
     (prescient-persist-mode +1)
     (marginalia-mode +1))
   (setq selectrum-num-candidates-displayed 15
@@ -1670,23 +1706,26 @@ comment to the line."
          ("M-i"      . consult-project-imenu)
          ("M-g e"    . consult-error)
          ("M-s m"    . consult-multi-occur)
+         ("M-s r"    . consult-ripgrep)
          ("<help> a" . consult-apropos))
   :init
   (fset 'multi-occur #'consult-multi-occur)
+  ;; (fset 'projectile-ripgrep #'consult-ripgrep)
   :config
   (setq consult-preview-buffer nil)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
-  ;; (setq consult-narrow-key "<") ;; (kbd "C-+")
-  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-  ;; (setq consult-view-open-function #'bookmark-jump
-  ;;       consult-view-list-function #'bookmark-view-names)
-  (consult-preview-mode))
+  (setq consult-project-root-function #'projectile-project-root))
 
 (use-package consult-selectrum
   :after selectrum
   :demand t)
+
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :config
+  (add-hook 'embark-collect-mode-hook #'embark-consult-preview-minor-mode))
 
 ;; (use-package org-plus-contrib
 ;;   :pin org)
@@ -1694,9 +1733,12 @@ comment to the line."
 (use-package org
   :ensure org-plus-contrib
   :pin org
+  ;; :hook (org-mode . org-indent-mode)
   :commands org-agenda org-capture
   :bind (("<f12> a"     . org-agenda)
          ("<f12> c"     . org-capture)
+         ("<f12> b"     . org-switchb)
+         ("<f12> <f11>" . jccb/org-agenda-switch-to-buffer)
          ("<f12> <f12>" . jccb/capture-task)
          ("<f12> w"     . jccb/org-agenda-work)
          ("<f12> p"     . jccb/org-agenda-personal)
@@ -1707,7 +1749,7 @@ comment to the line."
   (defun jccb/capture-task () (interactive) (org-capture nil "t"))
   (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
   (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
-  ;; (dolist (face '((org-level-1 . 1.2)
+  (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
   ;;                 (org-level-2 . 1.1)
   ;;                 (org-level-3 . 1.05)
   ;;                 (org-level-4 . 1.0)
@@ -1737,8 +1779,8 @@ comment to the line."
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path 'file)
   (setq org-todo-keywords
-        (quote ((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(p!)" "|" "DONE(d!)")
-                (sequence "SOMETIME(f)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)"))))
+        (quote ((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
+                (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)"))))
   (setq org-todo-keyword-faces
         `(("TODO"        . ,(doom-color 'yellow))
           ("IN-PROGRESS" . ,(doom-color 'orange))
@@ -1753,9 +1795,11 @@ comment to the line."
           (?B . ,(doom-color 'base7))
           (?C . ,(doom-color 'base6))))
 
-  (setq org-tag-alist '(("work" . ?w)
+  (setq org-tag-alist '(("work"     . ?w)
                         ("personal" . ?p)
-                        ("learn" . ?l)))
+                        ("kb      " . ?k)
+                        ("idea"     . ?i)
+                        ("learn"    . ?l)))
 
   (setq jccb/org-todo-sort-order '("NEXT"
                                    "IN-PROGRESS"
