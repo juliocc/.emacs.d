@@ -1380,10 +1380,6 @@ comment to the line."
 ;;               ("RET" . ivy-alt-done))
 ;;   :config
 
-;;   ;; TODO
-;;   ;; (use-package orderless
-;;   ;;   :custom (completion-styles '(orderless)))
-
 ;;   (setq ivy-use-virtual-buffers t
 ;;         ivy-virtual-abbreviate 'full
 ;;         ivy-fixed-height-minibuffer t
@@ -1661,12 +1657,19 @@ comment to the line."
   ;; No unnecessary computation delay after injection.
   (add-hook 'embark-setup-hook #'selectrum-set-selected-candidate))
 
-;; (use-package orderless
-;;   :config
-;;   (setq orderless-matching-styles '(;orderless-literal
-;;                                     orderless-initialism
-;;                                     orderless-regexp
-;;                                     orderless-flex))
+(use-package orderless
+  :config
+  (defun jccb/orderless-dispatcher (pattern _index _total)
+    (cond ((string-prefix-p "!" pattern)
+           `(orderless-without-literal . ,(substring pattern 1)))
+          ((string-prefix-p "~" pattern)
+           `(orderless-regexp . ,(substring pattern 1)))
+          ((string-suffix-p "$" pattern)
+           `(orderless-regexp . ,pattern))
+          ((string-prefix-p "=" pattern)
+           `(orderless-literal . ,(substring pattern 1)))))
+  (setq orderless-matching-styles '(orderless-flex)
+        orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
 (use-package selectrum
   :hook (after-init . jccb/selectrum-setup)
@@ -1676,10 +1679,10 @@ comment to the line."
   (defun jccb/selectrum-setup ()
     (selectrum-mode +1)
     (selectrum-prescient-mode +1)
-    ;;(setq selectrum-refine-candidates-function #'orderless-filter)
-    ;;(setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
     (prescient-persist-mode +1)
-    (marginalia-mode +1))
+    (marginalia-mode +1)
+    (setq selectrum-refine-candidates-function #'orderless-filter)
+    (setq selectrum-highlight-candidates-function #'orderless-highlight-matches))
   (setq selectrum-num-candidates-displayed 15
         selectrum-fix-minibuffer-height nil
         selectrum-extend-current-candidate-highlight t
