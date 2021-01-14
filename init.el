@@ -1055,7 +1055,9 @@
   :hook ((prog-mode text-mode) . yas-minor-mode)
   :commands yas-hippie-try-expand
   :init
-  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand))
+  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
+  :config
+  (yas-reload-all))
 
 ;; (use-package flycheck
 ;;   :after-call after-find-file
