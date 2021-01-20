@@ -459,7 +459,7 @@
   ;; :commands recentf-open-files
   :config
   (setq recentf-max-saved-items 500
-        recentf-auto-cleanup 'never
+        recentf-auto-cleanup 1200
         recentf-max-menu-items 0)
 
   (dolist (path `("/tmp/" "/private/var" "/ssh:" "/iap:"
@@ -831,7 +831,9 @@
   :ensure nil
   :defer 1
   :commands (chmod+x-this jc/doctor)
-  :bind ("M-p" . goto-match-paren)
+  :bind (("M-p" . goto-match-paren)
+         ("C-o" . jccb/open-next-line)
+         ("C-M-o" . jccb/open-previous-line))
   :config (jc/doctor))
 
 (use-package crux
@@ -1144,10 +1146,10 @@
 (use-package pip-requirements
   :mode "requirements\\.txt\\'")
 
-(use-package paradox
-  :commands paradox-list-packages
-  :config
-  (setq paradox-column-width-package 40))
+;; (use-package paradox
+;;   :commands paradox-list-packages
+;;   :config
+;;   (setq paradox-column-width-package 40))
 
 (use-package highlight-symbol
   :commands (highlight-symbol
@@ -1171,7 +1173,6 @@
   (avy-setup-default))
 
 (use-package ace-window
-  :after avy
   :bind ([remap other-window] . ace-window)
   :config
   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
@@ -1494,14 +1495,14 @@ comment to the line."
 (use-package orderless
   :config
   (defun jccb/orderless-dispatcher (pattern _index _total)
-    (cond ((string-prefix-p "!" pattern)
-           `(orderless-without-literal . ,(substring pattern 1)))
-          ((string-prefix-p "~" pattern)
-           `(orderless-regexp . ,(substring pattern 1)))
+    (cond ((string-suffix-p "!" pattern)
+           `(orderless-without-literal . ,(substring pattern 0 -1)))
+          ((string-suffix-p "~" pattern)
+           `(orderless-regexp . ,(substring pattern 0 -1)))
           ((string-suffix-p "$" pattern)
            `(orderless-regexp . ,pattern))
-          ((string-prefix-p "=" pattern)
-           `(orderless-literal . ,(substring pattern 1)))))
+          ((string-suffix-p "=" pattern)
+           `(orderless-literal . ,(substring pattern 0 -1)))))
   (setq orderless-matching-styles '(orderless-flex)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
@@ -1606,11 +1607,15 @@ comment to the line."
   ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
   (org-load-modules-maybe t)
   (setq org-habit-graph-column 50)
-  (setq org-habit-show-habits-only-for-today nil)
+  (setq org-habit-show-habits-only-for-today t)
   (setq org-habit-show-all-today nil)
+  (setq org-habit-following-days 3)
+  (setq org-habit-show-done-always-green t)
   (setq org-directory "~/org/")
   (setq org-default-notes-file "~/org/notes.org")
   (setq org-agenda-files (list org-directory))
+  (setq org-agenda-start-on-weekday nil)
+  (setq org-agenda-use-time-grid nil)
   (setq org-refile-targets '((nil :maxlevel . 2)
                              (org-agenda-files :maxlevel . 2)))
   (setq org-outline-path-complete-in-steps nil)
@@ -1668,7 +1673,7 @@ comment to the line."
             (tags-todo "-work-habit"
                        ((org-agenda-overriding-header "Tasks")
                         (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))))
-  (setq org-agenda-span 14)
+  (setq org-agenda-span 7)
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   (setq org-special-ctrl-a/e t
         org-special-ctrl-k t)
