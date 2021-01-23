@@ -455,8 +455,6 @@
 ;; Save a list of recent files visited.
 (use-package recentf
   :hook (after-init . recentf-mode)
-  ;; :bind ("C-x f" . recentf-ido-find-file)
-  ;; :commands recentf-open-files
   :config
   (setq recentf-max-saved-items 500
         recentf-auto-cleanup 1200
@@ -642,7 +640,6 @@
   (use-package git-commit
     :hook
     (git-commit-mode . turn-on-flyspell)
-
     :config
     (global-git-commit-mode +1)
 
@@ -672,6 +669,9 @@
     (interactive)
     (kill-buffer)
     (jump-to-register :magit-fullscreen)))
+
+;; (use-package magit-todos
+;;   :after magit)
 
 (use-package git-gutter
   :hook ((prog-mode text-mode conf-mode) . git-gutter-mode))
@@ -712,9 +712,6 @@
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
-;; (with-eval-after-load 'ediff
-;;   )
-
 (use-package ediff
   :ensure nil
   :config
@@ -733,8 +730,7 @@
   (setq dired-listing-switches "--time-style long-iso -alhF --group-directories-first"
         dired-auto-revert-buffer t
         dired-hide-details-hide-symlink-targets nil
-        dired-recursive-copies 'always
-        )
+        dired-recursive-copies 'always)
   (setq-default diredp-hide-details-initially-flag nil
                 dired-dwim-target t))
 
@@ -853,6 +849,7 @@
          ("C-x _" . split-window-vertically-instead)
          ("C-2"   . split-window-vertically-with-other-buffer)
          ("C-3"   . split-window-horizontally-with-other-buffer)
+         ("C-;"   . other-window)
          ("S-C-j" . quick-switch-buffer)))
 
 (use-package window
@@ -975,7 +972,11 @@
 
 (use-package flyspell-correct
   :after flyspell
-  :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
+  :bind (:map flyspell-mode-map ("C-:" . flyspell-correct-wrapper))
+  :config
+  (unbind-key "C-;" flyspell-mode-map)
+  (unbind-key "C-." flyspell-mode-map)
+  (bind-key "C-:" flyspell-correct-wrapper flyspell-mode-map))
 
 (use-package ripgrep
   :commands ripgrep-regexp)
@@ -1172,11 +1173,11 @@
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
 
-(use-package ace-window
-  :bind ([remap other-window] . ace-window)
-  :config
-  (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
-  (setq aw-dispatch-always nil))
+;; (use-package ace-window
+;;   :bind ("C-x o" . ace-window)
+;;   :config
+;;   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
+;;   (setq aw-dispatch-always nil))
 
 (use-package expand-region
   :bind (("C-=" . er/expand-region)
@@ -1499,7 +1500,13 @@ comment to the line."
            `(orderless-without-literal . ,(substring pattern 0 -1)))
           ((string-suffix-p "~" pattern)
            `(orderless-regexp . ,(substring pattern 0 -1)))
+          ((string-suffix-p "\\" pattern)
+           `(orderless-initialism . ,(substring pattern 0 -1)))
+          ((string-suffix-p "/" pattern)
+           `(orderless-prefixes . ,(substring pattern 0 -1)))
           ((string-suffix-p "$" pattern)
+           `(orderless-regexp . ,pattern))
+          ((string-prefix-p "^" pattern)
            `(orderless-regexp . ,pattern))
           ((string-suffix-p "=" pattern)
            `(orderless-literal . ,(substring pattern 0 -1)))))
@@ -1541,7 +1548,7 @@ comment to the line."
          ("M-g k"    . consult-global-mark)
          ("M-g r"    . consult-git-grep)
          ("M-g f"    . consult-find)
-         ("M-i"      . consult-project-imenu)
+         ("M-i"      . consult-imenu)
          ("M-g e"    . consult-error)
          ("M-s m"    . consult-multi-occur)
          ("M-s r"    . consult-ripgrep)
