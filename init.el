@@ -431,8 +431,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package highlight-parentheses
-  :config
-  (global-highlight-parentheses-mode t))
+  :hook (after-init . global-highlight-parentheses-mode))
 
 (use-package volatile-highlights
   :defer 5
@@ -628,6 +627,11 @@
 ;;   :load-path "site-lisp/gl-conf-mode"
 ;;   :mode "gitolite\\.conf\\'")
 
+(with-eval-after-load 'ediff
+  (setq ediff-diff-options "-w" ; turn off whitespace checking
+        ediff-split-window-function #'split-window-horizontally
+        ediff-window-setup-function #'ediff-setup-windows-plain))
+
 (use-package magit
   :after selectrum
   :bind (("C-x C-z" . magit-status)
@@ -711,13 +715,6 @@
 
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
-
-(use-package ediff
-  :ensure nil
-  :config
-  (setq ediff-diff-options "-w" ; turn off whitespace checking
-        ediff-split-window-function #'split-window-horizontally
-        ediff-window-setup-function #'ediff-setup-windows-plain))
 
 ;; (use-package scss-mode
 ;;   :config
@@ -959,10 +956,12 @@
 
 (use-package ispell
   :ensure nil
+  :hook (after-init . jccb/setup-ispell)
   :init
-  (setq ispell-program-name "aspell" ; use aspell instead of ispell
-        ispell-extra-args '("--sug-mode=ultra"
-                            "--run-together")))
+  (defun jccb/setup-ispell ()
+    (setq ispell-program-name "aspell" ; use aspell instead of ispell
+          ispell-extra-args '("--sug-mode=ultra"
+                              "--run-together"))))
 
 (use-package flyspell
   :ensure nil
@@ -1352,30 +1351,6 @@ comment to the line."
 (use-package ialign
   :commands ialign)
 
-(use-package treemacs
-  :init
-  (with-eval-after-load 'winum
-    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
-  :config
-  (treemacs-follow-mode t)
-  (treemacs-filewatch-mode t)
-  (treemacs-fringe-indicator-mode t)
-  (pcase (cons (not (null (executable-find "git")))
-               (not (null treemacs-python-executable)))
-    (`(t . t)
-     (treemacs-git-mode 'deferred))
-    (`(t . _)
-     (treemacs-git-mode 'simple)))
-  :commands treemacs)
-
-(use-package treemacs-projectile
-  :after treemacs projectile
-  :ensure t)
-
-(use-package treemacs-magit
-  :after treemacs magit
-  :ensure t)
-
 (use-package restart-emacs
   :commands restart-emacs)
 
@@ -1692,6 +1667,12 @@ comment to the line."
 ;; (use-package org-superstar
 ;;   :after org
 ;;   :hook (org-mode . org-superstart-mode))
+
+;; ;; Cycle completion on smaller number of candidates
+;; (setq completion-cycle-threshold 5)
+
+;; ;;; Don't show help for completions
+;; (setq completion-show-help nil)
 
 ;; use-package seq: init -> config
 
