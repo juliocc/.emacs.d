@@ -826,11 +826,11 @@
 (use-package jccb-misc
   :ensure nil
   :defer 1
-  :commands (chmod+x-this jc/doctor)
+  :commands (chmod+x-this jccb/doctor)
   :bind (("M-p" . goto-match-paren)
          ("C-o" . jccb/open-next-line)
          ("C-M-o" . jccb/open-previous-line))
-  :config (jc/doctor))
+  :config (jccb/doctor))
 
 (use-package crux
   :commands crux-find-shell-init-file
@@ -1046,13 +1046,13 @@
   :hook (company-mode . company-box-mode)
   :config
   ;; https://github.com/sebastiencs/company-box/issues/44
-  (defun jc/fix-company-scrollbar (orig-fn &rest args)
+  (defun jccb/fix-company-scrollbar (orig-fn &rest args)
     "disable company-box scrollbar"
     (cl-letf (((symbol-function #'display-buffer-in-side-window)
                (symbol-function #'ignore)))
       (apply orig-fn args)))
 
-  (advice-add #'company-box--update-scrollbar :around #'jc/fix-company-scrollbar))
+  (advice-add #'company-box--update-scrollbar :around #'jccb/fix-company-scrollbar))
 
 (use-package yasnippet
   :hook ((prog-mode text-mode) . yas-minor-mode)
@@ -1306,7 +1306,11 @@ comment to the line."
 
 
 (use-package restart-emacs
-  :commands restart-emacs)
+  :commands restart-emacs
+  :config
+  (defun jccb/disable-confirm-kill-emacs (&rest _)
+    (setq confirm-kill-emacs nil))
+  (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
 
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
@@ -1561,10 +1565,6 @@ comment to the line."
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root))
-
-(use-package consult-selectrum
-  :after selectrum
-  :demand t)
 
 (use-package embark-consult
   :ensure t

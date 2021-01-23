@@ -24,7 +24,7 @@
                          (backward-list 1)
                          (backward-char 1)))))))))
 
-(defun jc/doctor ()
+(defun jccb/doctor ()
   (dolist (exe '("rg" "ag" "fd" "git" "terraform" "aspell"
                  "grip" "markdown" "black" "isort"))
     (unless (executable-find exe)
