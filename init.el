@@ -1496,6 +1496,13 @@ comment to the line."
 
 (use-package orderless
   :config
+  ;; orderless-flex is probably more "flex" but this makes
+  ;; highlighting easier to understand (at least for me)
+  (defun jccb/orderless-flex-non-greedy (component)
+    (orderless--separated-by
+     '(minimal-match (zero-or-more nonl))
+     (cl-loop for char across component collect char)))
+
   (defun jccb/orderless-dispatcher (pattern _index _total)
     (cond ((string-suffix-p "!" pattern)
            `(orderless-without-literal . ,(substring pattern 0 -1)))
@@ -1511,7 +1518,8 @@ comment to the line."
            `(orderless-regexp . ,pattern))
           ((string-suffix-p "=" pattern)
            `(orderless-literal . ,(substring pattern 0 -1)))))
-  (setq orderless-matching-styles '(orderless-flex)
+
+  (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
 (use-package selectrum
