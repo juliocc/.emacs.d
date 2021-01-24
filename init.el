@@ -449,7 +449,8 @@
   (setq undo-tree-auto-save-history t
         undo-limit 800000
         undo-strong-limit 12000000
-        undo-outer-limit 120000000))
+        undo-outer-limit 120000000
+        undo-tree-enable-undo-in-region t))
 
 ;; Save a list of recent files visited.
 (use-package recentf
@@ -680,6 +681,9 @@
 (use-package git-gutter
   :hook ((prog-mode text-mode conf-mode) . git-gutter-mode))
 
+(use-package git-timemachine
+  :commands git-timemachine)
+
 ;; use regexp isearch by default
 (bind-key [remap isearch-forward] #'isearch-forward-regexp)
 (bind-key [remap isearch-backward] #'isearch-backward-regexp)
@@ -752,6 +756,9 @@
 ;;   :after dired
 ;;   :config
 ;;   (global-dired-hide-details-mode -1))
+
+(use-package dired-imenu
+  :after dired)
 
 (use-package peep-dired
   :bind (:map dired-mode-map
@@ -956,26 +963,38 @@
 
 (use-package ispell
   :ensure nil
-  :hook (after-init . jccb/setup-ispell)
-  :init
-  (defun jccb/setup-ispell ()
-    (setq ispell-program-name "aspell" ; use aspell instead of ispell
-          ispell-extra-args '("--sug-mode=ultra"
-                              "--run-together"))))
+  :bind ("C-. d" . jccb/cycle-ispell-languages)
+  :config
+  (setq ispell-program-name "aspell" ; use aspell instead of ispell
+        ispell-extra-args '("--sug-mode=ultra"
+                            "--run-together"))
+
+  (defvar jccb/ispell-langs (make-ring 2))
+  (ring-insert jccb/ispell-langs "american")
+  (ring-insert jccb/ispell-langs "castellano8")
+
+  (defun jccb/cycle-ispell-languages ()
+    (interactive)
+    (let ((lang (ring-ref jccb/ispell-langs -1)))
+      (ring-insert jccb/ispell-langs lang)
+      (ispell-change-dictionary lang)
+      (flyspell-buffer)
+      (message "Spell language changed to %s" lang))))
 
 (use-package flyspell
   :ensure nil
-  :hook (text-mode . turn-on-flyspell)
-  :hook (prog-mode . flyspell-prog-mode)
-  :commands (turn-on-flyspell flyspell-buffer))
-
-(use-package flyspell-correct
-  :after flyspell
-  :bind (:map flyspell-mode-map ("C-:" . flyspell-correct-wrapper))
+  :hook (text-mode . flyspell-mode)
+  :hook ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode)
   :config
   (unbind-key "C-;" flyspell-mode-map)
   (unbind-key "C-." flyspell-mode-map)
-  (bind-key "C-:" flyspell-correct-wrapper flyspell-mode-map))
+  (setq flyspell-issue-welcome-flag nil
+        flyspell-issue-message-flag nil))
+
+(use-package flyspell-correct
+  :after flyspell
+  :bind (:map flyspell-mode-map
+              ("C-:" . flyspell-correct-wrapper)))
 
 (use-package ripgrep
   :commands ripgrep-regexp)
@@ -1008,7 +1027,8 @@
 (use-package dumb-jump
   :commands dumb-jump-xref-activate
   :init
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+  (with-eval-after-load "xref"
+    (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate))
   :config
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
@@ -1588,6 +1608,7 @@ comment to the line."
   ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
   (org-load-modules-maybe t)
+  (setq org-catch-invisible-edits 'show-and-error)
   (setq org-habit-graph-column 50)
   (setq org-habit-show-habits-only-for-today t)
   (setq org-habit-show-all-today nil)
@@ -1597,6 +1618,7 @@ comment to the line."
   (setq org-default-notes-file "~/org/notes.org")
   (setq org-agenda-files (list org-directory))
   (setq org-agenda-start-on-weekday nil)
+  (setq org-ellipsis "…")
   (setq org-agenda-use-time-grid nil)
   (setq org-refile-targets '((nil :maxlevel . 2)
                              (org-agenda-files :maxlevel . 2)))
@@ -1663,6 +1685,9 @@ comment to the line."
   (setq org-agenda-start-with-log-mode t)
   (setq org-log-done 'time)
   (setq org-log-into-drawer t))
+
+(use-package so-long
+  :hook (after-init . global-so-long-mode))
 
 ;; (use-package org-superstar
 ;;   :after org
