@@ -1679,12 +1679,12 @@ comment to the line."
   (setq org-agenda-custom-commands
         '(("w" "Work Agenda"
            ((agenda "" nil)
-            (tags-todo "work-habit"
+            (tags-todo "work-habit-xhome"
                        ((org-agenda-overriding-header "Tasks")
                         (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))
           ("p" "Personal Agenda"
            ((agenda "" nil)
-            (tags-todo "-work-habit"
+            (tags-todo "-work-habit-xhome"
                        ((org-agenda-overriding-header "Tasks")
                         (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))))
   (setq org-agenda-span 7)
