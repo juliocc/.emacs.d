@@ -658,7 +658,6 @@
   (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
         magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
         magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
-        magit-delete-by-moving-to-trash t
         magit-diff-refine-hunk 'all
         magit-delete-by-moving-to-trash t
         magit-git-executable (executable-find magit-git-executable)
