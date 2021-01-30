@@ -178,16 +178,15 @@
         icon-title-format frame-title-format)
   (blink-cursor-mode -1))
 
-(set-face-attribute 'default nil
-                    :font "Iosevka SS09"
-                    :height 200)
-(set-face-attribute 'fixed-pitch nil
-                    :font "Iosevka SS09"
-                    :height 200)
-;; (set-face-attribute 'variable-pitch nil
-;;                     :font "Verdana"
-;;                     :height 160
-;;                     :weight 'regular)
+
+(defvar jccb/fixed-font "Iosevka SS09")
+(when (find-font (font-spec :name jccb/fixed-font))
+  (set-face-attribute 'default nil
+                      :font jccb/fixed-font
+                      :height 200)
+  (set-face-attribute 'fixed-pitch nil
+                      :font jccb/fixed-font
+                      :height 200))
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
