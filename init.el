@@ -1591,7 +1591,9 @@ comment to the line."
          ("<f12> <f12>" . jccb/capture-task)
          ("<f12> w"     . jccb/org-agenda-work)
          ("<f12> p"     . jccb/org-agenda-personal)
-         ("<f12> l"     . org-store-link))
+         ("<f12> l"     . org-store-link)
+         :map org-agenda-mode-map
+         ("y" . org-agenda-todo-yesterday))
   :init
   (setq org-modules '(org-habit))
   :config
@@ -1599,43 +1601,37 @@ comment to the line."
   (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
   (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
   (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
-  ;;                 (org-level-2 . 1.1)
-  ;;                 (org-level-3 . 1.05)
-  ;;                 (org-level-4 . 1.0)
-  ;;                 (org-level-5 . 1.1)
-  ;;                 (org-level-6 . 1.1)
-  ;;                 (org-level-7 . 1.1)
-  ;;                 (org-level-8 . 1.1)))
-  ;;   (set-face-attribute (car face) nil :height (cdr face)))
-  ;; (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
-  ;; (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
-  ;; (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
-  ;; (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
-  ;; (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
-  ;; (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  ;; (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  ;; (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  ;; (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
   (org-load-modules-maybe t)
-  (setq org-catch-invisible-edits 'show-and-error)
-  (setq org-habit-graph-column 50)
-  (setq org-habit-show-habits-only-for-today t)
-  (setq org-habit-show-all-today nil)
-  (setq org-habit-following-days 3)
-  (setq org-habit-show-done-always-green t)
-  (setq org-directory "~/org/")
-  (setq org-default-notes-file "~/org/notes.org")
-  (setq org-agenda-files (list org-directory))
-  (setq org-agenda-start-on-weekday nil)
-  (setq org-ellipsis "…")
-  (setq org-agenda-use-time-grid nil)
-  (setq org-refile-targets '((nil :maxlevel . 2)
-                             (org-agenda-files :maxlevel . 2)))
-  (setq org-outline-path-complete-in-steps nil)
-  (setq org-refile-use-outline-path 'file)
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+  ;; (add-hook 'org-agenda-finalize-hook 'hide-mode-line-mode)
+  (setq org-agenda-span 7
+        org-agenda-start-with-log-mode t
+        org-special-ctrl-a/e t
+        org-special-ctrl-k t
+        org-use-fast-todo-selection t
+        org-log-done 'time
+        org-log-into-drawer t
+        org-catch-invisible-edits 'show-and-error
+        org-habit-graph-column 50
+        org-habit-show-habits-only-for-today t
+        org-habit-show-all-today nil
+        org-habit-following-days 3
+        org-habit-show-done-always-green t
+        org-directory "~/org/"
+        org-default-notes-file "~/org/notes.org"
+        org-agenda-files (list org-directory)
+        org-agenda-start-on-weekday nil
+        org-ellipsis "…"
+        org-agenda-use-time-grid nil
+        org-refile-targets '((nil :maxlevel . 2)
+                             (org-agenda-files :maxlevel . 2))
+        org-outline-path-complete-in-steps nil
+        org-refile-use-outline-path 'file)
+
   (setq org-todo-keywords
-        (quote ((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
-                (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)"))))
+        '((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
+          (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)")))
+
   (setq org-todo-keyword-faces
         `(("TODO"        . ,(doom-color 'yellow))
           ("IN-PROGRESS" . ,(doom-color 'orange))
@@ -1652,7 +1648,7 @@ comment to the line."
 
   (setq org-tag-alist '(("work"     . ?w)
                         ("personal" . ?p)
-                        ("kb      " . ?k)
+                        ("kb"       . ?k)
                         ("idea"     . ?i)
                         ("learn"    . ?l)))
 
@@ -1674,29 +1670,40 @@ comment to the line."
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
             (t nil))))
-  (setq org-agenda-cmp-user-defined #'jccb/org-sort)
+  (setq org-agenda-cmp-user-defined #'jccb/org-sort
+        org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))
+
   (setq org-agenda-custom-commands
         '(("w" "Work Agenda"
            ((agenda "" nil)
-            (tags-todo "work-habit-xhome"
-                       ((org-agenda-overriding-header "Tasks")
-                        (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))
+            (tags-todo "-habit"
+                       ((org-agenda-overriding-header "Tasks"))))
+           ((org-agenda-tag-filter-preset '("+work" "-xhome"))))
           ("p" "Personal Agenda"
            ((agenda "" nil)
-            (tags-todo "-work-habit-xhome"
-                       ((org-agenda-overriding-header "Tasks")
-                        (org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))))))))
-  (setq org-agenda-span 7)
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
-  (setq org-special-ctrl-a/e t
-        org-special-ctrl-k t)
-  (setq org-use-fast-todo-selection t)
-  (setq org-agenda-start-with-log-mode t)
-  (setq org-log-done 'time)
-  (setq org-log-into-drawer t))
+            (tags-todo "-habit"
+                       ((org-agenda-overriding-header "Tasks"))))
+           ((org-agenda-tag-filter-preset '("-work" "-xhome"))
+            (org-habit-show-habits-only-for-today t)
+            (org-habit-show-all-today t)
+            (org-agenda-span 1)))))
+
+  ;; make org work with shackle
+  (defun org-switch-to-buffer-other-window (&rest args)
+    (apply 'switch-to-buffer-other-window args)))
 
 (use-package so-long
   :hook (after-init . global-so-long-mode))
+
+;; (use-package shackle
+;;   :defer 1
+;;   :config
+;;   (setq
+;;    shackle-inhibit-window-quit-on-same-windows t
+;;    shackle-rules
+;;    '((helpful-mode   :select t :same t)
+;;      ("*Org Agenda*" :select t :same t)))
+;;   (shackle-mode t))
 
 ;; (use-package org-superstar
 ;;   :after org
