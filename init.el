@@ -634,13 +634,8 @@
 
 (use-package magit
   :after selectrum
-  :bind (("C-x C-z" . magit-status)
-         :map magit-status-mode-map
-         ("q" . magit-quit-session))
+  :bind (("C-x C-z" . magit-status))
   :config
-
-  (setq magit-completing-read-function #'selectrum-completing-read)
-
   (use-package git-commit
     :hook
     (git-commit-mode . turn-on-flyspell)
@@ -655,25 +650,16 @@
 
   (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
 
-  (setq magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
+  (setq magit-completing-read-function #'selectrum-completing-read
+        magit-bury-buffer-function #'magit-restore-window-configuration
+        magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
         magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
         magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
         magit-diff-refine-hunk 'all
         magit-delete-by-moving-to-trash t
         magit-git-executable (executable-find magit-git-executable)
         magit-revision-insert-related-refs nil
-        magit-save-repository-buffers nil)
-
-  (defadvice magit-status (around magit-fullscreen activate)
-    (window-configuration-to-register :magit-fullscreen)
-    ad-do-it
-    (delete-other-windows))
-
-  (defun magit-quit-session ()
-    "Restores the previous window configuration and kills the magit buffer"
-    (interactive)
-    (kill-buffer)
-    (jump-to-register :magit-fullscreen)))
+        magit-save-repository-buffers nil))
 
 ;; (use-package magit-todos
 ;;   :after magit)
