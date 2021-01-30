@@ -532,6 +532,8 @@
         which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 6
+        which-key-idle-delay 0.75
+        which-key-idle-secondary-delay 0.05
         which-key-side-window-slot -10)
   :config
   (which-key-setup-side-window-bottom)
@@ -1014,7 +1016,7 @@
   :commands dumb-jump-xref-activate
   :init
   (with-eval-after-load "xref"
-    (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate))
+    (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t))
   :config
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
@@ -1446,13 +1448,13 @@ comment to the line."
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
 (use-package embark
-  :bind (("C-S-a" . embark-act)
-         :map minibuffer-local-map
-         ("C-S-a" . embark-act-noexit))
+  :bind (("C-S-a" . embark-act))
   :config
+  ;; (setq embark-quit-after-action nil)
   (defun refresh-selectrum ()
     (setq selectrum--previous-input-string nil))
   (add-hook 'embark-pre-action-hook #'refresh-selectrum)
+  (add-hook 'embark-post-action-hook #'embark-collect--update-linked)
 
   (setq embark-action-indicator
         (lambda (map)
@@ -1460,23 +1462,13 @@ comment to the line."
           #'which-key--hide-popup-ignore-command)
         embark-become-indicator embark-action-indicator)
 
-  (defun current-candidate+category ()
-    (when selectrum-active-p
-      (cons (selectrum--get-meta 'category)
-            (selectrum-get-current-candidate))))
+  (defun pause-selectrum ()
+    (when (eq embark-collect--kind :live)
+      (with-selected-window (active-minibuffer-window)
+        (shrink-window selectrum-num-candidates-displayed)
+        (setq-local selectrum-num-candidates-displayed 0))))
+  (add-hook 'embark-collect-mode-hook #'pause-selectrum))
 
-  (add-hook 'embark-target-finders #'current-candidate+category)
-
-  (defun current-candidates+category ()
-    (when selectrum-active-p
-      (cons (selectrum--get-meta 'category)
-            (selectrum-get-current-candidates
-             ;; Pass relative file names for dired.
-             minibuffer-completing-file-name))))
-
-  (add-hook 'embark-candidate-collectors #'current-candidates+category)
-  ;; No unnecessary computation delay after injection.
-  (add-hook 'embark-setup-hook #'selectrum-set-selected-candidate))
 
 (use-package orderless
   :config
@@ -1521,36 +1513,45 @@ comment to the line."
   (setq selectrum-num-candidates-displayed 15
         selectrum-fix-minibuffer-height nil
         selectrum-extend-current-candidate-highlight t
-        selectrum-show-indices t))
+        selectrum-show-indices nil))
 
 (use-package consult
-  :bind (;; ("C-x M-:" . consult-complex-command)
-         ;; ("C-c h"   . consult-history)
-         ;; ("C-c m"   . consult-mode-command)
-         ;; ("C-x 5 b" . consult-buffer-other-frame)
-         ;; ("M-g g"   . consult-goto-line)
-         ;; ("M-g M-g" . consult-goto-line)
-         ;; ("M-y"     . consult-yank-pop)
-         ("C-x b"    . consult-buffer)
-         ("C-x 4 b"  . consult-buffer-other-window)
+  :bind (("C-c h" . consult-history)
+         ("C-c m" . consult-mode-command)
+         ;; ("C-c b" . consult-bookmark)
+         ("C-c k" . consult-kmacro)
+         ;; C-x bindings (ctl-x-map)
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complet-command
+         ("C-x b"   . consult-buffer)              ;; orig. switch-to-buffer
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
          ("C-x r x"  . consult-register)
          ("C-x r b"  . consult-bookmark)
+
          ("M-g o"    . consult-outline)
-         ("M-g l"    . consult-line)
          ("M-g m"    . consult-mark)
          ("M-g k"    . consult-global-mark)
-         ("M-g r"    . consult-git-grep)
-         ("M-g f"    . consult-find)
-         ("M-i"      . consult-imenu)
          ("M-g e"    . consult-error)
-         ("M-s m"    . consult-multi-occur)
-         ("M-s r"    . consult-ripgrep)
+         ("M-i"      . consult-imenu)
+         ;; M-s bindings (search-map)
+         ("M-s r" . consult-ripgrep)
+         ;; ("M-s f" . consult-fd)
+         ("M-s l" . consult-line)
+         ("M-s m" . consult-multi-occur)
+         ("M-s k" . consult-keep-lines)
+         ("M-s u" . consult-focus-lines)
+         ;; ("M-s e" . consult-isearch)
          ("<help> a" . consult-apropos))
   :init
   (fset 'multi-occur #'consult-multi-occur)
-  ;; (fset 'projectile-ripgrep #'consult-ripgrep)
+  (fset 'projectile-ripgrep #'consult-ripgrep)
   :config
-  (setq consult-preview-buffer nil)
+  (setq consult-narrow-key "`"
+        register-preview-delay 0
+        consult-preview-key (kbd "<C-return>")
+        register-preview-function #'consult-register-format)
+
+  (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root))
