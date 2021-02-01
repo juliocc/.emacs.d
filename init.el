@@ -100,9 +100,9 @@
 (use-package gcmh
   :hook (emacs-startup . gcmh-mode)
   :config
-  (setq gcmh-idle-delay 10
-        gcmh-high-cons-threshold (* 32 1024 1024)
-        gcmh-low-cons-threshold (* 16 1024 1024)
+  (setq gcmh-idle-delay 5
+        gcmh-high-cons-threshold (* 64 1024 1024)
+        gcmh-low-cons-threshold (* 32 1024 1024)
         gcmh-verbose jccb/debug))
 
 ;;==================================================
@@ -953,7 +953,7 @@
   :ensure nil
   :bind ("C-. d" . jccb/cycle-ispell-languages)
   :config
-  (setq ispell-program-name "aspell" ; use aspell instead of ispell
+  (setq ispell-program-name "aspell"
         ispell-extra-args '("--sug-mode=ultra"
                             "--run-together"))
 
@@ -1550,6 +1550,21 @@ comment to the line."
         register-preview-delay 0
         consult-preview-key (kbd "<C-return>")
         register-preview-function #'consult-register-format)
+
+  (defun reduce-which-key-delay (fun &rest args)
+    (let ((timer (and consult-narrow-key
+                      (memq :narrow args)
+                      (run-at-time 0.01 0.01
+                                   (lambda ()
+                                     (when (eq last-input-event (elt consult-narrow-key 0))
+                                       (which-key--start-timer 0.001)))))))
+      (unwind-protect
+          (apply fun args)
+        (when timer
+          (cancel-timer timer)
+          (which-key--start-timer)))))
+  (advice-add #'consult--read :around #'reduce-which-key-delay)
+
 
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
