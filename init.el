@@ -47,6 +47,14 @@
       initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
 
+;; *scratch* stats using fundamental-mode, but change it to
+;; lisp-interaction-mode once we're all set up
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq initial-major-mode 'lisp-interaction-mode)
+            (with-current-buffer (get-buffer "*scratch*")
+              (lisp-interaction-mode))))
+
 (eval-and-compile
   (defun emacs-path (path)
     (expand-file-name path user-emacs-directory)))
@@ -1569,7 +1577,13 @@ comment to the line."
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root))
+  (setq consult-project-root-function #'projectile-project-root)
+  (defvar jccb/consult-org-source
+    (list :name "Org"
+          :narrow   ?o
+          :category 'buffer
+          :items  #'(lambda () (mapcar #'buffer-name (org-buffer-list)))))
+  (add-to-list 'consult-buffer-sources 'jccb/consult-org-source 'append))
 
 (use-package embark-consult
   :ensure t
@@ -1584,7 +1598,7 @@ comment to the line."
   :ensure org-plus-contrib
   :pin org
   ;; :hook (org-mode . org-indent-mode)
-  :commands org-agenda org-capture
+  :commands org-agenda org-capture org-buffer-list
   :bind (("<f12> a"     . org-agenda)
          ("<f12> c"     . org-capture)
          ("<f12> b"     . org-switchb)
@@ -1602,6 +1616,7 @@ comment to the line."
   (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
   (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
   (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
+
   (org-load-modules-maybe t)
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   ;; (add-hook 'org-agenda-finalize-hook 'hide-mode-line-mode)
@@ -1696,7 +1711,10 @@ comment to the line."
 (use-package so-long
   :hook (after-init . global-so-long-mode))
 
-;; (use-package shackle
+(use-package dtrt-indent
+  :hook (after-init . dtrt-indent-global-mode))
+
+;; (Use-package shackle
 ;;   :defer 1
 ;;   :config
 ;;   (setq
