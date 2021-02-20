@@ -440,10 +440,10 @@
 (use-package highlight-parentheses
   :hook (after-init . global-highlight-parentheses-mode))
 
-(use-package volatile-highlights
-  :defer 5
-  :config
-  (volatile-highlights-mode +1))
+;; (use-package volatile-highlights
+;;   :defer 5
+;;   :config
+;;   (volatile-highlights-mode +1))
 
 (use-package undo-tree
   :hook (after-init . global-undo-tree-mode)
@@ -887,15 +887,20 @@
 (use-package shrink-whitespace
   :bind ("M-\\" . shrink-whitespace))
 
-(use-package beacon
-  :defer 2
+;; (use-package beacon
+;;   :defer 2
+;;   :config
+;;   (setq beacon-color "#6F6F6F"
+;;         beacon-blink-when-focused  t)
+;;   (defun not-display-graphic-p ()
+;;     (not (display-graphic-p)))
+;;   (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
+;;   (beacon-mode))
+
+(use-package goggles
+  :hook ((prog-mode text-mode) . goggles-mode)
   :config
-  (setq beacon-color "#6F6F6F"
-        beacon-blink-when-focused  t)
-  (defun not-display-graphic-p ()
-    (not (display-graphic-p)))
-  (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
-  (beacon-mode))
+  (setq-default goggles-pulse t))
 
 ;; (use-package pulse
 ;;   :ensure nil
@@ -1389,7 +1394,7 @@ comment to the line."
 (use-package guru-mode
   :hook (after-init . guru-global-mode)
   :config
-  (setq guru-warn-only t))
+  (setq guru-warn-only nil))
 
 ;; (use-package lsp-mode
 ;;   :commands (lsp lsp-deferred)
@@ -1577,13 +1582,7 @@ comment to the line."
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
-  (defvar jccb/consult-org-source
-    (list :name "Org"
-          :narrow   ?o
-          :category 'buffer
-          :items  #'(lambda () (mapcar #'buffer-name (org-buffer-list)))))
-  (add-to-list 'consult-buffer-sources 'jccb/consult-org-source 'append))
+  (setq consult-project-root-function #'projectile-project-root))
 
 (use-package embark-consult
   :ensure t
