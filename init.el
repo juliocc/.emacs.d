@@ -1247,18 +1247,18 @@ comment to the line."
 ;; you press ESC/C-g two or three times on some occasions to reach
 ;; `keyboard-quit', but this is much more intuitive.
 
-(defun doom/escape ()
-  "Run `doom-escape-hook'."
-  (interactive)
-  (cond ((minibuffer-window-active-p (minibuffer-window))
-         ;; quit the minibuffer if open.
-         (abort-recursive-edit))
-        ;; don't abort macros
-        ((or defining-kbd-macro executing-kbd-macro) nil)
-        ;; Back to the default
-        ((keyboard-quit))))
+;; (defun doom/escape ()
+;;   "Run `doom-escape-hook'."
+;;   (interactive)
+;;   (cond ((minibuffer-window-active-p (minibuffer-window))
+;;          ;; quit the minibuffer if open.
+;;          (abort-recursive-edit))
+;;         ;; don't abort macros
+;;         ((or defining-kbd-macro executing-kbd-macro) nil)
+;;         ;; Back to the default
+;;         ((keyboard-quit))))
 
-(bind-key [remap keyboard-quit] #'doom/escape)
+;; (bind-key [remap keyboard-quit] #'doom/escape)
 
 ;; Don't resize windows & frames in steps; it's prohibitive to prevent the user
 ;; from resizing it to exact dimensions, and looks weird.
@@ -1391,26 +1391,32 @@ comment to the line."
 (use-package clipetty
   :commands (global-clipetty-mode clipetty-kill-ring-save))
 
-(use-package guru-mode
-  :hook (after-init . guru-global-mode)
-  :config
-  (setq guru-warn-only nil))
-
-;; (use-package lsp-mode
-;;   :commands (lsp lsp-deferred)
-;;   :hook ((terraform-mode python-mode) . lsp)
-;;   :hook (lsp-mode . lsp-enable-which-key-integration)
-;;   :init
-;;   (setq lsp-keymap-prefix "C-c l"))
-
-;; (use-package lsp-ui
-;;   :commands lsp-ui)
-
-;; (use-package company-lsp
-;;   :after (lsp-mode company)
+;; (use-package guru-mode
+;;   :hook (after-init . guru-global-mode)
 ;;   :config
-;;   (push 'company-lsp company-backends))
+;;   (setq guru-warn-only nil))
 
+(use-package typescript-mode
+  :mode (("\\.ts\\'" . typescript-mode))
+  :mode (("\\.tsx\\'" . typescript-mode)))
+
+(use-package lsp-mode
+  :init
+  (setq read-process-output-max (* 1024 1024))
+  (setq lsp-keymap-prefix "C-c l")
+  :hook ((typescript-mode . lsp)
+         (js2-mode . lsp)
+         (python-mode . lsp)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
+
+(use-package lsp-ui :commands lsp-ui-mode)
+
+(use-package lsp-jedi
+  :config
+  (with-eval-after-load "lsp-mode"
+    (add-to-list 'lsp-disabled-clients 'pyls)
+    (add-to-list 'lsp-enabled-clients 'jedi)))
 
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
@@ -1524,7 +1530,7 @@ comment to the line."
     (setq selectrum-refine-candidates-function #'orderless-filter)
     (setq selectrum-highlight-candidates-function #'orderless-highlight-matches))
   (setq selectrum-num-candidates-displayed 15
-        selectrum-fix-minibuffer-height nil
+        selectrum-fix-vertical-window-height nil
         selectrum-extend-current-candidate-highlight t
         selectrum-show-indices nil))
 
