@@ -2,3 +2,4 @@
 *.elc
 /site-lisp/jc-local.el
 /var/
+/eln-cache/
