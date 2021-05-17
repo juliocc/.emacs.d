@@ -136,7 +136,7 @@
         doom-one-brighter-modeline nil
         doom-themes-treemacs-theme "doom-colors")
   (load-theme 'doom-one t)
-  (doom-themes-treemacs-config)
+  ;;(doom-themes-treemacs-config)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config))
 
@@ -178,7 +178,7 @@
 ;; font. By inhibiting this, we halve startup times, particularly when we use
 ;; fonts that are larger than the system default (which would resize the frame).
 (setq frame-inhibit-implied-resize t)
-(setq default-frame-alist '((cursor-type . (bar . 2))))
+(setq-default cursor-type '(bar . 2))
 (setq-default frame-background-mode 'dark)
 
 (when window-system
@@ -1355,10 +1355,10 @@ comment to the line."
 ;; (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
 (add-hook 'Man-mode-hook #'hide-mode-line-mode)
 
-(use-package vterm
-  :disabled t
-  :hook (vterm-mode . hide-mode-line-mode)
-  :commands vterm)
+;; (use-package vterm
+;;   :disabled t
+;;   :hook (vterm-mode . hide-mode-line-mode)
+;;   :commands vterm)
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
@@ -1388,8 +1388,8 @@ comment to the line."
 (use-package browse-kill-ring
   :hook (after-init . browse-kill-ring-default-keybindings))
 
-(use-package clipetty
-  :commands (global-clipetty-mode clipetty-kill-ring-save))
+;; (use-package clipetty
+;;   :commands (global-clipetty-mode clipetty-kill-ring-save))
 
 ;; (use-package guru-mode
 ;;   :hook (after-init . guru-global-mode)
@@ -1403,7 +1403,7 @@ comment to the line."
 (use-package lsp-mode
   :init
   (setq read-process-output-max (* 1024 1024))
-  (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-keymap-prefix "<f9>")
   :hook ((typescript-mode . lsp)
          (js2-mode . lsp)
          (python-mode . lsp)
@@ -1412,11 +1412,11 @@ comment to the line."
 
 (use-package lsp-ui :commands lsp-ui-mode)
 
-(use-package lsp-jedi
-  :config
-  (with-eval-after-load "lsp-mode"
-    (add-to-list 'lsp-disabled-clients 'pyls)
-    (add-to-list 'lsp-enabled-clients 'jedi)))
+(use-package lsp-jedi)
+
+;;   (with-eval-after-load "lsp-mode"
+;;     (add-to-list 'lsp-disabled-clients 'pyls)
+;;     (add-to-list 'lsp-enabled-clients 'jedi)))
 
 (use-package goto-line-preview
   :bind ([remap goto-line] . goto-line-preview))
@@ -1446,11 +1446,12 @@ comment to the line."
   (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
 
 (use-package dimmer
-  :commands dimmer-mode
+  :hook (after-init . dimmer-mode)
   :config
-  (setq dimmer-fraction 0.1)
+  (setq dimmer-fraction 0.25)
   (dimmer-configure-which-key)
-  (dimmer-configure-magit))
+  (dimmer-configure-magit)
+  (dimmer-configure-org))
 
 (use-package selectrum-prescient
   :commands selectrum-prescient-mode
@@ -1523,14 +1524,17 @@ comment to the line."
   :commands selectrum-mode
   :config
   (defun jccb/selectrum-setup ()
+    (setq selectrum-prescient-enable-filtering nil)
+    (setq selectrum-refine-candidates-function #'orderless-filter)
+    (setq orderless-skip-highlighting (lambda () selectrum-is-active))
+    (setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
+    (setq completion-styles '(orderless))
     (selectrum-mode +1)
     (selectrum-prescient-mode +1)
     (prescient-persist-mode +1)
-    (marginalia-mode +1)
-    (setq selectrum-refine-candidates-function #'orderless-filter)
-    (setq selectrum-highlight-candidates-function #'orderless-highlight-matches))
-  (setq selectrum-num-candidates-displayed 15
-        selectrum-fix-vertical-window-height nil
+    (marginalia-mode +1))
+  (setq selectrum-fix-vertical-window-height 15
+        ;; selectrum-num-candidates-displayed 15
         selectrum-extend-current-candidate-highlight t
         selectrum-show-indices nil))
 
