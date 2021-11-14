@@ -19,6 +19,7 @@
 ;; Setup basic stuff
 ;;==================================================
 (defconst *is-a-mac* (eq system-type 'darwin))
+(defconst *is-a-linux* (eq system-type 'gnu/linux))
 (defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
 (defvar jccb/interactive-mode (not noninteractive))
 (defvar jccb/debug init-file-debug)
@@ -566,17 +567,17 @@
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
   ;; left and right commands are meta
-  (setq ns-command-modifier 'meta)
-  (setq ns-right-command-modifier 'left)
+  (setq mac-command-modifier 'meta)
+  (setq mac-right-command-modifier 'left)
   ;; left opt key is super
-  (setq ns-alternate-modifier 'super)
+  (setq mac-option-modifier 'super)
   ;; right opt is ignored by emacs (useful for mac-style accent input)
-  (setq ns-right-alternate-modifier 'none)
+  (setq mac-right-option-modifier 'none)
   ;; left and right controls are control
-  (setq ns-control-modifier 'control)
-  (setq ns-right-control-modifier 'left)
+  (setq mac-control-modifier 'control)
+  (setq mac-right-control-modifier 'left)
   ;; function key is hyper
-  (setq ns-function-modifier 'hyper)
+  (setq mac-function-modifier 'hyper)
   (setq default-input-method "MacOSX")
   (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME")))
@@ -675,7 +676,14 @@
 ;;   :after magit)
 
 (use-package git-gutter
-  :hook ((prog-mode text-mode conf-mode) . git-gutter-mode))
+  :commands git-gutter-mode
+  :init
+  (defun jccb/git-gutter-mode-if-local ()
+    (unless (file-remote-p default-directory)
+      (git-gutter-mode)))
+  (add-hook 'prog-mode-hook #'jccb/git-gutter-mode-if-local)
+  (add-hook 'text-mode-hook #'jccb/git-gutter-mode-if-local)
+  (add-hook 'config-mode-hook #'jccb/git-gutter-mode-if-local))
 
 (use-package git-timemachine
   :commands git-timemachine)
@@ -1012,9 +1020,9 @@
   (setq projectile-enable-caching t)
   (setq projectile-completion-system 'auto)
   (setq projectile-sort-order 'recently-active)
-  projectile-globally-ignored-files '(".DS_Store" "TAGS")
+  (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
   (when (executable-find "fd")
-    (let ((fd-command "fd . --type f --print0"))
+    (let ((fd-command "fd . --type f --print0 --color=never"))
       (setq projectile-hg-command fd-command)
       (setq projectile-git-command fd-command)
       (setq projectile-fossil-command fd-command)
@@ -1026,11 +1034,8 @@
   (setq projectile-require-project-file nil))
 
 (use-package dumb-jump
-  :commands dumb-jump-xref-activate
-  :init
-  (with-eval-after-load "xref"
-    (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t))
   :config
+  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t)
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
@@ -1049,8 +1054,12 @@
         company-tooltip-align-annotations t
         company-minimum-prefix-length 1
         company-dabbrev-downcase nil)
-
-  (global-company-mode))
+  (global-company-mode)
+  ;; use numbers 0-9 to select company completion candidates
+  (let ((map company-active-map))
+    (mapc (lambda (x) (define-key map (format "%d" x)
+                        `(lambda () (interactive) (company-complete-number ,x))))
+          (number-sequence 0 9))))
 
 (use-package company-terraform
   :after (company terraform-mode)
@@ -1082,8 +1091,8 @@
   :config
   (yas-reload-all))
 
-;; (use-package flycheck
-;;   :after-call after-find-file
+;; (use-package after
+;;   :call-flycheck after-find-file
 ;;   :config
 ;;   (setq flycheck-check-syntax-automatically '(save mode-enabled))
 ;;   (setq flycheck-display-errors-delay 0.25)
@@ -1400,26 +1409,54 @@ comment to the line."
   :mode (("\\.ts\\'" . typescript-mode))
   :mode (("\\.tsx\\'" . typescript-mode)))
 
+(use-package flycheck
+  :hook (prog-mode . flycheck-mode))
+
 (use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook ((typescript-mode
+          js2-mode) . lsp)
+  :hook (lsp-mode . lsp-enable-which-key-integration)
   :init
-  (setq read-process-output-max (* 1024 1024))
-  (setq lsp-keymap-prefix "<f9>")
-  :hook ((typescript-mode . lsp)
-         (js2-mode . lsp)
-         (python-mode . lsp)
-         (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
+  (setq read-process-output-max (* 1024 1024)
+        lsp-keymap-prefix "C-c l")
+  :config
+  (setq lsp-headerline-breadcrumb-enable nil
+        lsp-signature-render-documentation nil
+        lsp-lens-enable nil
+        ;; lsp-eldoc-enable-hover nil
+        ;; lsp-eldoc-render-all nil
+        ))
 
-(use-package lsp-ui :commands lsp-ui-mode)
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-sideline-show-hover t
+        lsp-ui-sideline-delay 1
+        lsp-ui-doc-delay 2
+        ;; lsp-ui-sideline-enable nil
+        lsp-ui-sideline-ignore-duplicates t
+        lsp-ui-doc-position 'bottom
+        lsp-ui-doc-alignment 'frame
+        lsp-ui-doc-header nil
+        lsp-ui-doc-include-signature t
+        lsp-ui-doc-use-childframe t))
 
-(use-package lsp-jedi)
+
+(use-package lsp-python-ms
+  :init (setq lsp-python-ms-auto-install-server t)
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-python-ms)
+                         (lsp))))
+
+;; (use-package lsp-jedi)
 
 ;;   (with-eval-after-load "lsp-mode"
 ;;     (add-to-list 'lsp-disabled-clients 'pyls)
 ;;     (add-to-list 'lsp-enabled-clients 'jedi)))
 
-(use-package goto-line-preview
-  :bind ([remap goto-line] . goto-line-preview))
+;; (use-package goto-line-preview
+;;   :bind ([remap goto-line] . goto-line-preview))
 
 (use-package try
   :commands try)
@@ -1430,9 +1467,21 @@ comment to the line."
 (use-package py-isort
   :commands py-isort-buffer)
 
-(use-package blacken
-  :hook (python-mode . blacken-mode)
-  :commands blacken-mode blacken-buffer)
+;; (use-package blacken
+;;   :hook (python-mode . blacken-mode)
+;;   :commands blacken-mode blacken-buffer)
+
+(use-package format-all
+  ;; :hook (python-mode . format-all-mode)
+  :config
+  (setq-default format-all-formatters
+                '(("Python" yapf))))
+
+(use-package pyvenv
+  :config
+  (setq pyvenv-mode-line-indicator
+        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
+  (pyvenv-mode +1))
 
 (use-package keypression
   :commands keypression-mode)
@@ -1466,29 +1515,6 @@ comment to the line."
   (advice-add #'marginalia-cycle :after
               (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
-
-(use-package embark
-  :bind (("C-S-a" . embark-act))
-  :config
-  ;; (setq embark-quit-after-action nil)
-  (defun refresh-selectrum ()
-    (setq selectrum--previous-input-string nil))
-  (add-hook 'embark-pre-action-hook #'refresh-selectrum)
-  (add-hook 'embark-post-action-hook #'embark-collect--update-linked)
-
-  (setq embark-action-indicator
-        (lambda (map)
-          (which-key--show-keymap "Embark" map nil nil 'no-paging)
-          #'which-key--hide-popup-ignore-command)
-        embark-become-indicator embark-action-indicator)
-
-  (defun pause-selectrum ()
-    (when (eq embark-collect--kind :live)
-      (with-selected-window (active-minibuffer-window)
-        (shrink-window selectrum-num-candidates-displayed)
-        (setq-local selectrum-num-candidates-displayed 0))))
-  (add-hook 'embark-collect-mode-hook #'pause-selectrum))
-
 
 (use-package orderless
   :config
@@ -1551,10 +1577,12 @@ comment to the line."
          ("C-x r x"  . consult-register)
          ("C-x r b"  . consult-bookmark)
 
+         ("M-g g"    . consult-goto-line)             ;; orig. goto-line
+         ("M-g M-g"  . consult-goto-line)           ;; orig. goto-line
          ("M-g o"    . consult-outline)
          ("M-g m"    . consult-mark)
          ("M-g k"    . consult-global-mark)
-         ("M-g e"    . consult-error)
+         ("M-g e"    . consult-compile-error)
          ("M-i"      . consult-imenu)
          ;; M-s bindings (search-map)
          ("M-s r" . consult-ripgrep)
@@ -1565,40 +1593,62 @@ comment to the line."
          ("M-s u" . consult-focus-lines)
          ;; ("M-s e" . consult-isearch)
          ("<help> a" . consult-apropos))
+  :commands consult-ref
   :init
   (fset 'multi-occur #'consult-multi-occur)
   (fset 'projectile-ripgrep #'consult-ripgrep)
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   :config
   (setq consult-narrow-key "`"
         register-preview-delay 0
         consult-preview-key (kbd "<C-return>")
         register-preview-function #'consult-register-format)
 
-  (defun reduce-which-key-delay (fun &rest args)
-    (let ((timer (and consult-narrow-key
-                      (memq :narrow args)
-                      (run-at-time 0.01 0.01
-                                   (lambda ()
-                                     (when (eq last-input-event (elt consult-narrow-key 0))
-                                       (which-key--start-timer 0.001)))))))
-      (unwind-protect
-          (apply fun args)
-        (when timer
-          (cancel-timer timer)
-          (which-key--start-timer)))))
-  (advice-add #'consult--read :around #'reduce-which-key-delay)
+  (consult-customize
+   consult-goto-line :preview-key 'any)
 
+  (consult-customize
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-file consult--source-project-file consult--source-bookmark
+   :preview-key (kbd "M-."))
+  ;; (defun reduce-which-key-delay (fun &rest args)
+  ;;   (let ((timer (and consult-narrow-key
+  ;;                     (memq :narrow args)
+  ;;                     (run-at-time 0.01 0.01
+  ;;                                  (lambda ()
+  ;;                                    (when (eq last-input-event (elt consult-narrow-key 0))
+  ;;                                      (which-key--start-timer 0.001)))))))
+  ;;     (unwind-protect
+  ;;         (apply fun args)
+  ;;       (when timer
+  ;;         (cancel-timer timer)
+  ;;         (which-key--start-timer)))))
+  ;; (advice-add #'consult--read :around #'reduce-which-key-delay)
 
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root))
 
+(use-package embark
+  :bind (("C-S-a" . embark-act)
+         ("C-h B" . embark-bindings))
+  :init
+  (setq prefix-help-command #'embark-prefix-help-command)
+  :config
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
 (use-package embark-consult
   :ensure t
   :after (embark consult)
   :config
-  (add-hook 'embark-collect-mode-hook #'embark-consult-preview-minor-mode))
+  (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode))
+
 
 ;; (use-package org-plus-contrib
 ;;   :pin org)
@@ -1744,6 +1794,8 @@ comment to the line."
 ;; (setq completion-show-help nil)
 
 ;; use-package seq: init -> config
+
+;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
 
 (when init-file-debug
   (use-package-report))
