@@ -432,7 +432,7 @@
 
 ;; don't let the cursor go into minibuffer prompt
 (setq minibuffer-prompt-properties
-      '(read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
+      '(read-only t cursor-intangible t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 (use-package rainbow-delimiters
@@ -644,7 +644,7 @@
         ediff-window-setup-function #'ediff-setup-windows-plain))
 
 (use-package magit
-  :after selectrum
+  ;;:after selectrum
   :bind (("C-x C-z" . magit-status))
   :config
   (use-package git-commit
@@ -661,7 +661,7 @@
 
   (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
 
-  (setq magit-completing-read-function #'selectrum-completing-read
+  (setq ;magit-completing-read-function #'selectrum-completing-read
         magit-bury-buffer-function #'magit-restore-window-configuration
         magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
         magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
@@ -910,52 +910,6 @@
   :config
   (setq-default goggles-pulse t))
 
-;; (use-package pulse
-;;   :ensure nil
-;;   :custom-face
-;;   (pulse-highlight-start-face ((t (:inherit region))))
-;;   (pulse-highlight-face ((t (:inherit region))))
-;;   :hook (((dumb-jump-after-jump
-;;            imenu-after-jump) . my/recenter-and-pulse)
-;;          ((bookmark-after-jump
-;;            magit-diff-visit-file
-;;            next-error) . my/recenter-and-pulse-line))
-;;   :init
-;;   (with-no-warnings
-;;     (defun my/pulse-momentary-line (&rest _)
-;;       "Pulse the current line."
-;;       (pulse-momentary-highlight-one-line (point)))
-
-;;     (defun my/pulse-momentary (&rest _)
-;;       "Pulse the region or the current line."
-;;       (if (fboundp 'xref-pulse-momentarily)
-;;           (xref-pulse-momentarily)
-;;         (my/pulse-momentary-line)))
-
-;;     (defun my/recenter-and-pulse(&rest _)
-;;       "Recenter and pulse the region or the current line."
-;;       (recenter)
-;;       (my/pulse-momentary))
-
-;;     (defun my/recenter-and-pulse-line (&rest _)
-;;       "Recenter and pulse the current line."
-;;       (recenter)
-;;       (my/pulse-momentary-line))
-
-;;     (dolist (cmd '(recenter-top-bottom
-;;                    other-window windmove-do-window-select
-;;                    ace-window aw--select-window
-;;                    pager-page-down pager-page-up
-;;                    winum-select-window-by-number
-;;                    ;; treemacs-select-window
-;;                    symbol-overlay-basic-jump))
-;;       (advice-add cmd :after #'my/pulse-momentary-line))
-
-;;     (dolist (cmd '(pop-to-mark-command
-;;                    pop-global-mark
-;;                    goto-last-change))
-;;       (advice-add cmd :after #'my/recenter-and-pulse))))
-
 (use-package drag-stuff
   :hook
   ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
@@ -1091,40 +1045,8 @@
   :config
   (yas-reload-all))
 
-;; (use-package after
-;;   :call-flycheck after-find-file
-;;   :config
-;;   (setq flycheck-check-syntax-automatically '(save mode-enabled))
-;;   (setq flycheck-display-errors-delay 0.25)
-;;   (global-flycheck-mode))
-
-;; (use-package flymake-shellcheck
-;;   :after flycheck
-;;   :hook (sh-mode . flymake-shellcheck-load))
-
-;; ;; (use-package flycheck-popup-tip
-;; ;;   :after flycheck
-;; ;;   :config
-;; ;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode))
-
-;; (use-package flycheck-posframe
-;;   :after flycheck
-;;   :hook
-;;   (flycheck-mode . flycheck-posframe-mode)
-;;   :config
-;;   (setq flycheck-posframe-border-width 2
-;;         flycheck-posframe-warning-prefix "⚠ "
-;;         flycheck-posframe-info-prefix "··· "
-;;         flycheck-posframe-error-prefix "✕ ")
-;;   (after! company
-;;     ;; Don't display popups if company is open
-;;     (add-hook 'flycheck-posframe-inhibit-functions #'company--active-p)))
-
-
-;; (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
-;; (flycheck-posframe-configure-pretty-defaults)
-;; (setq flycheck-posframe-border-width 2)
-;; (set-face-foreground 'flycheck-posframe-border-face "red"))
+(use-package consult-yasnippet
+  :after yasnippet)
 
 (use-package wgrep
   :commands wgrep-change-to-wgrep-mode)
@@ -1502,11 +1424,11 @@ comment to the line."
   (dimmer-configure-magit)
   (dimmer-configure-org))
 
-(use-package selectrum-prescient
-  :commands selectrum-prescient-mode
-  :config
-  (setq prescient-filter-method '(literal regexp fuzzy))
-  (setq prescient-history-length 1000))
+;; (use-package selectrum-prescient
+;;   :commands selectrum-prescient-mode
+;;   :config
+;;   (setq prescient-filter-method '(literal regexp fuzzy))
+;;   (setq prescient-history-length 1000))
 
 (use-package marginalia
   :commands marginalia-mode
@@ -1515,6 +1437,61 @@ comment to the line."
   (advice-add #'marginalia-cycle :after
               (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+
+
+
+(use-package vertico
+  :init
+  (vertico-mode +1)
+  (marginalia-mode +1)
+
+  ;; Different scroll margin
+  ;; (setq vertico-scroll-margin 0)
+
+  ;; Show more candidates
+  (setq vertico-count 15)
+
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (setq vertico-resize t)
+
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  (setq vertico-cycle nil))
+
+;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+;; Vertico commands are hidden in normal buffers.
+(setq read-extended-command-predicate
+      #'command-completion-default-include-p)
+
+;; (use-package corfu
+;;   ;; Optional customizations
+;;   :custom
+;;   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+;;   (corfu-auto t)                 ;; Enable auto completion
+;;   ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
+;;   ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
+;;   ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
+;;   ;; (corfu-echo-documentation nil) ;; Do not show documentation in the echo area
+;;   ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+;;   ;; (corfu-preview-current nil)    ;; Do not preview current candidate
+
+;;   ;; Optionally use TAB for cycling, default is `corfu-complete'.
+;;   ;; :bind (:map corfu-map
+;;   ;;        ("TAB" . corfu-next)
+;;   ;;        ([tab] . corfu-next)
+;;   ;;        ("S-TAB" . corfu-previous)
+;;   ;;        ([backtab] . corfu-previous))
+
+;;   ;; You may want to enable Corfu only for certain modes.
+;;   ;; :hook ((prog-mode . corfu-mode)
+;;   ;;        (shell-mode . corfu-mode)
+;;   ;;        (eshell-mode . corfu-mode))
+
+;;   ;; Recommended: Enable Corfu globally.
+;;   ;; This is recommended since dabbrev can be used globally (M-/).
+;;   :init
+;;   (corfu-global-mode))
+;; (setq tab-always-indent 'complete)
+
 
 (use-package orderless
   :config
@@ -1541,28 +1518,38 @@ comment to the line."
           ((string-suffix-p "=" pattern)
            `(orderless-literal . ,(substring pattern 0 -1)))))
 
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion))))
   (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
-(use-package selectrum
-  :hook (after-init . jccb/selectrum-setup)
-  :bind ("C-c C-r" . selectrum-repeat)
-  :commands selectrum-mode
-  :config
-  (defun jccb/selectrum-setup ()
-    (setq selectrum-prescient-enable-filtering nil)
-    (setq selectrum-refine-candidates-function #'orderless-filter)
-    (setq orderless-skip-highlighting (lambda () selectrum-is-active))
-    (setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
-    (setq completion-styles '(orderless))
-    (selectrum-mode +1)
-    (selectrum-prescient-mode +1)
-    (prescient-persist-mode +1)
-    (marginalia-mode +1))
-  (setq selectrum-fix-vertical-window-height 15
-        ;; selectrum-num-candidates-displayed 15
-        selectrum-extend-current-candidate-highlight t
-        selectrum-show-indices nil))
+
+
+;; (use-package selectrum
+;;   :hook (after-init . jccb/selectrum-setup)
+;;   :bind ("C-c C-r" . selectrum-repeat)
+;;   :commands selectrum-mode
+;;   :config
+;;   (defun jccb/selectrum-setup ()
+;;     (setq selectrum-prescient-enable-filtering nil)
+;;     (setq selectrum-refine-candidates-function #'orderless-filter)
+;;     (setq orderless-skip-highlighting (lambda () selectrum-is-active))
+;;     (setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
+;;     (setq completion-styles '(orderless))
+;;     (selectrum-mode +1)
+;;     (selectrum-prescient-mode +1)
+;;     (prescient-persist-mode +1)
+;;     (marginalia-mode +1))
+;;   (setq selectrum-fix-vertical-window-height 15
+;;         ;; selectrum-num-candidates-displayed 15
+;;         selectrum-extend-current-candidate-highlight t
+;;         selectrum-show-indices nil))
+
+(use-package consult-flycheck
+  :commads consult-flycheck)
+;; (use-package consult-lsp
+;;   :commands (consult-lsp-symbols consult-lsp-diagnostics consult-lsp-file-symbols))
 
 (use-package consult
   :bind (("C-c h" . consult-history)
@@ -1577,6 +1564,7 @@ comment to the line."
          ("C-x r x"  . consult-register)
          ("C-x r b"  . consult-bookmark)
 
+         ("M-g f"    . consult-flycheck)
          ("M-g g"    . consult-goto-line)             ;; orig. goto-line
          ("M-g M-g"  . consult-goto-line)           ;; orig. goto-line
          ("M-g o"    . consult-outline)
@@ -1599,6 +1587,8 @@ comment to the line."
   (fset 'projectile-ripgrep #'consult-ripgrep)
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
+  (advice-add #'register-preview :override #'consult-register-window)
+  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
   :config
   (setq consult-narrow-key "`"
         register-preview-delay 0
