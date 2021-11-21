@@ -139,7 +139,8 @@
   (load-theme 'doom-one t)
   ;;(doom-themes-treemacs-config)
   (doom-themes-visual-bell-config)
-  (doom-themes-org-config))
+  ;;(doom-themes-org-config)
+  )
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
@@ -162,9 +163,7 @@
   (doom-modeline-mode))
 
 (use-package winum
-  :defer 3
-  :config
-  (winum-mode +1))
+  :hook (after-init . winum-mode))
 
 ;; (use-package solaire-mode
 ;;   :hook (change-major-mode . turn-on-solaire-mode)
@@ -709,14 +708,12 @@
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
 (use-package anzu
+  :hook (after-init . global-anzu-mode)
   :bind (([remap query-replace-regexp] . anzu-query-replace)
          ([remap query-replace] . anzu-query-replace-regexp)
          :map isearch-mode-map
          ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp)
-         ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp))
-  :config
-  ;; show number of matches while searching
-  (global-anzu-mode +1))
+         ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp)))
 
 (use-package highlight-quoted
   :hook (emacs-lisp-mode . highlight-quoted-mode))
@@ -1422,7 +1419,8 @@ comment to the line."
   (setq dimmer-fraction 0.25)
   (dimmer-configure-which-key)
   (dimmer-configure-magit)
-  (dimmer-configure-org))
+  ;;(dimmer-configure-org)
+  )
 
 ;; (use-package selectrum-prescient
 ;;   :commands selectrum-prescient-mode
@@ -1547,7 +1545,8 @@ comment to the line."
 ;;         selectrum-show-indices nil))
 
 (use-package consult-flycheck
-  :commads consult-flycheck)
+  :commands consult-flycheck)
+
 ;; (use-package consult-lsp
 ;;   :commands (consult-lsp-symbols consult-lsp-diagnostics consult-lsp-file-symbols))
 
@@ -1643,119 +1642,119 @@ comment to the line."
 ;; (use-package org-plus-contrib
 ;;   :pin org)
 
-(use-package org
-  :ensure org-plus-contrib
-  :pin org
-  ;; :hook (org-mode . org-indent-mode)
-  :commands org-agenda org-capture org-buffer-list
-  :bind (("<f12> a"     . org-agenda)
-         ("<f12> c"     . org-capture)
-         ("<f12> b"     . org-switchb)
-         ("<f12> <f11>" . jccb/org-agenda-switch-to-buffer)
-         ("<f12> <f12>" . jccb/capture-task)
-         ("<f12> w"     . jccb/org-agenda-work)
-         ("<f12> p"     . jccb/org-agenda-personal)
-         ("<f12> l"     . org-store-link)
-         :map org-agenda-mode-map
-         ("y" . org-agenda-todo-yesterday))
-  :init
-  (setq org-modules '(org-habit))
-  :config
-  (defun jccb/capture-task () (interactive) (org-capture nil "t"))
-  (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
-  (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
-  (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
+;; (use-package org
+;;   :ensure org-plus-contrib
+;;   :pin org
+;;   ;; :hook (org-mode . org-indent-mode)
+;;   :commands org-agenda org-capture org-buffer-list
+;;   :bind (("<f12> a"     . org-agenda)
+;;          ("<f12> c"     . org-capture)
+;;          ("<f12> b"     . org-switchb)
+;;          ("<f12> <f11>" . jccb/org-agenda-switch-to-buffer)
+;;          ("<f12> <f12>" . jccb/capture-task)
+;;          ("<f12> w"     . jccb/org-agenda-work)
+;;          ("<f12> p"     . jccb/org-agenda-personal)
+;;          ("<f12> l"     . org-store-link)
+;;          :map org-agenda-mode-map
+;;          ("y" . org-agenda-todo-yesterday))
+;;   :init
+;;   (setq org-modules '(org-habit))
+;;   :config
+;;   (defun jccb/capture-task () (interactive) (org-capture nil "t"))
+;;   (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
+;;   (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
+;;   (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
 
-  (org-load-modules-maybe t)
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
-  ;; (add-hook 'org-agenda-finalize-hook 'hide-mode-line-mode)
-  (setq org-agenda-span 7
-        org-agenda-start-with-log-mode t
-        org-special-ctrl-a/e t
-        org-special-ctrl-k t
-        org-use-fast-todo-selection t
-        org-log-done 'time
-        org-log-into-drawer t
-        org-catch-invisible-edits 'show-and-error
-        org-habit-graph-column 50
-        org-habit-show-habits-only-for-today t
-        org-habit-show-all-today nil
-        org-habit-following-days 3
-        org-habit-show-done-always-green t
-        org-directory "~/org/"
-        org-default-notes-file "~/org/notes.org"
-        org-agenda-files (list org-directory)
-        org-agenda-start-on-weekday nil
-        org-ellipsis "…"
-        org-agenda-use-time-grid nil
-        org-refile-targets '((nil :maxlevel . 2)
-                             (org-agenda-files :maxlevel . 2))
-        org-outline-path-complete-in-steps nil
-        org-refile-use-outline-path 'file)
+;;   (org-load-modules-maybe t)
+;;   (advice-add 'org-refile :after 'org-save-all-org-buffers)
+;;   ;; (add-hook 'org-agenda-finalize-hook 'hide-mode-line-mode)
+;;   (setq org-agenda-span 7
+;;         org-agenda-start-with-log-mode t
+;;         org-special-ctrl-a/e t
+;;         org-special-ctrl-k t
+;;         org-use-fast-todo-selection t
+;;         org-log-done 'time
+;;         org-log-into-drawer t
+;;         org-catch-invisible-edits 'show-and-error
+;;         org-habit-graph-column 50
+;;         org-habit-show-habits-only-for-today t
+;;         org-habit-show-all-today nil
+;;         org-habit-following-days 3
+;;         org-habit-show-done-always-green t
+;;         org-directory "~/org/"
+;;         org-default-notes-file "~/org/notes.org"
+;;         org-agenda-files (list org-directory)
+;;         org-agenda-start-on-weekday nil
+;;         org-ellipsis "…"
+;;         org-agenda-use-time-grid nil
+;;         org-refile-targets '((nil :maxlevel . 2)
+;;                              (org-agenda-files :maxlevel . 2))
+;;         org-outline-path-complete-in-steps nil
+;;         org-refile-use-outline-path 'file)
 
-  (setq org-todo-keywords
-        '((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
-          (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)")))
+;;   (setq org-todo-keywords
+;;         '((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
+;;           (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)")))
 
-  (setq org-todo-keyword-faces
-        `(("TODO"        . ,(doom-color 'yellow))
-          ("IN-PROGRESS" . ,(doom-color 'orange))
-          ("NEXT"        . ,(doom-color 'red))
-          ("SOMETIME"    . ,(doom-color 'base7))
-          ("WAITING"     . ,(doom-color 'base6))
-          ("HOLD"        . ,(doom-color 'base5))
-          ("DONE"        . ,(doom-color 'green))
-          ("CANCELED"    . ,(doom-color 'green)))
-        org-priority-faces
-        `((?A . ,(doom-color 'base8))
-          (?B . ,(doom-color 'base7))
-          (?C . ,(doom-color 'base6))))
+;;   (setq org-todo-keyword-faces
+;;         `(("TODO"        . ,(doom-color 'yellow))
+;;           ("IN-PROGRESS" . ,(doom-color 'orange))
+;;           ("NEXT"        . ,(doom-color 'red))
+;;           ("SOMETIME"    . ,(doom-color 'base7))
+;;           ("WAITING"     . ,(doom-color 'base6))
+;;           ("HOLD"        . ,(doom-color 'base5))
+;;           ("DONE"        . ,(doom-color 'green))
+;;           ("CANCELED"    . ,(doom-color 'green)))
+;;         org-priority-faces
+;;         `((?A . ,(doom-color 'base8))
+;;           (?B . ,(doom-color 'base7))
+;;           (?C . ,(doom-color 'base6))))
 
-  (setq org-tag-alist '(("work"     . ?w)
-                        ("personal" . ?p)
-                        ("kb"       . ?k)
-                        ("idea"     . ?i)
-                        ("learn"    . ?l)))
+;;   (setq org-tag-alist '(("work"     . ?w)
+;;                         ("personal" . ?p)
+;;                         ("kb"       . ?k)
+;;                         ("idea"     . ?i)
+;;                         ("learn"    . ?l)))
 
-  (setq jccb/org-todo-sort-order '("NEXT"
-                                   "IN-PROGRESS"
-                                   "TODO"
-                                   "WAITING"
-                                   "HOLD"
-                                   "SOMETIME"
-                                   "DONE"
-                                   "CANCELED"))
-  (defun jccb/org-sort (a b)
-    (when-let ((state-a (get-text-property 14 'todo-state a))
-               (state-b (get-text-property 14 'todo-state b))
-               (cmp (--map (cl-position-if (lambda (x)
-                                             (equal x it))
-                                           jccb/org-todo-sort-order)
-                           (list state-a state-b))))
-      (cond ((apply '> cmp) 1)
-            ((apply '< cmp) -1)
-            (t nil))))
-  (setq org-agenda-cmp-user-defined #'jccb/org-sort
-        org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))
+;;   (setq jccb/org-todo-sort-order '("NEXT"
+;;                                    "IN-PROGRESS"
+;;                                    "TODO"
+;;                                    "WAITING"
+;;                                    "HOLD"
+;;                                    "SOMETIME"
+;;                                    "DONE"
+;;                                    "CANCELED"))
+;;   (defun jccb/org-sort (a b)
+;;     (when-let ((state-a (get-text-property 14 'todo-state a))
+;;                (state-b (get-text-property 14 'todo-state b))
+;;                (cmp (--map (cl-position-if (lambda (x)
+;;                                              (equal x it))
+;;                                            jccb/org-todo-sort-order)
+;;                            (list state-a state-b))))
+;;       (cond ((apply '> cmp) 1)
+;;             ((apply '< cmp) -1)
+;;             (t nil))))
+;;   (setq org-agenda-cmp-user-defined #'jccb/org-sort
+;;         org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))
 
-  (setq org-agenda-custom-commands
-        '(("w" "Work Agenda"
-           ((agenda "" nil)
-            (tags-todo "-habit"
-                       ((org-agenda-overriding-header "Tasks"))))
-           ((org-agenda-tag-filter-preset '("+work" "-xhome"))))
-          ("p" "Personal Agenda"
-           ((agenda "" nil)
-            (tags-todo "-habit"
-                       ((org-agenda-overriding-header "Tasks"))))
-           ((org-agenda-tag-filter-preset '("-work" "-xhome"))
-            (org-habit-show-habits-only-for-today t)
-            (org-habit-show-all-today t)
-            (org-agenda-span 1)))))
+;;   (setq org-agenda-custom-commands
+;;         '(("w" "Work Agenda"
+;;            ((agenda "" nil)
+;;             (tags-todo "-habit"
+;;                        ((org-agenda-overriding-header "Tasks"))))
+;;            ((org-agenda-tag-filter-preset '("+work" "-xhome"))))
+;;           ("p" "Personal Agenda"
+;;            ((agenda "" nil)
+;;             (tags-todo "-habit"
+;;                        ((org-agenda-overriding-header "Tasks"))))
+;;            ((org-agenda-tag-filter-preset '("-work" "-xhome"))
+;;             (org-habit-show-habits-only-for-today t)
+;;             (org-habit-show-all-today t)
+;;             (org-agenda-span 1)))))
 
-  ;; make org work with shackle
-  (defun org-switch-to-buffer-other-window (&rest args)
-    (apply 'switch-to-buffer-other-window args)))
+;;   ;; make org work with shackle
+;;   (defun org-switch-to-buffer-other-window (&rest args)
+;;     (apply 'switch-to-buffer-other-window args)))
 
 (use-package so-long
   :hook (after-init . global-so-long-mode))
