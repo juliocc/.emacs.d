@@ -67,13 +67,9 @@
 (unless (fboundp 'url-insert-buffer-contents)
   (require 'url-handlers))
 
-(require 'package)
-(setq package-enable-at-startup nil
-      package-archives
-      '(("gnu"   . "https://elpa.gnu.org/packages/")
-        ("melpa" . "https://melpa.org/packages/")
-        ("org"   . "https://orgmode.org/elpa/"))
-      gnutls-verify-error t
+(setq straight-use-package-by-default t
+      straight-profiles `((nil . ,(emacs-path "straight.lockfile.el")))
+      package-enable-at-startup nil
       tls-checktrust t
       gnutls-min-prime-bits 3072
       network-security-level 'high
@@ -86,17 +82,26 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
-(package-initialize)
 
 ;; use-package setup
+;; (setq use-package-enable-imenu-support t)
+;; (require 'use-package)
+;; (setq use-package-always-ensure t)
 
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
-(setq use-package-enable-imenu-support t)
-(require 'use-package)
-(setq use-package-always-ensure t)
+(straight-use-package 'use-package)
 
 (use-package no-littering
   :config
@@ -198,6 +203,7 @@
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
+  :straight nil
   :ensure nil
   :hook ((prog-mode text-mode conf-mode) . display-line-numbers-mode)
   :config
@@ -314,6 +320,7 @@
 
 (use-package hippie-exp
   :ensure nil
+  :straight nil
   :bind (("M-/"   . hippie-expand)
          ("C-M-/" . dabbrev-completion))
   :init
@@ -386,6 +393,7 @@
 
 ;; Backup settings
 (use-package files
+  :straight nil
   :ensure nil
   :init
   (setq backup-by-copying t
@@ -505,6 +513,7 @@
 
 ;; uniquify:  provide meaningful names for buffers with the same name
 (use-package uniquify
+  :straight nil
   :ensure nil
   :init
   ;; (setq uniquify-buffer-name-style 'forward)
@@ -529,6 +538,7 @@
 
 ;; Save point position between sessions
 (use-package saveplace
+  :straight nil
   :ensure nil
   :hook (after-init . save-place-mode))
 
@@ -625,17 +635,11 @@
 ;; git and magit settings
 ;;==================================================
 
-(use-package gitconfig-mode
-  :mode (("\\.gitconfig\\'"  . gitconfig-mode)
-         ("\\.git/config\\'" . gitconfig-mode)
-         ("\\.gitmodules\\'" . gitconfig-mode)))
-
-(use-package gitignore-mode
-  :mode "\\.gitignore\\'")
-
 ;; (use-package gl-conf-mode
 ;;   :load-path "site-lisp/gl-conf-mode"
 ;;   :mode "gitolite\\.conf\\'")
+
+(use-package git-modes)
 
 (with-eval-after-load 'ediff
   (setq ediff-diff-options "-w" ; turn off whitespace checking
@@ -646,30 +650,24 @@
   ;;:after selectrum
   :bind (("C-x C-z" . magit-status))
   :config
-  (use-package git-commit
-    :hook
-    (git-commit-mode . turn-on-flyspell)
-    :config
-    (global-git-commit-mode +1)
-
-    ;; Enforce git commit conventions.
-    ;; See https://chris.beams.io/posts/git-commit/
-    (setq git-commit-summary-max-length 50
-          git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
-    (add-hook 'git-commit-mode-hook (lambda () (setq fill-column 72))))
+  (global-git-commit-mode +1)
+  (setq git-commit-summary-max-length 70)
+  (defun jccb/git-commit-mode-hook ()
+    (turn-on-flyspell)
+    (setq fill-column 70))
+  (add-hook 'git-commit-mode-hook #'jccb/git-commit-mode-hook)
 
   (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
-
   (setq ;magit-completing-read-function #'selectrum-completing-read
-        magit-bury-buffer-function #'magit-restore-window-configuration
-        magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
-        magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
-        magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
-        magit-diff-refine-hunk 'all
-        magit-delete-by-moving-to-trash t
-        magit-git-executable (executable-find magit-git-executable)
-        magit-revision-insert-related-refs nil
-        magit-save-repository-buffers nil))
+   magit-bury-buffer-function #'magit-restore-window-configuration
+   magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
+   magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
+   magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
+   magit-diff-refine-hunk 'all
+   magit-delete-by-moving-to-trash t
+   magit-git-executable (executable-find magit-git-executable)
+   magit-revision-insert-related-refs nil
+   magit-save-repository-buffers nil))
 
 ;; (use-package magit-todos
 ;;   :after magit)
@@ -694,6 +692,7 @@
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (use-package jccb-search
+  :straight nil
   :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :bind (:map isearch-mode-map
@@ -726,6 +725,7 @@
 ;;   (setq scss-compile-at-save nil))
 
 (use-package dired
+  :straight nil
   :ensure nil
   :bind (("C-x C-j" . dired-jump))
   :init
@@ -737,6 +737,7 @@
                 dired-dwim-target t))
 
 (use-package dired-x
+  :straight nil
   :ensure nil
   :after dired
   :hook (dired-mode . dired-omit-mode)
@@ -825,10 +826,12 @@
   :bind (("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package misc
+  :straight nil
   :ensure nil
   :bind ("M-z" . zap-up-to-char))
 
 (use-package jccb-misc
+  :straight nil
   :ensure nil
   :defer 1
   :commands (chmod+x-this jccb/doctor)
@@ -849,6 +852,7 @@
   (crux-reopen-as-root-mode +1))
 
 (use-package jccb-windows
+  :straight nil
   :ensure nil
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
@@ -858,6 +862,7 @@
          ("S-C-j" . quick-switch-buffer)))
 
 (use-package window
+  :straight nil
   :ensure nil
   :bind (("C-1"         . delete-other-windows)
          ("C-0"         . delete-window)
@@ -922,6 +927,7 @@
   (whole-line-or-region-global-mode +1))
 
 (use-package ispell
+  :straight nil
   :ensure nil
   :bind ("C-. d" . jccb/cycle-ispell-languages)
   :config
@@ -942,6 +948,7 @@
       (message "Spell language changed to %s" lang))))
 
 (use-package flyspell
+  :straight nil
   :ensure nil
   :hook (text-mode . flyspell-mode)
   :hook ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode)
@@ -1153,6 +1160,7 @@ comment to the line."
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
+  :straight nil
   :ensure nil
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
@@ -1436,24 +1444,28 @@ comment to the line."
               (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
-
-
 (use-package vertico
   :init
   (vertico-mode +1)
   (marginalia-mode +1)
-
-  ;; Different scroll margin
-  ;; (setq vertico-scroll-margin 0)
-
-  ;; Show more candidates
   (setq vertico-count 15)
-
-  ;; Grow and shrink the Vertico minibuffer
-  ;; (setq vertico-resize t)
-
-  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle nil))
+
+(use-package vertico-extensions
+  :straight (vertico-extensions
+             :host github
+             :repo "minad/vertico"
+             :local-repo "vertico-extensions"
+             :files ("extensions/vertico-directory.el"
+                     "extensions/vertico-repeat.el"))
+  :after vertico
+  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
+         (minibuffer-setup . vertico-repeat-save))
+  :bind ("C-c C-r" . vertico-repeat)
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ;; ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word)))
 
 ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
 ;; Vertico commands are hidden in normal buffers.
