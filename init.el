@@ -20,7 +20,7 @@
 ;;==================================================
 (defconst *is-a-mac* (eq system-type 'darwin))
 (defconst *is-a-linux* (eq system-type 'gnu/linux))
-(defconst *is-a-windowed-mac* (and *is-a-mac* window-system))
+(defconst *is-a-windowed-mac* (and *is-a-mac* (display-graphic-p)))
 (defvar jccb/interactive-mode (not noninteractive))
 (defvar jccb/debug init-file-debug)
 
@@ -186,7 +186,7 @@
 (setq-default cursor-type '(bar . 2))
 (setq-default frame-background-mode 'dark)
 
-(when window-system
+(when (display-graphic-p)
   (setq frame-title-format '(buffer-file-name "%f" ("%b"))
         icon-title-format frame-title-format)
   (blink-cursor-mode -1))
@@ -1166,7 +1166,7 @@ comment to the line."
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
 (use-package server
-  :if window-system
+  :if (display-graphic-p)
   :hook (after-init . server-start))
 
 ;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
