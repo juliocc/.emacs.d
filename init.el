@@ -135,17 +135,40 @@
              all-the-icons-material
              all-the-icons-alltheicon))
 
-(use-package doom-themes
+;; (use-package doom-themes
+;;   :config
+;;   (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
+;;         doom-themes-enable-italic nil
+;;         doom-one-brighter-modeline nil
+;;         doom-themes-treemacs-theme "doom-colors")
+;;   (load-theme 'doom-one t)
+;;   ;;(doom-themes-treemacs-config)
+;;   (doom-themes-visual-bell-config)
+;;   ;;(doom-themes-org-config)
+;;   )
+
+(use-package modus-themes
+  :init
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t
+        modus-themes-subtle-line-numbers nil
+        modus-themes-intense-markup t
+        modus-themes-tabs-accented t
+        modus-themes-fringes 'subtle
+        modus-themes-syntax nil
+        modus-themes-hl-line '(accented)
+        modus-themes-paren-match '(bold intense)
+        modus-themes-links '(neutral-underline background)
+        modus-themes-prompts '(intense)
+        modus-themes-completions 'subtle
+        modus-themes-region '(bg-only no-extend)
+        modus-themes-mode-line '(1 accented borderless)
+        modus-themes-diffs nil)
+  ;; ddddd
+  (modus-themes-load-themes)
   :config
-  (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
-        doom-themes-enable-italic nil
-        doom-one-brighter-modeline nil
-        doom-themes-treemacs-theme "doom-colors")
-  (load-theme 'doom-one t)
-  ;;(doom-themes-treemacs-config)
-  (doom-themes-visual-bell-config)
-  ;;(doom-themes-org-config)
-  )
+  (modus-themes-load-vivendi))
+
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
