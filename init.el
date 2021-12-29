@@ -279,7 +279,6 @@
       blink-matching-paren-distance 51200
       confirm-nonexistent-file-or-buffer nil
       indicate-buffer-boundaries nil
-      indicate-empty-lines t
       x-underline-at-descent-line t
       idle-update-delay 2.0
       window-combination-resize t
@@ -301,6 +300,7 @@
 
 (setq-default highlight-tabs t)
 (setq-default indicate-empty-lines t)
+(setq-default show-trailing-whitespace t)
 (setq-default word-wrap t)
 (setq-default truncate-lines t)         ; don't word-wrap
 (setq truncate-partial-width-windows nil)
@@ -367,7 +367,6 @@
 (use-package whitespace-cleanup-mode
   :hook (after-init . global-whitespace-cleanup-mode))
 
-;; But don't show trailing whitespace in these modes
 (defun sanityinc/no-trailing-whitespace ()
   "Turn off display of trailing whitespace in this buffer."
   (setq show-trailing-whitespace nil))
@@ -381,10 +380,6 @@
                 isearch-mode-hook
                 minibuffer-setup-hook))
   (add-hook hook #'sanityinc/no-trailing-whitespace))
-
-(dolist (hook '(prog-mode-hook text-mode-hook conf-mode-hook))
-  (add-hook hook (lambda () (setq show-trailing-whitespace t))))
-
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
