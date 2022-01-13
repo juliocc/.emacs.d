@@ -664,6 +664,12 @@
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
 
+;; (use-package magit-delta
+;;   :after magit
+;;   ;;:hook (magit-mode . magit-delta-mode)
+;;   :config
+;;   (setq magit-delta-delta-args (append magit-delta-delta-args '("--features" "magit-delta"))))
+
 (use-package magit
   ;;:after selectrum
   :bind (("C-x C-z" . magit-status))
@@ -772,10 +778,11 @@
                 "\\|\\(?:\\.js\\)?\\.meta\\'"
                 "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")))
 
-;; (use-package dired+
-;;   :after dired
-;;   :config
-;;   (global-dired-hide-details-mode -1))
+(use-package dired+
+  :after dired
+  :config
+  ;(global-dired-hide-details-mode -1)
+  )
 
 (use-package dired-imenu
   :after dired)
@@ -1791,6 +1798,9 @@ comment to the line."
 
 (use-package dtrt-indent
   :hook (after-init . dtrt-indent-global-mode))
+
+;; (use-package go-mode)
+
 
 ;; (Use-package shackle
 ;;   :defer 1
