@@ -60,6 +60,9 @@
   (defun emacs-path (path)
     (expand-file-name path user-emacs-directory)))
 
+;; Silence compiler warnings as they can be pretty disruptive
+(setq native-comp-async-report-warnings-errors nil)
+
 ;;==================================================
 ;; Setup package management tools
 ;;==================================================
@@ -83,10 +86,7 @@
                 ":+VERS-TLS1.2")))
 
 
-;; use-package setup
-;; (setq use-package-enable-imenu-support t)
-;; (require 'use-package)
-;; (setq use-package-always-ensure t)
+(setq use-package-enable-imenu-support t)
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -170,9 +170,9 @@
 
 
 (use-package doom-modeline
-  :hook (after-init . doom-modeline-mode)
-  :hook (doom-modeline-mode . size-indication-mode) ; filesize in modeline
-  :hook (doom-modeline-mode . column-number-mode)   ; cursor column in modeline
+  :hook ((after-init . doom-modeline-mode)
+         (doom-modeline-mode . size-indication-mode) ; filesize in modeline
+         (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 2
         doom-modeline-enable-word-count t)
@@ -341,35 +341,32 @@
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(use-package hippie-exp
-  :ensure nil
-  :straight nil
-  :bind (("M-/"   . hippie-expand)
-         ("C-M-/" . dabbrev-completion))
-  :init
-  (setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
-                                           try-expand-dabbrev
-                                           try-expand-dabbrev-all-buffers
-                                           try-complete-file-name-partially
-                                           try-complete-file-name
-                                           try-expand-all-abbrevs
-                                           try-expand-list
-                                           ;;try-expand-line
-                                           try-expand-dabbrev-from-kill
-                                           try-complete-lisp-symbol-partially
-                                           try-complete-lisp-symbol)))
+;; (use-package hippie-exp
+;;   :ensure nil
+;;   :straight nil
+;;   :bind (("M-/"   . hippie-expand)
+;;          ("C-M-/" . dabbrev-completion))
+;;   :init
+;;   (setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
+;;                                            try-expand-dabbrev
+;;                                            try-expand-dabbrev-all-buffers
+;;                                            try-complete-file-name-partially
+;;                                            try-complete-file-name
+;;                                            try-expand-all-abbrevs
+;;                                            try-expand-list
+;;                                            ;;try-expand-line
+;;                                            try-expand-dabbrev-from-kill
+;;                                            try-complete-lisp-symbol-partially
+;;                                            try-complete-lisp-symbol)))
 
 (use-package helpful
   :commands (helpful--read-symbol
-             helpful-command
-             helpful-variable
-             helpful-function
              helpful-callable)
-  :bind (([remap describe-command]  . #'helpful-command)
-         ([remap describe-key]      . #'helpful-key)
-         ([remap describe-symbol]   . #'helpful-symbol)
-         ([remap describe-function] . #'helpful-function)
-         ([remap describe-variable] . #'helpful-variable)
+  :bind (([remap describe-command]  . helpful-command)
+         ([remap describe-key]      . helpful-key)
+         ([remap describe-symbol]   . helpful-symbol)
+         ([remap describe-function] . helpful-function)
+         ([remap describe-variable] . helpful-variable)
          ("C-h ." . helpful-at-point))
   :init
   (with-eval-after-load 'apropos
@@ -768,9 +765,11 @@
   :straight nil
   :ensure nil
   :bind (("C-x C-j" . dired-jump))
+  :hook (dired-mode . dired-collapse-mode)
   :init
   (setq dired-listing-switches "--time-style long-iso -alhF --group-directories-first"
         dired-auto-revert-buffer t
+        dired-kill-when-opening-new-dired-buffer t
         dired-hide-details-hide-symlink-targets nil
         dired-recursive-copies 'always)
   (setq-default diredp-hide-details-initially-flag nil
@@ -796,12 +795,13 @@
 
 (use-package dired+
   :after dired
-  :config
-  ;(global-dired-hide-details-mode -1)
-  )
+  :config)
 
 (use-package dired-imenu
   :after dired)
+
+(use-package dired-collapse
+  :commands dired-collapse-mode)
 
 (use-package peep-dired
   :bind (:map dired-mode-map
@@ -822,13 +822,32 @@
 
 (add-hook 'find-file-not-found-functions #'make-parent-directory)
 
+
+
+(use-package visual-fill-column
+  :commands visual-fill-column-mode
+  :init
+  (setq ;; visual-fill-column-width 80
+   visual-fill-column-center-text t))
+
 (use-package markdown-mode
-  :hook (markdown-mode . turn-on-flyspell)
+  :hook ((markdown-mode . turn-on-flyspell)
+         (markdown-mode . visual-line-mode)
+         (markdown-mode . visual-fill-column-mode-map)
+         (markdown-mode . jccb/set-markdown-header-font-sizes))
   :bind (:map markdown-mode-command-map
               ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
+  :config
+  (defun jccb/set-markdown-header-font-sizes ()
+    (dolist (face '((markdown-header-face-1 . 1.3)
+                    (markdown-header-face-2 . 1.2)
+                    (markdown-header-face-3 . 1.1)
+                    (markdown-header-face-4 . 1.0)
+                    (markdown-header-face-5 . 1.0)))
+      (set-face-attribute (car face) nil :weight 'normal :height (cdr face))))
   :init
   (setq markdown-fontify-code-blocks-natively t
         markdown-asymmetric-header t
@@ -842,8 +861,8 @@
                 "<style> body { box-sizing: border-box; max-width: 740px; width: 100%; margin: 40px auto; padding: 0 10px; } </style>"
                 "<script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>"
                 "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>")
-                 markdown-open-command (cond (*is-a-mac* "open")
-                                             (t "xdg-open"))))
+        markdown-open-command (cond (*is-a-mac* "open")
+                                    (t "xdg-open"))))
 
 (use-package grip-mode
   :commands grip-mode)
@@ -959,16 +978,14 @@
   (setq-default goggles-pulse t))
 
 (use-package drag-stuff
-  :hook
-  ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
+  :hook ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-define-keys))
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :hook
-  ((prog-mode text-mode conf-mode) . whole-line-or-region-local-mode)
+  :hook ((prog-mode text-mode conf-mode) . whole-line-or-region-local-mode)
   :config
   (whole-line-or-region-global-mode +1))
 
@@ -996,8 +1013,8 @@
 (use-package flyspell
   :straight nil
   :ensure nil
-  :hook (text-mode . flyspell-mode)
-  :hook ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode)
+  :hook ((text-mode . flyspell-mode)
+         ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
   :config
   (unbind-key "C-;" flyspell-mode-map)
   (unbind-key "C-." flyspell-mode-map)
@@ -1043,49 +1060,49 @@
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
-(use-package company
-  :defer 2
-  :commands (company-mode company-indent-or-complete-common)
-  :init
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (local-set-key (kbd "<tab>")
-                             #'company-indent-or-complete-common)))
-  :config
-  (setq company-idle-delay 0.6
-        company-show-numbers t
-        company-tooltip-limit 20
-        company-tooltip-align-annotations t
-        company-minimum-prefix-length 1
-        company-dabbrev-downcase nil)
-  (global-company-mode)
-  ;; use numbers 0-9 to select company completion candidates
-  (let ((map company-active-map))
-    (mapc (lambda (x) (define-key map (format "%d" x)
-                        `(lambda () (interactive) (company-complete-number ,x))))
-          (number-sequence 0 9))))
+;; (use-package company
+;;   :defer 2
+;;   :commands (company-mode company-indent-or-complete-common)
+;;   :init
+;;   (add-hook 'prog-mode-hook
+;;             (lambda ()
+;;               (local-set-key (kbd "<tab>")
+;;                              #'company-indent-or-complete-common)))
+;;   :config
+;;   (setq company-idle-delay 0.6
+;;         company-show-numbers t
+;;         company-tooltip-limit 20
+;;         company-tooltip-align-annotations t
+;;         company-minimum-prefix-length 1
+;;         company-dabbrev-downcase nil)
+;;   (global-company-mode)
+;;   ;; use numbers 0-9 to select company completion candidates
+;;   (let ((map company-active-map))
+;;     (mapc (lambda (x) (define-key map (format "%d" x)
+;;                         `(lambda () (interactive) (company-complete-number ,x))))
+;;           (number-sequence 0 9))))
 
-(use-package company-terraform
-  :after (company terraform-mode)
-  :disabled t
-  :config
-  (add-to-list 'company-backends 'company-terraform))
+;; (use-package company-terraform
+;;   :after (company terraform-mode)
+;;   :disabled t
+;;   :config
+;;   (add-to-list 'company-backends 'company-terraform))
 
-;; (use-package company-quickhelp
-;;  :hook
-;;  (global-company-mode . company-quickhelp))
+;; ;; (use-package company-quickhelp
+;; ;;  :hook
+;; ;;  (global-company-mode . company-quickhelp))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode)
-  :config
-  ;; https://github.com/sebastiencs/company-box/issues/44
-  (defun jccb/fix-company-scrollbar (orig-fn &rest args)
-    "disable company-box scrollbar"
-    (cl-letf (((symbol-function #'display-buffer-in-side-window)
-               (symbol-function #'ignore)))
-      (apply orig-fn args)))
+;; (use-package company-box
+;;   :hook (company-mode . company-box-mode)
+;;   :config
+;;   ;; https://github.com/sebastiencs/company-box/issues/44
+;;   (defun jccb/fix-company-scrollbar (orig-fn &rest args)
+;;     "disable company-box scrollbar"
+;;     (cl-letf (((symbol-function #'display-buffer-in-side-window)
+;;                (symbol-function #'ignore)))
+;;       (apply orig-fn args)))
 
-  (advice-add #'company-box--update-scrollbar :around #'jccb/fix-company-scrollbar))
+;;   (advice-add #'company-box--update-scrollbar :around #'jccb/fix-company-scrollbar))
 
 (use-package yasnippet
   :hook ((prog-mode text-mode) . yas-minor-mode)
@@ -1112,8 +1129,7 @@
   :mode "Dockerfile[a-zA-Z.-]*\\'")
 
 (use-package terraform-mode
-  :hook
-  (terraform-mode . terraform-format-on-save-mode))
+  :hook (terraform-mode . terraform-format-on-save-mode))
 
 (use-package rust-mode
   :mode "\\.rs\\'")
@@ -1386,20 +1402,44 @@ comment to the line."
   :hook (prog-mode . flycheck-mode))
 
 (use-package lsp-mode
+  :after (corfu cape orderless)
   :commands (lsp lsp-deferred)
-  :hook ((typescript-mode
-          js2-mode) . lsp)
-  :hook (lsp-mode . lsp-enable-which-key-integration)
+  :custom
+  (lsp-completion-provider :none) ;; we use Corfu!
+  :hook (((typescript-mode js2-mode) . lsp)
+         (lsp-mode . lsp-enable-which-key-integration)
+         (lsp-mode . jccb/corfu-lsp-setup))
+  :bind (:map corfu-map
+              ("M-m" . corfu-move-to-minibuffer))
   :init
   (setq read-process-output-max (* 1024 1024)
         lsp-keymap-prefix "C-c l")
+
+  ;; (defun jccb/orderless-dispatch-flex-first (_pattern index _total)
+  ;;   (and (eq index 0) 'orderless-flex))
+
+  (defun jccb/corfu-lsp-setup ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless)))
+
+  ;; Optionally configure the first word as flex filtered.
+  ;; (add-hook 'orderless-style-dispatchers #'jccb/orderless-dispatch-flex-first nil 'local)
+
+  ;; Optionally configure the cape-capf-buster.
+  (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
+
   :config
+  (defun corfu-move-to-minibuffer ()
+    (interactive)
+    (let ((completion-extra-properties corfu--extra)
+          completion-cycle-threshold completion-cycling)
+      (apply #'consult-completion-in-region completion-in-region--data)))
+
   (setq lsp-headerline-breadcrumb-enable nil
         lsp-signature-render-documentation nil
-        lsp-lens-enable nil
         ;; lsp-eldoc-enable-hover nil
         ;; lsp-eldoc-render-all nil
-        ))
+        lsp-lens-enable nil))
 
 (use-package lsp-ui
   :commands lsp-ui-mode
@@ -1518,36 +1558,80 @@ comment to the line."
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
 
-;; (use-package corfu
-;;   ;; Optional customizations
-;;   :custom
-;;   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-;;   (corfu-auto t)                 ;; Enable auto completion
-;;   ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
-;;   ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
-;;   ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
-;;   ;; (corfu-echo-documentation nil) ;; Do not show documentation in the echo area
-;;   ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-;;   ;; (corfu-preview-current nil)    ;; Do not preview current candidate
+(use-package corfu
+  ;; Optional customizations
+  :hook (after-init . corfu-global-mode)
+  :custom
+  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  (corfu-auto t)                 ;; Enable auto completion
+  ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
+  ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
+  ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
+  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+  ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
+  ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-;;   ;; Optionally use TAB for cycling, default is `corfu-complete'.
-;;   ;; :bind (:map corfu-map
-;;   ;;        ("TAB" . corfu-next)
-;;   ;;        ([tab] . corfu-next)
-;;   ;;        ("S-TAB" . corfu-previous)
-;;   ;;        ([backtab] . corfu-previous))
+  ;; Optionally use TAB for cycling, default is `corfu-complete'.
+  ;; :bind (:map corfu-map
+  ;;        ("TAB" . corfu-next)
+  ;;        ([tab] . corfu-next)
+  ;;        ("S-TAB" . corfu-previous)
+  ;;        ([backtab] . corfu-previous))
+  )
 
-;;   ;; You may want to enable Corfu only for certain modes.
-;;   ;; :hook ((prog-mode . corfu-mode)
-;;   ;;        (shell-mode . corfu-mode)
-;;   ;;        (eshell-mode . corfu-mode))
+(use-package dabbrev
+  :bind (;;("M-/" . dabbrev-completion)
+         ("C-M-/" . dabbrev-expand))
+  :init
+  (setq dabbrev-check-all-buffers t
+        dabbrev-check-other-buffers t))
 
-;;   ;; Recommended: Enable Corfu globally.
-;;   ;; This is recommended since dabbrev can be used globally (M-/).
-;;   :init
-;;   (corfu-global-mode))
-;; (setq tab-always-indent 'complete)
+(use-package cape
+  ;; Bind dedicated completion commands
+  :bind (("C-c / p" . completion-at-point) ;; capf
+         ;; ("C-c p t" . complete-tag)        ;; etags
+         ;; ("C-c / d" . cape-dabbrev)        ;; or dabbrev-completion
+         ("C-c / f" . cape-file)
+         ("C-c / k" . cape-keyword)
+         ("C-c / s" . cape-symbol)
+         ;; ("C-c p a" . cape-abbrev)
+         ("C-c / i" . cape-ispell)
+         ("M-/"     . cape-dabbrev)
+         ;; ("C-c p l" . cape-line)
+         ;; ("C-c p w" . cape-dict)
+         ;; ("C-c p \\" . cape-tex)
+         ;; ("C-c p _" . cape-tex)
+         ;; ("C-c p ^" . cape-tex)
+         ;; ("C-c p &" . cape-sgml)
+         ;; ("C-c p r" . cape-rfc1345)
+         )
+  :init
+  ;; Add `completion-at-point-functions', used by `completion-at-point'.
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  (add-to-list 'completion-at-point-functions #'cape-ispell)
+  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  (add-to-list 'completion-at-point-functions #'cape-symbol)
+  ;;(add-to-list 'completion-at-point-functions #'cape-line)
+  )
 
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+(setq completion-cycle-threshold 3)
+(setq read-extended-command-predicate
+      #'command-completion-default-include-p)
+(setq tab-always-indent 'complete)
 
 (use-package orderless
   :config
@@ -1576,7 +1660,7 @@ comment to the line."
 
   (setq completion-styles '(orderless)
         completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion))))
+        completion-category-overrides '((file (styles . (partial-completion)))))
   (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
@@ -1680,7 +1764,8 @@ comment to the line."
   (setq consult-project-root-function #'projectile-project-root))
 
 (use-package embark
-  :bind (("C-S-a" . embark-act)
+  :bind (("C-." . embark-act)
+         ("M-." . embark-dwim)
          ("C-h B" . embark-bindings))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
@@ -1693,9 +1778,7 @@ comment to the line."
 (use-package embark-consult
   :ensure t
   :after (embark consult)
-  :config
-  (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode))
-
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 ;; (use-package org-plus-contrib
 ;;   :pin org)
@@ -1822,8 +1905,32 @@ comment to the line."
 
 ;; (use-package go-mode)
 
+(use-package super-save
+  :hook (after-init . super-save-mode)
+  :config
+  (setq super-save-auto-save-when-idle t))
 
-;; (Use-package shackle
+(use-package darkroom
+  :commands (darkroom-mode s darkroom-tentative-mode)
+  :config
+  (setq darkroom-text-scale-increase 1.1))
+
+(use-package puni
+  :hook ((after-init . puni-global-mode)
+         (term-mode . puni-disable-puni-mode))
+  :bind (:map puni-mode-map
+              (;; puni-raise
+               ;; puni-split
+               ;; puni-splice
+               ;; puni-squeeze
+               ;; puni-transpose
+               ;; puni-convolute
+               ("C-{"   . puni-slurp-backward)
+               ("C-}"   . puni-slurp-forward)
+               ("M-C-{" . puni-barf-backward)
+               ("M-C-}" . puni-barf-forward))))
+
+;; (use-package shackle
 ;;   :defer 1
 ;;   :config
 ;;   (setq
@@ -1843,9 +1950,9 @@ comment to the line."
 ;; ;;; Don't show help for completions
 ;; (setq completion-show-help nil)
 
-;; use-package seq: init -> config
 
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
 
+;; use-package seq: init -> config
 (when init-file-debug
   (use-package-report))
