@@ -992,7 +992,7 @@
 (use-package ispell
   :straight nil
   :ensure nil
-  :bind ("C-. d" . jccb/cycle-ispell-languages)
+  ;; :bind ("C-." . jccb/cycle-ispell-languages)
   :config
   (setq ispell-program-name "aspell"
         ispell-extra-args '("--sug-mode=ultra"
@@ -1402,30 +1402,23 @@ comment to the line."
   :hook (prog-mode . flycheck-mode))
 
 (use-package lsp-mode
-  :after (corfu cape orderless)
+  :after (orderless)
   :commands (lsp lsp-deferred)
-  :custom
-  (lsp-completion-provider :none) ;; we use Corfu!
+  :custom (lsp-completion-provider :none)
   :hook (((typescript-mode js2-mode) . lsp)
          (lsp-mode . lsp-enable-which-key-integration)
-         (lsp-mode . jccb/corfu-lsp-setup))
+         (lsp-completion-mode . jccb/corfu-lsp-setup))
   :bind (:map corfu-map
               ("M-m" . corfu-move-to-minibuffer))
   :init
   (setq read-process-output-max (* 1024 1024)
         lsp-keymap-prefix "C-c l")
 
-  ;; (defun jccb/orderless-dispatch-flex-first (_pattern index _total)
-  ;;   (and (eq index 0) 'orderless-flex))
-
   (defun jccb/corfu-lsp-setup ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless)))
 
-  ;; Optionally configure the first word as flex filtered.
-  ;; (add-hook 'orderless-style-dispatchers #'jccb/orderless-dispatch-flex-first nil 'local)
-
-  ;; Optionally configure the cape-capf-buster.
+  ;; optionally configure the cape-capf-buster.
   (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
 
   :config
@@ -1560,7 +1553,6 @@ comment to the line."
 
 (use-package corfu
   ;; Optional customizations
-  :hook (after-init . corfu-global-mode)
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
@@ -1578,7 +1570,8 @@ comment to the line."
   ;;        ([tab] . corfu-next)
   ;;        ("S-TAB" . corfu-previous)
   ;;        ([backtab] . corfu-previous))
-  )
+  :init
+  (corfu-global-mode))
 
 (use-package dabbrev
   :bind (;;("M-/" . dabbrev-completion)
