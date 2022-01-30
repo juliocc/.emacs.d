@@ -164,7 +164,6 @@
         modus-themes-region '(bg-only no-extend)
         modus-themes-mode-line '(1 accented borderless)
         modus-themes-diffs nil)
-  ;; ddddd
   (modus-themes-load-themes)
   :config
   (modus-themes-load-vivendi))
@@ -190,6 +189,7 @@
                 (hide-mode-line-mode))))
   (doom-modeline-mode))
 
+;; switch windows with C-x w <number>
 (use-package winum
   :hook (after-init . winum-mode))
 
@@ -422,15 +422,16 @@
         create-lockfiles nil))
 
 ;; UTF-8 everything please
-(when (fboundp 'set-charset-priority)
-  (set-charset-priority 'unicode))
-(setq locale-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(set-selection-coding-system 'utf-8)
-(prefer-coding-system 'utf-8)
 (set-language-environment 'utf-8)
-(set-default-coding-systems 'utf-8)
+;; apparently that is enough
+
+;; (when (fboundp 'set-charset-priority)
+;;   (set-charset-priority 'unicode))
+;; (set-terminal-coding-system 'utf-8)
+;; (set-keyboard-coding-system 'utf-8)
+;; (set-selection-coding-system 'utf-8)
+;; (prefer-coding-system 'utf-8)
+;; (set-default-coding-systems 'utf-8)
 
 ;; Don't cripple my emacs
 (setq disabled-command-function nil)
@@ -637,7 +638,8 @@
 
 ;; Stop C-z from minimizing windows under OS X
 (when *is-a-windowed-mac*
-  (unbind-key "C-z"))
+  (unbind-key "C-z")
+  (unbind-key "C-x C-z"))
 
 (bind-key "RET" #'newline-and-indent)
 
@@ -672,7 +674,10 @@
 
 (use-package magit
   ;;:after selectrum
-  :bind (("C-x C-z" . magit-status))
+  :bind (("C-c C-g" . magit-status)
+         ;;("C-x C-z" . magit-status-quick)
+         ("C-c g" . magit-file-dispatch)
+         ("C-c M-g" . magit-dispatch))
   :config
   (global-git-commit-mode +1)
   (setq git-commit-summary-max-length 70)
@@ -688,13 +693,24 @@
    magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
    magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
    magit-diff-refine-hunk 'all
+   ;; magit-branch-adjust-remote-upstream-alist '(("origin/master" "master"))
+   magit-branch-prefer-remote-upstream '("master" "main")
    magit-delete-by-moving-to-trash t
    magit-git-executable (executable-find magit-git-executable)
    magit-revision-insert-related-refs nil
    magit-save-repository-buffers nil))
 
-;; (use-package magit-todos
-;;   :after magit)
+(use-package forge
+  :config
+  ;; add to keychain:
+  ;; security add-internet-password -a '{user}^forge' -r 'htps' -s "api.github.com"
+  ;; https://github.com/magit/ghub/issues/101
+  (add-to-list 'auth-sources 'macos-keychain-internet)
+  (setq  forge-topic-list-limit '(100 . -10))
+  :after magit)
+
+(use-package magit-todos
+  :after magit)
 
 (use-package git-gutter
   :commands git-gutter-mode
@@ -881,20 +897,25 @@
   :ensure nil
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
-         ("C-2"   . split-window-vertically-with-other-buffer)
-         ("C-3"   . split-window-horizontally-with-other-buffer)
-         ("C-;"   . other-window)
-         ("S-C-j" . quick-switch-buffer)))
+         ;; ("C-2"   . split-window-vertically-with-other-buffer)
+         ;; ("C-3"   . split-window-horizontally-with-other-buffer)
+         ("M-o" . quick-switch-buffer)))
 
 (use-package window
   :straight nil
   :ensure nil
-  :bind (("C-1"         . delete-other-windows)
-         ("C-0"         . delete-window)
-         ("S-C-<left>"  . shrink-window-horizontally)
-         ("S-C-<right>" . enlarge-window-horizontally)
-         ("S-C-<down>"  . shrink-window)
-         ("S-C-<up>"    . enlarge-window)))
+  :bind (("C-0"            . delete-window)
+         ("C-1"            . delete-other-windows)
+         ("C-2"            . split-window-below)
+         ("C-3"            . split-window-right)
+         ("C-;"            . other-window)
+         ("S-C-<left>"     . shrink-window-horizontally)
+         ("S-C-<right>"    . enlarge-window-horizontally)
+         ("S-C-<down>"     . shrink-window)
+         ("S-C-<up>"       . enlarge-win1dow)
+         ("C-x <C-return>" . window-swap-states))
+  :init
+  (unbind-key "C-x o"))
 
 ; ibuffer
 (use-package ibuffer
