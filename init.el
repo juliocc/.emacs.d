@@ -827,21 +827,25 @@
 (use-package visual-fill-column
   :commands visual-fill-column-mode
   :init
-  (setq ;; visual-fill-column-width 80
-   visual-fill-column-center-text t))
+  (setq  visual-fill-column-width 80
+         visual-fill-column-center-text t))
 
 (use-package markdown-mode
   :hook ((markdown-mode . turn-on-flyspell)
          (markdown-mode . visual-line-mode)
          (markdown-mode . visual-fill-column-mode-map)
-         (markdown-mode . jccb/set-markdown-header-font-sizes))
+         (markdown-mode . jccb/markdown-setup))
   :bind (:map markdown-mode-command-map
               ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :config
-  (defun jccb/set-markdown-header-font-sizes ()
+  (defun jccb/markdown-setup ()
+    (message "jccb-mdown mode")
+    (turn-on-flyspell)
+    (visual-line-mode +1)
+    (visual-fill-column-mode +1)
     (dolist (face '((markdown-header-face-1 . 1.3)
                     (markdown-header-face-2 . 1.2)
                     (markdown-header-face-3 . 1.1)
@@ -902,9 +906,9 @@
 
 (use-package crux
   :commands crux-find-shell-init-file
-  :bind (("C-a" . crux-move-beginning-of-line)
-         ("S-<return>" . crux-smart-open-line)
-         ("C-S-k" . crux-kill-whole-line)
+  :bind (("C-a"          . crux-move-beginning-of-line)
+         ("S-<return>"   . crux-smart-open-line)
+         ("C-S-k"        . crux-kill-whole-line)
          ("C-S-<return>" . crux-smart-open-line-above))
   :config
   (crux-with-region-or-buffer indent-region)
@@ -1525,6 +1529,14 @@ comment to the line."
 
 (use-package vertico
   :init
+  (advice-add #'vertico--format-candidate :around
+              (lambda (orig cand prefix suffix index _start)
+                (setq cand (funcall orig cand prefix suffix index _start))
+                (concat
+                 (if (= vertico--index index)
+                     (propertize "» " 'face 'vertico-current)
+                   "  ")
+                 cand)))
   (vertico-mode +1)
   (marginalia-mode +1)
   (setq vertico-count 15)
@@ -1552,10 +1564,10 @@ comment to the line."
       #'command-completion-default-include-p)
 
 (use-package corfu
-  ;; Optional customizations
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
+  (corfu-auto-delay 0.75)
   ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
   ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
   ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
@@ -1564,13 +1576,22 @@ comment to the line."
   ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
   ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-  ;; Optionally use TAB for cycling, default is `corfu-complete'.
-  ;; :bind (:map corfu-map
-  ;;        ("TAB" . corfu-next)
-  ;;        ([tab] . corfu-next)
-  ;;        ("S-TAB" . corfu-previous)
-  ;;        ([backtab] . corfu-previous))
+  :bind (:map corfu-map
+              ("C-a" . corfu-beginning-of-prompt)
+              ("C-e" . corfu-end-of-prompt))
   :init
+  (defun corfu-beginning-of-prompt ()
+    "Move to beginning of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (car completion-in-region--data)))
+
+  (defun corfu-end-of-prompt ()
+    "Move to end of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (cadr completion-in-region--data)))
+
   (corfu-global-mode))
 
 (use-package dabbrev
@@ -1600,7 +1621,6 @@ comment to the line."
          ;; ("C-c p r" . cape-rfc1345)
          )
   :init
-  ;; Add `completion-at-point-functions', used by `completion-at-point'.
   (add-to-list 'completion-at-point-functions #'cape-file)
   ;; (add-to-list 'completion-at-point-functions #'cape-tex)
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
@@ -1904,7 +1924,7 @@ comment to the line."
   (setq super-save-auto-save-when-idle t))
 
 (use-package darkroom
-  :commands (darkroom-mode s darkroom-tentative-mode)
+  :commands (darkroom-mode darkroom-tentative-mode)
   :config
   (setq darkroom-text-scale-increase 1.1))
 
@@ -1919,9 +1939,9 @@ comment to the line."
                ;; puni-transpose
                ;; puni-convolute
                ("C-{"   . puni-slurp-backward)
-               ("C-}"   . puni-slurp-forward)
-               ("M-C-{" . puni-barf-backward)
-               ("M-C-}" . puni-barf-forward))))
+               ("C-}"   . puni-barf-backward)
+               ("M-C-{" . puni-barf-forward)
+               ("M-C-}" . puni-slurp-forward))))
 
 ;; (use-package shackle
 ;;   :defer 1
