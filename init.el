@@ -1548,14 +1548,27 @@ comment to the line."
              :repo "minad/vertico"
              :local-repo "vertico-extensions"
              :files ("extensions/vertico-directory.el"
+                     ;; "extensions/vertico-flat.el"
+                     ;; "extensions/vertico-grid.el"
+                     ;; "extensions/vertico-reverse.el"
+                     ;; "extensions/vertico-multiform.el"
+                     ;; "extensions/vertico-unobtrusive.el"
+                     "extensions/vertico-quick.el"
                      "extensions/vertico-repeat.el"))
   :after vertico
   :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
          (minibuffer-setup . vertico-repeat-save))
   :bind ("C-c C-r" . vertico-repeat)
   :bind (:map vertico-map
+              ;; ("M-V" . vertico-multiform-vertical)
+              ;; ("M-G" . vertico-grid-mode)
+              ;; ("M-F" . vertico-flat-mode)
+              ;; ("M-R" . vertico-reverse-mode)
+              ;; ("M-U" . vertico-unobtrusive-mode)
+              ("M-q" . vertico-quick-insert)
+              ("C-q" . vertico-quick-exit)
               ("RET" . vertico-directory-enter)
-              ;; ("DEL" . vertico-directory-delete-char)
+              ("DEL" . vertico-directory-delete-char)
               ("M-DEL" . vertico-directory-delete-word)))
 
 ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
@@ -1732,7 +1745,7 @@ comment to the line."
          ("M-s l" . consult-line)
          ("M-s m" . consult-multi-occur)
          ("M-s k" . consult-keep-lines)
-         ("M-s u" . consult-focus-lines)
+         ;; ("M-s u" . consult-focus-lines)
          ;; ("M-s e" . consult-isearch)
          ("<help> a" . consult-apropos))
   :commands consult-ref
@@ -1755,7 +1768,7 @@ comment to the line."
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-file consult--source-project-file consult--source-bookmark
+   consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
    :preview-key (kbd "M-."))
   ;; (defun reduce-which-key-delay (fun &rest args)
   ;;   (let ((timer (and consult-narrow-key
@@ -1775,6 +1788,13 @@ comment to the line."
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root))
+
+(use-package consult-dir
+  :after consult
+  :bind (("C-x C-d" . consult-dir)
+         :map vertico-map
+         ("C-x C-f" . consult-dir-jump-file)
+         ("C-x C-d" . consult-dir)))
 
 (use-package embark
   :bind (("C-." . embark-act)
