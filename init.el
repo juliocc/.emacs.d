@@ -39,7 +39,7 @@
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
-(if (fboundp 'fringe-mode) (fringe-mode 10))
+(if (fboundp 'fringe-mode) (fringe-mode 4))
 
 ;; Less noise at startup. The dashboard/empty scratch buffer is good enough.
 (setq inhibit-startup-message t
@@ -155,7 +155,7 @@
         modus-themes-subtle-line-numbers nil
         modus-themes-intense-markup t
         modus-themes-tabs-accented t
-        modus-themes-fringes 'subtle
+        modus-themes-fringes nil
         modus-themes-hl-line nil
         modus-themes-paren-match '(bold intense)
         modus-themes-links '(neutral-underline background)
@@ -259,7 +259,7 @@
       ;; during large-scale scrolling commands. If kept over 100, the window is
       ;; never automatically recentered.
       scroll-conservatively 101
-      scroll-margin 2
+      scroll-margin 3
       scroll-preserve-screen-position t
       ;; Reduce cursor lag by a tiny bit by not auto-adjusting `window-vscroll'
       ;; for tall lines.
@@ -699,27 +699,34 @@
    magit-revision-insert-related-refs nil
    magit-save-repository-buffers nil))
 
-(use-package forge
-  :config
-  ;; add to keychain:
-  ;; security add-internet-password -a '{user}^forge' -r 'htps' -s "api.github.com"
-  ;; https://github.com/magit/ghub/issues/101
-  (add-to-list 'auth-sources 'macos-keychain-internet)
-  (setq  forge-topic-list-limit '(100 . -10))
-  :after magit)
+;; (use-package forge
+;;   :config
+;;   ;; add to keychain:
+;;   ;; security add-internet-password -a '{user}^forge' -r 'htps' -s "api.github.com"
+;;   ;; https://github.com/magit/ghub/issues/101
+;;   (add-to-list 'auth-sources 'macos-keychain-internet)
+;;   (setq  forge-topic-list-limit '(100 . -10))
+;;   :after magit)
 
 (use-package magit-todos
   :after magit)
 
-(use-package git-gutter
-  :commands git-gutter-mode
-  :init
-  (defun jccb/git-gutter-mode-if-local ()
-    (unless (file-remote-p default-directory)
-      (git-gutter-mode)))
-  (add-hook 'prog-mode-hook #'jccb/git-gutter-mode-if-local)
-  (add-hook 'text-mode-hook #'jccb/git-gutter-mode-if-local)
-  (add-hook 'config-mode-hook #'jccb/git-gutter-mode-if-local))
+;; (use-package git-gutter
+;;   :commands git-gutter-mode
+;;   :hook ((prog-mode text-mode config-mode) . jccb/git-gutter-mode-if-local)
+;;   :config
+;;   (setq git-gutter:update-interval 0.05)
+;;   (defun jccb/git-gutter-mode-if-local ()
+;;     (unless (file-remote-p default-directory)
+;;       (git-gutter-mode))))
+
+;; (use-package git-gutter-fringe
+;;   :after git-gutter
+;;   :config
+;;   (setq-default fringes-outside-margins t)
+;;   (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+;;   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+;;   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
 
 (use-package git-timemachine
   :commands git-timemachine)
@@ -729,6 +736,7 @@
 (bind-key [remap isearch-backward] #'isearch-backward-regexp)
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
+
 
 (use-package jccb-search
   :straight nil
@@ -1405,7 +1413,10 @@ comment to the line."
   :mode (("\\.tsx\\'" . typescript-mode)))
 
 (use-package flycheck
-  :hook (prog-mode . flycheck-mode))
+  :hook (prog-mode . flycheck-mode)
+  :config
+  (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
+    [128 192 224 192 128] nil nil 'center))
 
 (use-package lsp-mode
   :after (orderless)
