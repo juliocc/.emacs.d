@@ -9,7 +9,7 @@
               (add-to-list 'file-name-handler-alist-old handler))
             (setq file-name-handler-alist file-name-handler-alist-old) t))
 
-(setq load-prefer-newer noninteractive
+(setq load-prefer-newer t
       inhibit-compacting-font-caches t)
 
 ;; Put this file in register e for easy access
@@ -114,9 +114,9 @@
 (use-package gcmh
   :hook (emacs-startup . gcmh-mode)
   :config
-  (setq gcmh-idle-delay 5
-        gcmh-high-cons-threshold (* 64 1024 1024)
-        gcmh-low-cons-threshold (* 32 1024 1024)
+  (setq gcmh-idle-delay 'auto
+        gcmh-auto-idle-delay-factor 10
+        gcmh-high-cons-threshold (* 32 1024 1024)
         gcmh-verbose jccb/debug))
 
 ;;==================================================
@@ -149,25 +149,27 @@
 
 (use-package modus-themes
   :init
-  (setq modus-themes-italic-constructs t
+  (setq modus-themes-syntax '(green-strings alt-syntax)
+        modus-themes-italic-constructs t
         modus-themes-bold-constructs t
         modus-themes-subtle-line-numbers nil
         modus-themes-intense-markup t
         modus-themes-tabs-accented t
         modus-themes-fringes 'subtle
-        modus-themes-syntax nil
-        modus-themes-hl-line '(accented)
+        modus-themes-hl-line nil
         modus-themes-paren-match '(bold intense)
         modus-themes-links '(neutral-underline background)
+        modus-themes-lang-checkers '(faint)
         modus-themes-prompts '(intense)
-        modus-themes-completions 'subtle
+        modus-themes-completions '((matches . (semibold intense))
+                                   (selection . (semibold intense accented))
+                                   (popup . (accented)))
         modus-themes-region '(bg-only no-extend)
-        modus-themes-mode-line '(1 accented borderless)
+        modus-themes-mode-line '(borderless)
         modus-themes-diffs nil)
   (modus-themes-load-themes)
   :config
   (modus-themes-load-vivendi))
-
 
 (use-package doom-modeline
   :hook ((after-init . doom-modeline-mode)
@@ -1482,7 +1484,7 @@ comment to the line."
 ;;   :commands blacken-mode blacken-buffer)
 
 (use-package format-all
-  ;; :hook (python-mode . format-all-mode)
+  :hook (python-mode . format-all-mode)
   :config
   (setq-default format-all-formatters
                 '(("Python" yapf))))
