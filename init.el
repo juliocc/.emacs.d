@@ -135,41 +135,45 @@
              all-the-icons-material
              all-the-icons-alltheicon))
 
-;; (use-package doom-themes
-;;   :config
-;;   (setq doom-themes-enable-bold nil    ; if nil, bold is universally disabled
-;;         doom-themes-enable-italic nil
-;;         doom-one-brighter-modeline nil
-;;         doom-themes-treemacs-theme "doom-colors")
-;;   (load-theme 'doom-one t)
-;;   ;;(doom-themes-treemacs-config)
-;;   (doom-themes-visual-bell-config)
-;;   ;;(doom-themes-org-config)
-;;   )
-
-(use-package modus-themes
-  :init
-  (setq modus-themes-syntax '(green-strings alt-syntax)
-        modus-themes-italic-constructs t
-        modus-themes-bold-constructs t
-        modus-themes-subtle-line-numbers nil
-        modus-themes-intense-markup t
-        modus-themes-tabs-accented t
-        modus-themes-fringes nil
-        modus-themes-hl-line nil
-        modus-themes-paren-match '(bold intense)
-        modus-themes-links '(neutral-underline background)
-        modus-themes-lang-checkers '(faint)
-        modus-themes-prompts '(intense)
-        modus-themes-completions '((matches . (semibold intense))
-                                   (selection . (semibold intense accented))
-                                   (popup . (accented)))
-        modus-themes-region '(bg-only no-extend)
-        modus-themes-mode-line '(borderless)
-        modus-themes-diffs nil)
-  (modus-themes-load-themes)
+(use-package doom-themes
+  :custom-face
+  (region                         ((t (:extend nil))))
+  (font-lock-comment-face         ((t (:italic t))))
+  ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
+  ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
+  ;; (link                           ((t (:foreground "#3794ff"))))
+  (vertical-border                ((t (:foreground "black" :background "black"))))
+  (fringe                         ((t (:background nil))))
   :config
-  (modus-themes-load-vivendi))
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t
+        doom-one-brighter-modeline t)
+  (load-theme 'doom-vibrant t)
+  (doom-themes-visual-bell-config))
+
+;; (use-package modus-themes
+;;   :init
+;;   (setq modus-themes-syntax '(green-strings alt-syntax)
+;;         modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs t
+;;         modus-themes-subtle-line-numbers nil
+;;         modus-themes-intense-markup t
+;;         modus-themes-tabs-accented t
+;;         modus-themes-fringes nil
+;;         modus-themes-hl-line nil
+;;         modus-themes-paren-match '(bold intense)
+;;         modus-themes-links '(neutral-underline background)
+;;         modus-themes-lang-checkers '(faint)
+;;         modus-themes-prompts '(intense)
+;;         modus-themes-completions '((matches . (semibold intense))
+;;                                    (selection . (semibold intense accented))
+;;                                    (popup . (accented)))
+;;         modus-themes-region '(bg-only no-extend)
+;;         modus-themes-mode-line '(borderless)
+;;         modus-themes-diffs nil)
+;;   (modus-themes-load-themes)
+;;   :config
+;;   (modus-themes-load-vivendi))
 
 (use-package doom-modeline
   :hook ((after-init . doom-modeline-mode)
@@ -195,14 +199,8 @@
 (use-package winum
   :hook (after-init . winum-mode))
 
-;; (use-package solaire-mode
-;;   :hook (change-major-mode . turn-on-solaire-mode)
-;;   :hook (after-revert . turn-on-solaire-mode)
-;;   :hook (ediff-prepare-buffer . solaire-mode)
-;;   :hook (minibuffer-setup . solaire-mode-in-minibuffer)
-;;   :config
-;;   (setq solaire-mode-auto-swap-bg t)
-;;   (solaire-global-mode +1))
+(use-package solaire-mode
+  :hook (after-init . solaire-global-mode))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -246,6 +244,9 @@
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
+
+;; (use-package highlight-escape-sequences
+;;   :hook (prog-mode . hes-mode))
 
 ;; (use-package display-fill-column-indicator
 ;;   :ensure nil
@@ -309,6 +310,7 @@
       window-combination-resize t
       next-line-add-newlines nil            ; don't add new lines when scrolling down
       kill-read-only-ok t
+      confirm-kill-processes nil
       kill-do-not-save-duplicates t)
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
@@ -720,13 +722,17 @@
 ;;     (unless (file-remote-p default-directory)
 ;;       (git-gutter-mode))))
 
-;; (use-package git-gutter-fringe
-;;   :after git-gutter
-;;   :config
-;;   (setq-default fringes-outside-margins t)
-;;   (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
-;;   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
-;;   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+(use-package git-gutter
+  :hook (prog-mode . git-gutter-mode)
+  :config
+  (setq git-gutter:update-interval 0.05))
+
+(use-package git-gutter-fringe
+  :config
+  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+
 
 (use-package git-timemachine
   :commands git-timemachine)
@@ -1074,6 +1080,10 @@
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
+(use-package xref
+  :hook (xref-after-jump . xref-pulse-momentarily)
+  :hook (xref-after-return . xref-pulse-momentarily))
+
 ;; (use-package company
 ;;   :defer 2
 ;;   :commands (company-mode company-indent-or-complete-common)
@@ -1184,9 +1194,12 @@
 ;;   (setq paradox-column-width-package 40))
 
 (use-package highlight-symbol
+  :hook (prog-mode . highlight-symbol-mode)
   :commands (highlight-symbol
              highlight-symbol-query-replace
-             highlight-symbol-occur))
+             highlight-symbol-occur)
+  :config
+  (setq highlight-symbol-idle-delay 0.5))
 
 (use-package ssh-config-mode
   :mode (("/\\.ssh/config\\'"   . ssh-config-mode)
@@ -1522,9 +1535,7 @@ comment to the line."
   :config
   (setq dimmer-fraction 0.25)
   (dimmer-configure-which-key)
-  (dimmer-configure-magit)
-  ;;(dimmer-configure-org)
-  )
+  (dimmer-configure-magit))
 
 ;; (use-package selectrum-prescient
 ;;   :commands selectrum-prescient-mode
