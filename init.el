@@ -2011,5 +2011,3 @@ comment to the line."
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
 
 ;; use-package seq: init -> config
-(when init-file-debug
-  (use-package-report))
