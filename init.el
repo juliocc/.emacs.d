@@ -402,7 +402,8 @@
                 comint-mode-hook
                 compilation-mode-hook
                 isearch-mode-hook
-                minibuffer-setup-hook))
+                minibuffer-setup-hook
+                vterm-mode-hook))
   (add-hook hook #'sanityinc/no-trailing-whitespace))
 
 ;; don't confirm killing buffers with attached processes
@@ -951,7 +952,7 @@
          ("S-C-<left>"     . shrink-window-horizontally)
          ("S-C-<right>"    . enlarge-window-horizontally)
          ("S-C-<down>"     . shrink-window)
-         ("S-C-<up>"       . enlarge-win1dow)
+         ("S-C-<up>"       . enlarge-window)
          ("C-x <C-return>" . window-swap-states))
   :init
   (unbind-key "C-x o"))
@@ -1380,10 +1381,15 @@ comment to the line."
 ;; (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
 (add-hook 'Man-mode-hook #'hide-mode-line-mode)
 
-;; (use-package vterm
-;;   :disabled t
-;;   :hook (vterm-mode . hide-mode-line-mode)
-;;   :commands vterm)
+(use-package vterm
+  :hook (vterm-mode . hide-mode-line-mode)
+  :commands vterm
+  :config
+  (unbind-key "<f12>" vterm-mode-map))
+
+(use-package vterm-toggle
+  :bind (("<f12>" . vterm-toggle)
+         ("C-<f12>" . vterm-toggle-cd)))
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
@@ -1552,6 +1558,8 @@ comment to the line."
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
 (use-package vertico
+  :bind (:map vertico-map
+              ("S-SPC" . jccb/vertico-restrict-to-matches))
   :init
   (advice-add #'vertico--format-candidate :around
               (lambda (orig cand prefix suffix index _start)
@@ -1564,7 +1572,15 @@ comment to the line."
   (vertico-mode +1)
   (marginalia-mode +1)
   (setq vertico-count 15)
-  (setq vertico-cycle nil))
+  (setq vertico-cycle nil)
+  :config
+  (defun jccb/vertico-restrict-to-matches ()
+    (interactive)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert " ")
+      (add-text-properties (minibuffer-prompt-end) (point-max)
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t)))))
 
 (use-package vertico-extensions
   :straight (vertico-extensions
@@ -1689,8 +1705,8 @@ comment to the line."
   ;; highlighting easier to understand (at least for me)
   (defun jccb/orderless-flex-non-greedy (component)
     (orderless--separated-by
-     '(minimal-match (zero-or-more nonl))
-     (cl-loop for char across component collect char)))
+        '(minimal-match (zero-or-more nonl))
+      (cl-loop for char across component collect char)))
 
   (defun jccb/orderless-dispatcher (pattern _index _total)
     (cond ((string-suffix-p "!" pattern)
@@ -1710,7 +1726,7 @@ comment to the line."
 
   (setq completion-styles '(orderless)
         completion-category-defaults nil
-        completion-category-overrides '((file (styles . (partial-completion)))))
+        completion-category-overrides '((file (styles partial-completion))))
   (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
