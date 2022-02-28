@@ -676,6 +676,7 @@
 
 (use-package magit
   ;;:after selectrum
+  :defer 5
   :bind (("C-c C-g" . magit-status)
          ;;("C-x C-z" . magit-status-quick)
          ("C-c g" . magit-file-dispatch)
@@ -810,9 +811,9 @@
                 "\\|\\(?:\\.js\\)?\\.meta\\'"
                 "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")))
 
-(use-package dired+
-  :after dired
-  :config)
+;; (use-package dired+
+;;   :after dired
+;;   :config)
 
 (use-package dired-imenu
   :after dired)
@@ -1384,12 +1385,22 @@ comment to the line."
 (use-package vterm
   :hook (vterm-mode . hide-mode-line-mode)
   :commands vterm
+  :init
+  (add-to-list 'display-buffer-alist
+               '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                 (display-buffer-reuse-window display-buffer-in-side-window)
+                 (side . bottom)
+                 ;;(dedicated . t) ;dedicated is supported in emacs27
+                 (reusable-frames . visible)
+                 (window-height . 0.3)))
   :config
   (unbind-key "<f12>" vterm-mode-map))
 
-(use-package vterm-toggle
-  :bind (("<f12>" . vterm-toggle)
-         ("C-<f12>" . vterm-toggle-cd)))
+  (use-package vterm-toggle
+    :bind (("<f12>" . vterm-toggle)
+           ("C-<f12>" . vterm-toggle-cd))
+    :config
+    (setq vterm-toggle-fullscreen-p nil))
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
