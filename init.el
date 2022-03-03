@@ -133,7 +133,9 @@
              all-the-icons-fileicon
              all-the-icons-wicon
              all-the-icons-material
-             all-the-icons-alltheicon))
+             all-the-icons-alltheicon)
+  :custom
+  (all-the-icons-scale-factor 1.0))
 
 (use-package doom-themes
   :custom-face
@@ -185,15 +187,14 @@
   (unless after-init-time
     ;; prevent flash of unstyled modeline at startup
     (setq-default mode-line-format nil))
-  :config
 
+  :config
   (add-hook 'magit-mode-hook
             (lambda ()
               "Show minimal modeline in magit-status buffer, no modeline elsewhere."
               (if (eq major-mode 'magit-status-mode)
                   (doom-modeline-set-vcs-modeline)
-                (hide-mode-line-mode))))
-  (doom-modeline-mode))
+                (hide-mode-line-mode)))))
 
 ;; switch windows with C-x w <number>
 (use-package winum
@@ -1561,29 +1562,63 @@ comment to the line."
 ;;   (setq prescient-history-length 1000))
 
 (use-package marginalia
-  :commands marginalia-mode
+  :hook (after-init . marginalia-mode)
   :bind (:map minibuffer-local-map ("C-M-a" . marginalia-cycle))
   :config
   (advice-add #'marginalia-cycle :after
               (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
   (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
-(use-package vertico
-  :bind (:map vertico-map
-              ("S-SPC" . jccb/vertico-restrict-to-matches))
+(use-package all-the-icons-completion
+  :after (marginalia all-the-icons)
+  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup)
   :init
-  (advice-add #'vertico--format-candidate :around
-              (lambda (orig cand prefix suffix index _start)
-                (setq cand (funcall orig cand prefix suffix index _start))
-                (concat
-                 (if (= vertico--index index)
-                     (propertize "» " 'face 'vertico-current)
-                   "  ")
-                 cand)))
-  (vertico-mode +1)
-  (marginalia-mode +1)
-  (setq vertico-count 15)
-  (setq vertico-cycle nil)
+  (all-the-icons-completion-mode))
+
+
+(use-package vertico
+  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
+                     :includes (vertico-indexed
+                                vertico-flat
+                                vertico-grid
+                                vertico-mouse
+                                vertico-quick
+                                vertico-buffer
+                                vertico-repeat
+                                vertico-reverse
+                                vertico-directory
+                                vertico-multiform
+                                vertico-unobtrusive))
+  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
+         (minibuffer-setup . vertico-repeat-save))
+  :hook (after-init . vertico-mode)
+  ;; :hook (after-init . vertico-multiform-mode)
+  :bind (:map vertico-map
+              ("M-q"   . vertico-quick-insert)
+              ("C-q"   . vertico-quick-exit)
+              ("S-SPC" . jccb/vertico-restrict-to-matches)
+              ("RET"   . vertico-directory-enter)
+              ("DEL"   . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  :bind ("C-c C-r" . vertico-repeat)
+  :custom
+  ;; (vertico-multiform-categories
+  ;;  '((consult-grep buffer)
+  ;;    (consult-location)
+  ;;    (imenu buffer)
+  ;;    (library reverse indexed)
+  ;;    (t reverse)
+  ;;    ))
+  ;; (vertico-multiform-commands
+  ;;  '(("flyspell-correct-*" grid reverse)
+  ;;    (consult-yank-pop indexed)
+  ;;    (consult-flycheck)
+  ;;    (consult-lsp-diagnostics)))
+  (vertico-count 15)
+  (vertico-cycle nil)
+  (vertico-grid-separator "       ")
+  (vertico-grid-lookahead 50)
+  (vertico-buffer-display-action '(display-buffer-reuse-window))
   :config
   (defun jccb/vertico-restrict-to-matches ()
     (interactive)
@@ -1591,36 +1626,15 @@ comment to the line."
       (goto-char (point-max))
       (insert " ")
       (add-text-properties (minibuffer-prompt-end) (point-max)
-                           '(invisible t read-only t cursor-intangible t rear-nonsticky t)))))
-
-(use-package vertico-extensions
-  :straight (vertico-extensions
-             :host github
-             :repo "minad/vertico"
-             :local-repo "vertico-extensions"
-             :files ("extensions/vertico-directory.el"
-                     ;; "extensions/vertico-flat.el"
-                     ;; "extensions/vertico-grid.el"
-                     ;; "extensions/vertico-reverse.el"
-                     ;; "extensions/vertico-multiform.el"
-                     ;; "extensions/vertico-unobtrusive.el"
-                     "extensions/vertico-quick.el"
-                     "extensions/vertico-repeat.el"))
-  :after vertico
-  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
-         (minibuffer-setup . vertico-repeat-save))
-  :bind ("C-c C-r" . vertico-repeat)
-  :bind (:map vertico-map
-              ;; ("M-V" . vertico-multiform-vertical)
-              ;; ("M-G" . vertico-grid-mode)
-              ;; ("M-F" . vertico-flat-mode)
-              ;; ("M-R" . vertico-reverse-mode)
-              ;; ("M-U" . vertico-unobtrusive-mode)
-              ("M-q" . vertico-quick-insert)
-              ("C-q" . vertico-quick-exit)
-              ("RET" . vertico-directory-enter)
-              ("DEL" . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word)))
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+  (advice-add #'vertico--format-candidate :around
+              (lambda (orig cand prefix suffix index _start)
+                (setq cand (funcall orig cand prefix suffix index _start))
+                (concat
+                 (if (= vertico--index index)
+                     (propertize "» " 'face 'vertico-current)
+                   "  ")
+                 cand))))
 
 ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
 ;; Vertico commands are hidden in normal buffers.
@@ -1628,22 +1642,25 @@ comment to the line."
       #'command-completion-default-include-p)
 
 (use-package corfu
-  :custom
-  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  (corfu-auto t)                 ;; Enable auto completion
-  (corfu-auto-delay 0.75)
-  ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
-  ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
-  ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
-  ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-
+  :hook (after-init . corfu-global-mode)
+  :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
   :bind (:map corfu-map
+              ("SPC" . corfu-insert-separator)
               ("C-a" . corfu-beginning-of-prompt)
               ("C-e" . corfu-end-of-prompt))
+  :bind ("M-/" . completion-at-point)
+  :custom
+  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  (corfu-auto nil)                 ;; Enable auto completion
+  (corfu-auto-delay 0.75)
+  (corfu-min-width 50)
+  (corfu-max-width 80)
+  (corfu-echo-documentation nil)        ; Already use corfu-doc
+
   :init
+  (setq completion-cycle-threshold nil)
+  (setq tab-always-indent 'complete)
+
   (defun corfu-beginning-of-prompt ()
     "Move to beginning of completion input."
     (interactive)
@@ -1656,7 +1673,38 @@ comment to the line."
     (corfu--goto -1)
     (goto-char (cadr completion-in-region--data)))
 
-  (corfu-global-mode))
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
+                (bound-and-true-p vertico--input))
+      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
+      (corfu-mode 1))))
+
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-use-icons t)
+  (kind-icon-default-face 'corfu-default)
+  (kind-icon-blend-background nil)
+  (kind-icon-blend-frac 0.08)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+(use-package corfu-doc
+  :straight (corfu-doc :type git :host github :repo "galeo/corfu-doc")
+  :after corfu
+  :hook (corfu-mode . corfu-doc-mode)
+  :bind (:map corfu-map
+              ;; This is a manual toggle for the documentation popup.
+              ([remap corfu-show-documentation] . corfu-doc-toggle)
+              ;; Scroll in the documentation window
+              ("M-n" . corfu-doc-scroll-up)
+              ("M-p" . corfu-doc-scroll-down))
+  :custom
+  (corfu-doc-delay 1.0)
+  (corfu-doc-max-width 70)
+  (corfu-doc-max-height 20)
+  (corfu-echo-documentation nil))
 
 (use-package dabbrev
   :bind (;;("M-/" . dabbrev-completion)
@@ -1667,7 +1715,7 @@ comment to the line."
 
 (use-package cape
   ;; Bind dedicated completion commands
-  :bind (("C-c / p" . completion-at-point) ;; capf
+  :bind (;; ("C-c / p" . completion-at-point) ;; capf
          ;; ("C-c p t" . complete-tag)        ;; etags
          ;; ("C-c / d" . cape-dabbrev)        ;; or dabbrev-completion
          ("C-c / f" . cape-file)
@@ -1675,7 +1723,7 @@ comment to the line."
          ("C-c / s" . cape-symbol)
          ;; ("C-c p a" . cape-abbrev)
          ("C-c / i" . cape-ispell)
-         ("M-/"     . cape-dabbrev)
+         ("C-c / d"     . cape-dabbrev)
          ;; ("C-c p l" . cape-line)
          ;; ("C-c p w" . cape-dict)
          ;; ("C-c p \\" . cape-tex)
@@ -1736,6 +1784,7 @@ comment to the line."
            `(orderless-literal . ,(substring pattern 0 -1)))))
 
   (setq completion-styles '(orderless)
+        orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion))))
   (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
