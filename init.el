@@ -148,8 +148,7 @@
   (fringe                         ((t (:background nil))))
   :config
   (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t
-        doom-one-brighter-modeline t)
+        doom-themes-enable-italic t)
   (load-theme 'doom-vibrant t)
   (doom-themes-visual-bell-config))
 
@@ -183,7 +182,14 @@
          (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 2
+        doom-modeline-buffer-file-name-style 'buffer-name
+        ;;doom-modeline-project-detection
+        doom-modeline-minor-modes nil
         doom-modeline-enable-word-count t)
+
+  ;; (setq doom-modeline-height 0)
+  ;; (set-face-attribute 'mode-line nil :height 1.1)
+  ;; (set-face-attribute 'mode-line-inactive nil :height 1.1)
   (unless after-init-time
     ;; prevent flash of unstyled modeline at startup
     (setq-default mode-line-format nil))
@@ -199,9 +205,6 @@
 ;; switch windows with C-x w <number>
 (use-package winum
   :hook (after-init . winum-mode))
-
-(use-package solaire-mode
-  :hook (after-init . solaire-global-mode))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -470,11 +473,6 @@
 (use-package highlight-parentheses
   :hook (after-init . global-highlight-parentheses-mode))
 
-;; (use-package volatile-highlights
-;;   :defer 5
-;;   :config
-;;   (volatile-highlights-mode +1))
-
 (use-package undo-tree
   :hook (after-init . global-undo-tree-mode)
   :config
@@ -510,7 +508,7 @@
 (use-package elec-pair
   :hook (after-init . electric-pair-mode)
   :config
-  (setq electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit))
+  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
 
 (use-package savehist
   :hook (after-init . savehist-mode)
@@ -812,6 +810,15 @@
                 "\\|\\(?:\\.js\\)?\\.meta\\'"
                 "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'")))
 
+(use-package dired-hist
+  :after dired
+  :straight (dired-hist :type git :host github :repo "karthink/dired-hist")
+  :bind (:map  dired-mode-map
+               ("l" . dired-hist-go-back)
+               ("r" . dired-hist-go-forward))
+  :config
+  (dired-hist-mode 1))
+
 ;; (use-package dired+
 ;;   :after dired
 ;;   :config)
@@ -901,9 +908,6 @@
          ("C-c c e"       . mc/edit-ends-of-lines)
          ("C-c c a"       . mc/edit-beginnings-of-lines)))
 
-(use-package change-inner
-  :bind (("C-c i" . change-inner)
-         ("C-c o" . change-outer)))
 
 (use-package avy-zap
   :bind (("M-Z" . avy-zap-up-to-char-dwim)))
@@ -1131,16 +1135,16 @@
 
 ;;   (advice-add #'company-box--update-scrollbar :around #'jccb/fix-company-scrollbar))
 
-(use-package yasnippet
-  :hook ((prog-mode text-mode) . yas-minor-mode)
-  :commands yas-hippie-try-expand
-  :init
-  (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-  :config
-  (yas-reload-all))
+;; (use-package yasnippet
+;;   :hook ((prog-mode text-mode) . yas-minor-mode)
+;;   :commands yas-hippie-try-expand
+;;   :init
+;;   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
+;;   :config
+;;   (yas-reload-all))
 
-(use-package consult-yasnippet
-  :after yasnippet)
+;; (use-package consult-yasnippet
+;;   :after yasnippet)
 
 (use-package wgrep
   :commands wgrep-change-to-wgrep-mode)
@@ -1214,8 +1218,8 @@
          ("C-c C-j" . avy-resume)
          ("C-c C-n" . avy-next)
          ("C-c C-p" . avy-prev)
-         ("C-'"     . avy-goto-char)
-         ("C-\""    . avy-goto-char-timer))
+         ("C-'"     . avy-goto-char-timer)
+         ("C-\""    . avy-goto-char))
   :config
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
@@ -1226,11 +1230,30 @@
 ;;   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
 ;;   (setq aw-dispatch-always nil))
 
+(use-package puni
+  :hook ((after-init . puni-global-mode)
+         (term-mode . puni-disable-puni-mode))
+  :bind (:map puni-mode-map
+              (;; puni-raise
+               ;; puni-split
+               ;; puni-transpose
+               ;; puni-convolute
+               ("C-<f9>" . puni-splice)
+               ("<f9>"   . puni-squeeze)
+               ("C-{"    . puni-slurp-backward)
+               ("C-}"    . puni-barf-backward)
+               ("M-C-{"  . puni-barf-forward)
+               ("M-C-}"  . puni-slurp-forward))))
+
 (use-package expand-region
-  :bind (("C-=" . er/expand-region)
-         ("C-c I" . er/mark-inside-pairs)
-         ("C-c O" . er/mark-outside-pairs)
-         ("C-c '" . er/mark-inside-quotes)))
+  :bind ("C-=" . er/expand-region)
+  :config
+  (setq expand-region-preferred-python-mode 'python-mode)
+  (setq expand-region-smart-cursor t))
+
+(use-package change-inner
+  :bind (("C-c i" . change-inner)
+         ("C-c o" . change-outer)))
 
 (use-package rainbow-mode
   :hook (css-mode html-mode))
@@ -1450,7 +1473,7 @@ comment to the line."
     [128 192 224 192 128] nil nil 'center))
 
 (use-package lsp-mode
-  :after (orderless)
+  :after (orderless corfu cape)
   :commands (lsp lsp-deferred)
   :custom (lsp-completion-provider :none)
   :hook (((typescript-mode js2-mode) . lsp)
@@ -1644,22 +1667,25 @@ comment to the line."
 (use-package corfu
   :hook (after-init . corfu-global-mode)
   :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
+  :bind ("M-/" . completion-at-point)
   :bind (:map corfu-map
               ("SPC" . corfu-insert-separator)
+              ("C-l" . corfu-show-location)
               ("C-a" . corfu-beginning-of-prompt)
               ("C-e" . corfu-end-of-prompt))
-  :bind ("M-/" . completion-at-point)
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto nil)                 ;; Enable auto completion
   (corfu-auto-delay 0.75)
   (corfu-min-width 50)
   (corfu-max-width 80)
+  (corfu-preview-current nil)
   (corfu-echo-documentation nil)        ; Already use corfu-doc
 
   :init
   (setq completion-cycle-threshold nil)
   (setq tab-always-indent 'complete)
+  ;; (setq tab-first-completion 'word-or-paren-or-punct)
 
   (defun corfu-beginning-of-prompt ()
     "Move to beginning of completion input."
@@ -1690,61 +1716,43 @@ comment to the line."
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-(use-package corfu-doc
-  :straight (corfu-doc :type git :host github :repo "galeo/corfu-doc")
-  :after corfu
-  :hook (corfu-mode . corfu-doc-mode)
-  :bind (:map corfu-map
-              ;; This is a manual toggle for the documentation popup.
-              ([remap corfu-show-documentation] . corfu-doc-toggle)
-              ;; Scroll in the documentation window
-              ("M-n" . corfu-doc-scroll-up)
-              ("M-p" . corfu-doc-scroll-down))
-  :custom
-  (corfu-doc-delay 1.0)
-  (corfu-doc-max-width 70)
-  (corfu-doc-max-height 20)
-  (corfu-echo-documentation nil))
+;; (use-package corfu-doc
+;;   :straight (corfu-doc :type git :host github :repo "galeo/corfu-doc")
+;;   :after corfu
+;;   :hook (corfu-mode . corfu-doc-mode)
+;;   :bind (:map corfu-map
+;;               ;; This is a manual toggle for the documentation popup.
+;;               ([remap corfu-show-documentation] . corfu-doc-toggle)
+;;               ;; Scroll in the documentation window
+;;               ("M-n" . corfu-doc-scroll-up)
+;;               ("M-p" . corfu-doc-scroll-down))
+;;   :custom
+;;   (corfu-doc-delay 1.0)
+;;   (corfu-doc-max-width 70)
+;;   (corfu-doc-max-height 20)
+;;   (corfu-echo-documentation nil))
 
 (use-package dabbrev
-  :bind (;;("M-/" . dabbrev-completion)
-         ("C-M-/" . dabbrev-expand))
+  ;; :bind (;;("M-/" . dabbrev-completion)
+  ;;        ("C-M-/" . dabbrev-expand))
   :init
   (setq dabbrev-check-all-buffers t
         dabbrev-check-other-buffers t))
 
 (use-package cape
   ;; Bind dedicated completion commands
-  :bind (;; ("C-c / p" . completion-at-point) ;; capf
-         ;; ("C-c p t" . complete-tag)        ;; etags
-         ;; ("C-c / d" . cape-dabbrev)        ;; or dabbrev-completion
-         ("C-c / f" . cape-file)
-         ("C-c / k" . cape-keyword)
-         ("C-c / s" . cape-symbol)
-         ;; ("C-c p a" . cape-abbrev)
-         ("C-c / i" . cape-ispell)
-         ("C-c / d"     . cape-dabbrev)
-         ;; ("C-c p l" . cape-line)
-         ;; ("C-c p w" . cape-dict)
-         ;; ("C-c p \\" . cape-tex)
-         ;; ("C-c p _" . cape-tex)
-         ;; ("C-c p ^" . cape-tex)
-         ;; ("C-c p &" . cape-sgml)
-         ;; ("C-c p r" . cape-rfc1345)
-         )
+  :bind (("<f8> s" . cape-symbol)
+         ("<f8> <f8>" . cape-dabbrev)
+         ("<f8> k" . cape-keyword)
+         ("<f8> f" . cape-file)
+         ("<f8> t" . complete-tag)
+         ("<f8> i" . cape-ispell)
+         ("<f8> a" . cape-abbrev)
+         ("<f8> l" . cape-line)
+         ("<f8> w" . cape-dict))
   :init
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
-  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  (add-to-list 'completion-at-point-functions #'cape-ispell)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
-  (add-to-list 'completion-at-point-functions #'cape-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
-  )
+  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
+    (add-hook 'completion-at-point-functions cape 'append)))
 
 (use-package kind-icon
   :after corfu
@@ -1753,7 +1761,7 @@ comment to the line."
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-(setq completion-cycle-threshold 3)
+;(setq completion-cycle-threshold 3)
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
 (setq tab-always-indent 'complete)
@@ -2048,20 +2056,25 @@ comment to the line."
   :config
   (setq darkroom-text-scale-increase 1.1))
 
-(use-package puni
-  :hook ((after-init . puni-global-mode)
-         (term-mode . puni-disable-puni-mode))
-  :bind (:map puni-mode-map
-              (;; puni-raise
-               ;; puni-split
-               ;; puni-splice
-               ;; puni-squeeze
-               ;; puni-transpose
-               ;; puni-convolute
-               ("C-{"   . puni-slurp-backward)
-               ("C-}"   . puni-barf-backward)
-               ("M-C-{" . puni-barf-forward)
-               ("M-C-}" . puni-slurp-forward))))
+
+(use-package tempel
+  :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
+         ("M-*" . tempel-insert))
+
+  :hook ((prog-mode text-mode) . tempel-setup-capf)
+  :config
+  ;; Setup completion at point
+  (defun tempel-setup-capf ()
+    ;; Add the Tempel Capf to `completion-at-point-functions'. `tempel-expand'
+    ;; only triggers on exact matches. Alternatively use `tempel-complete' if
+    ;; you want to see all matches, but then Tempel will probably trigger too
+    ;; often when you don't expect it.
+    ;; NOTE: We add `tempel-expand' *before* the main programming mode Capf,
+    ;; such that it will be tried first.
+    (setq-local completion-at-point-functions
+                (cons #'tempel-expand
+                      completion-at-point-functions))))
+
 
 ;; (use-package shackle
 ;;   :defer 1
