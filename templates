@@ -1,0 +1,45 @@
+;; -*- mode: lisp -*-
+
+terraform-mode
+
+(res "resource \"" p "\" \"" p "\" {" n> p n "}" n )
+
+(mod
+ "module \"" p "\" {" n>
+ "source = \"" p "\"" n
+ "}" n )
+
+(fmod
+ "module \"" p "\" {" n>
+ "source = \"" p "\"" n>
+ "project_id = \"" p "\"" n>
+ p n
+ "}" n )
+
+(out
+ "output \"" p "\" {" n>
+ "description = \"" p "\"" n>
+ "value = " p  n
+ "}" n )
+
+(var
+ "variable \"" p "\" {" n>
+ "description = \"" p "\"" n>
+ "type = " p  n>
+ "default = " p  n
+ "}" n )
+
+(loc
+ "locals {" n>
+ p n
+ "}" n )
+
+(tern p " ? " p " : " p)
+(pgb "provider = google-beta")
+
+(dyn
+ "dynamic \"" p "\" {" n>
+ "for_each = " p n>
+ "content { " n r> n
+ "} " > n
+ "}" n)
