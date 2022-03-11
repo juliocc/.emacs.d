@@ -618,11 +618,13 @@
   (setq ns-pop-up-frames nil)
 
   ;; set my path manually on mac
-  (setenv "LANG" "en_US.UTF-8")
-  (let* ((mypaths '("~/bin" "~/homebrew/bin" "~/google-cloud-sdk/bin/"))
-         (expanded (mapcar 'expand-file-name mypaths)))
-    (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
-    (setq exec-path (append expanded exec-path))))
+  ;; (Deprecated in favor of fix-mac-path.sh)
+  ;; (setenv "LANG" "en_US.UTF-8")
+  ;; (let* ((mypaths '("~/bin" "~/homebrew/bin" "~/google-cloud-sdk/bin/"))
+  ;;        (expanded (mapcar 'expand-file-name mypaths)))
+  ;;   (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
+  ;;   (setq exec-path (append expanded exec-path)))
+  )
 
 ;; breaks doom theme
 ;; (setq ring-bell-function 'ignore)
