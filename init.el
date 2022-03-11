@@ -2077,6 +2077,8 @@ comment to the line."
                 (cons #'tempel-expand
                       completion-at-point-functions))))
 
+(use-package fasd
+  :hook (after-init . global-fasd-mode))
 
 ;; (use-package shackle
 ;;   :defer 1
