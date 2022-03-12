@@ -1228,9 +1228,7 @@
   :ensure nil
   :defer 1
   :commands (chmod+x-this jccb/doctor)
-  :bind (("M-p"   . goto-match-paren)
-         ("C-o"   . jccb/open-next-line)
-         ("C-M-o" . jccb/open-previous-line))
+  :bind (("M-p"   . goto-match-paren))
   :config (jccb/doctor))
 
 (use-package shrink-whitespace
@@ -1282,7 +1280,7 @@
   :hook (css-mode html-mode))
 
 (use-package highlight-symbol
-  :hook (prog-mode . highlight-symbol-mode)
+  ;; :hook (prog-mode . highlight-symbol-mode)
   :commands (highlight-symbol
              highlight-symbol-query-replace
              highlight-symbol-occur)
@@ -1732,6 +1730,7 @@ comment to the line."
   :bind (("C-a"          . crux-move-beginning-of-line)
          ("S-<return>"   . crux-smart-open-line)
          ("C-S-k"        . crux-kill-whole-line)
+         ("C-^"          . crux-top-join-line)
          ("C-S-<return>" . crux-smart-open-line-above))
   :config
   (crux-with-region-or-buffer indent-region)
