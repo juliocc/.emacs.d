@@ -124,7 +124,7 @@
 ;;==================================================
 
 (use-package hide-mode-line
-  :commands hide-mode-line-mode)
+  :hook (Man-mode . hide-mode-line-mode))
 
 (use-package all-the-icons
   :if (display-graphic-p)
@@ -187,20 +187,8 @@
         doom-modeline-minor-modes nil
         doom-modeline-enable-word-count t)
 
-  ;; (setq doom-modeline-height 0)
-  ;; (set-face-attribute 'mode-line nil :height 1.1)
-  ;; (set-face-attribute 'mode-line-inactive nil :height 1.1)
   (unless after-init-time
-    ;; prevent flash of unstyled modeline at startup
-    (setq-default mode-line-format nil))
-
-  :config
-  (add-hook 'magit-mode-hook
-            (lambda ()
-              "Show minimal modeline in magit-status buffer, no modeline elsewhere."
-              (if (eq major-mode 'magit-status-mode)
-                  (doom-modeline-set-vcs-modeline)
-                (hide-mode-line-mode)))))
+    (setq-default mode-line-format nil)))
 
 ;; switch windows with C-x w <number>
 (use-package winum
@@ -287,6 +275,9 @@
 ;; General settings
 ;;=================================================
 
+;; UTF-8 everything please
+(set-language-environment 'utf-8)
+
 (setq mouse-yank-at-point t                 ; mouse pastes at point
       select-enable-clipboard t             ; Allow pasting selection outside of Emacs
       global-auto-revert-non-file-buffers t ; auto refresh dired
@@ -315,7 +306,14 @@
       next-line-add-newlines nil            ; don't add new lines when scrolling down
       kill-read-only-ok t
       confirm-kill-processes nil
-      kill-do-not-save-duplicates t)
+      kill-do-not-save-duplicates t
+      disabled-command-function nil
+      nobreak-char-display 0
+      large-file-warning-threshold 100000000
+      image-animate-loop t
+      find-file-visit-truename t
+      vc-follow-symlinks t
+      ind-file-suppress-same-file-warnings t)
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
 ;; indicates misconfiguration (or that the user needs to stop relying on case
@@ -341,6 +339,10 @@
 (setq delete-by-moving-to-trash t)
 (setq sentence-end-double-space nil)
 
+;; Never ever use tabs
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)            ;; but maintain correct appearance
+
 ;; Disable bidirectional text rendering for a modest performance boost.
 (setq-default bidi-display-reordering 'left-to-right
               bidi-paragraph-direction 'left-to-right)
@@ -348,6 +350,209 @@
 
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
+
+;; don't confirm killing buffers with attached processes
+(setq kill-buffer-query-functions
+      (remq 'process-kill-buffer-query-function
+            kill-buffer-query-functions))
+
+;;==================================================
+;; Completion
+;;=================================================
+
+(use-package orderless
+  :config
+  ;; orderless-flex is probably more "flex" but this makes
+  ;; highlighting easier to understand (at least for me)
+  (defun jccb/orderless-flex-non-greedy (component)
+    (orderless--separated-by
+        '(minimal-match (zero-or-more nonl))
+      (cl-loop for char across component collect char)))
+
+  (defun jccb/orderless-dispatcher (pattern _index _total)
+    (cond ((string-suffix-p "!" pattern)
+           `(orderless-without-literal . ,(substring pattern 0 -1)))
+          ((string-suffix-p "~" pattern)
+           `(orderless-regexp . ,(substring pattern 0 -1)))
+          ((string-suffix-p "\\" pattern)
+           `(orderless-initialism . ,(substring pattern 0 -1)))
+          ((string-suffix-p "/" pattern)
+           `(orderless-prefixes . ,(substring pattern 0 -1)))
+          ((string-suffix-p "$" pattern)
+           `(orderless-regexp . ,pattern))
+          ((string-prefix-p "^" pattern)
+           `(orderless-regexp . ,pattern))
+          ((string-suffix-p "=" pattern)
+           `(orderless-literal . ,(substring pattern 0 -1)))))
+
+  (setq completion-styles '(orderless)
+        orderless-component-separator 'orderless-escapable-split-on-space
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion))))
+  (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
+        orderless-style-dispatchers '(jccb/orderless-dispatcher)))
+
+
+(use-package vertico
+  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
+                     :includes (vertico-indexed
+                                vertico-flat
+                                vertico-grid
+                                vertico-mouse
+                                vertico-quick
+                                vertico-buffer
+                                vertico-repeat
+                                vertico-reverse
+                                vertico-directory
+                                vertico-multiform
+                                vertico-unobtrusive))
+
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
+  :hook (minibuffer-setup . vertico-repeat-save)
+
+  :bind (:map vertico-map
+              ("M-q"   . vertico-quick-insert)
+              ("C-q"   . vertico-quick-exit)
+              ("S-SPC" . jccb/vertico-restrict-to-matches)
+              ("RET"   . vertico-directory-enter)
+              ("DEL"   . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  :bind ("C-c C-r" . vertico-repeat)
+
+  :custom
+  (vertico-count 15)
+  (vertico-cycle nil)
+  (vertico-buffer-display-action '(display-buffer-reuse-window))
+
+  :init
+  (vertico-mode)
+
+  (defun jccb/vertico-restrict-to-matches ()
+    (interactive)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert " ")
+      (add-text-properties (minibuffer-prompt-end) (point-max)
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+
+  (advice-add #'vertico--format-candidate :around
+              (lambda (orig cand prefix suffix index _start)
+                (setq cand (funcall orig cand prefix suffix index _start))
+                (concat
+                 (if (= vertico--index index)
+                     (propertize "» " 'face 'vertico-current)
+                   "  ")
+                 cand)))  )
+
+(use-package corfu
+  :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
+
+  :bind ("M-/" . completion-at-point)
+  :bind (:map corfu-map
+              ("SPC" . corfu-insert-separator)
+              ("C-l" . corfu-show-location)
+              ("C-a" . corfu-beginning-of-prompt)
+              ("C-e" . corfu-end-of-prompt)
+              ("M-m" . corfu-move-to-minibuffer))
+
+  :custom
+  (corfu-cycle t)
+  (corfu-auto nil)
+  (corfu-min-width 50)
+  (corfu-max-width 100)
+  (corfu-echo-documentation nil)
+
+  :init
+  (corfu-global-mode)
+
+  (setq completion-cycle-threshold nil)
+  (setq tab-always-indent 'complete)
+  ;; (setq tab-first-completion 'word-or-paren-or-punct)
+
+  (defun corfu-move-to-minibuffer ()
+    (interactive)
+    (let ((completion-extra-properties corfu--extra)
+          completion-cycle-threshold completion-cycling)
+      (apply #'consult-completion-in-region completion-in-region--data)))
+
+  (defun corfu-beginning-of-prompt ()
+    "Move to beginning of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (car completion-in-region--data)))
+
+  (defun corfu-end-of-prompt ()
+    "Move to end of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (cadr completion-in-region--data)))
+
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
+                (bound-and-true-p vertico--input))
+      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
+      (corfu-mode 1)))
+
+  (set-face-attribute 'corfu-current nil
+                      :foreground 'unspecified
+                      :background 'unspecified
+                      :inherit 'vertico-current))
+
+(use-package cape
+  ;; Bind dedicated completion commands
+  :bind (("<f8> s" . cape-symbol)
+         ("<f8> <f8>" . cape-dabbrev)
+         ("<f8> k" . cape-keyword)
+         ("<f8> f" . cape-file)
+         ("<f8> t" . complete-tag)
+         ("<f8> i" . cape-ispell)
+         ("<f8> a" . cape-abbrev)
+         ("<f8> l" . cape-line)
+         ("<f8> w" . cape-dict))
+  :commands cape-capf-buster
+  :init
+  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
+    (add-hook 'completion-at-point-functions cape 'append)))
+
+(use-package dabbrev
+  :init
+  (setq dabbrev-check-all-buffers t
+        dabbrev-check-other-buffers t))
+
+(use-package marginalia
+  :init
+  (marginalia-mode))
+
+(use-package all-the-icons-completion
+  :after (marginalia all-the-icons)
+  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup)
+  :init
+  (all-the-icons-completion-mode))
+
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-use-icons t)
+  (kind-icon-default-face 'corfu-default)
+  (kind-icon-blend-background nil)
+  (kind-icon-blend-frac 0.08)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+
+(defun crm-indicator (args)
+  (cons (concat "[Multi] " (car args)) (cdr args)))
+(advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+;; don't let the cursor go into minibuffer prompt
+(setq minibuffer-prompt-properties
+      '(read-only t cursor-intangible t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+(setq read-extended-command-predicate
+      #'command-completion-default-include-p)
+
 
 ;; (use-package hippie-exp
 ;;   :ensure nil
@@ -367,115 +572,20 @@
 ;;                                            try-complete-lisp-symbol-partially
 ;;                                            try-complete-lisp-symbol)))
 
-(use-package helpful
-  :commands (helpful--read-symbol
-             helpful-callable)
-  :bind (([remap describe-command]  . helpful-command)
-         ([remap describe-key]      . helpful-key)
-         ([remap describe-symbol]   . helpful-symbol)
-         ([remap describe-function] . helpful-function)
-         ([remap describe-variable] . helpful-variable)
-         ("C-h ." . helpful-at-point))
-  :init
-  (with-eval-after-load 'apropos
-    ;; patch apropos buttons to call helpful instead of help
-    (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
-      (button-type-put
-       fun-bt 'action
-       (lambda (button)
-         (helpful-callable (button-get button 'apropos-symbol)))))
-    (dolist (var-bt '(apropos-variable apropos-user-option))
-      (button-type-put
-       var-bt 'action
-       (lambda (button)
-         (helpful-variable (button-get button 'apropos-symbol)))))))
+;;==================================================
+;; Editor
+;;==================================================
 
-(setq nobreak-char-display 0)
-
-(use-package whitespace-cleanup-mode
-  :hook (after-init . global-whitespace-cleanup-mode))
-
-(defun sanityinc/no-trailing-whitespace ()
-  "Turn off display of trailing whitespace in this buffer."
-  (setq show-trailing-whitespace nil))
-
-;; But don't show trailing whitespace in SQLi, inf-ruby etc.
-(dolist (hook '(special-mode-hook
-                Info-mode-hook
-                term-mode-hook
-                comint-mode-hook
-                compilation-mode-hook
-                isearch-mode-hook
-                minibuffer-setup-hook
-                vterm-mode-hook))
-  (add-hook hook #'sanityinc/no-trailing-whitespace))
-
-;; don't confirm killing buffers with attached processes
-(setq kill-buffer-query-functions
-      (remq 'process-kill-buffer-query-function
-            kill-buffer-query-functions))
-
-;; Backup settings
-(use-package files
-  :straight nil
-  :ensure nil
-  :init
-  (setq backup-by-copying t
-        delete-old-versions t
-        kept-new-versions 6
-        kept-old-versions 2
-        version-control t
-        create-lockfiles nil))
-
-;; UTF-8 everything please
-(set-language-environment 'utf-8)
-;; apparently that is enough
-
-;; (when (fboundp 'set-charset-priority)
-;;   (set-charset-priority 'unicode))
-;; (set-terminal-coding-system 'utf-8)
-;; (set-keyboard-coding-system 'utf-8)
-;; (set-selection-coding-system 'utf-8)
-;; (prefer-coding-system 'utf-8)
-;; (set-default-coding-systems 'utf-8)
-
-;; Don't cripple my emacs
-(setq disabled-command-function nil)
-
-;; Useful modes
-(use-package image-file
-  :defer 5
-  :config
-  (auto-image-file-mode 1))
-
-;; (size-indication-mode +1)                ; display file size
-(delete-selection-mode +1)               ; delete selected text on input
-;; (global-subword-mode 1)
-(global-auto-revert-mode +1)             ; auto reload files if changed outside emacs
-(auto-compression-mode +1)               ; open compressed files a la dired
+(delete-selection-mode +1)
+(global-auto-revert-mode +1)
+(auto-compression-mode +1)
 (transient-mark-mode +1)
 (minibuffer-depth-indicate-mode +1)
-(electric-indent-mode -1)             ; make return key not auto indent
-;; (desktop-save-mode 1)
-;; (fancy-narrow-mode)
+(electric-indent-mode -1)
+;; (size-indication-mode +1)
+;; (global-subword-mode 1)
 
-(use-package winner
-  :hook (after-init . winner-mode))
-
-;; don't let the cursor go into minibuffer prompt
-(setq minibuffer-prompt-properties
-      '(read-only t cursor-intangible t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
-(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-(defun crm-indicator (args)
-  (cons (concat "[Multi] " (car args)) (cdr args)))
-(advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-
-(use-package highlight-parentheses
-  :hook (after-init . global-highlight-parentheses-mode))
+;; (bind-key "RET" #'newline-and-indent)
 
 (use-package undo-tree
   :hook (after-init . global-undo-tree-mode)
@@ -490,6 +600,63 @@
         undo-strong-limit 12000000
         undo-outer-limit 120000000
         undo-tree-enable-undo-in-region t))
+
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package highlight-parentheses
+  :hook (after-init . global-highlight-parentheses-mode))
+
+(use-package iedit
+  :commands iedit-mode)
+
+(use-package hl-line
+  ;; Highlights the current line
+  :if (display-graphic-p)
+  :hook ((prog-mode text-mode conf-mode special-mode) . hl-line-mode)
+  :config
+  ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
+  ;; performance boost. I also don't need to see it in other buffers.
+  (setq hl-line-sticky-flag nil
+        global-hl-line-sticky-flag nil)
+
+  ;; Temporarily disable `hl-line' when selection is active, since it doesn't
+  ;; serve much purpose when the selection is so much more visible.
+  (defvar doom--hl-line-mode nil)
+
+  (add-hook 'activate-mark-hook
+            (defun doom-disable-hl-line-h ()
+              (when hl-line-mode
+                (setq-local doom--hl-line-mode t)
+                (hl-line-mode -1))))
+
+  (add-hook 'deactivate-mark-hook
+            (defun doom-enable-hl-line-maybe-h ()
+              (when doom--hl-line-mode
+                (hl-line-mode +1)))))
+
+
+;;==================================================
+;; File management
+;;==================================================
+
+;; Backup settings
+(use-package files
+  :straight nil
+  :ensure nil
+  :init
+  (setq backup-by-copying t
+        delete-old-versions t
+        kept-new-versions 6
+        kept-old-versions 2
+        version-control t
+        create-lockfiles nil))
+
+;; Useful modes
+(use-package image-file
+  :defer 5
+  :config
+  (auto-image-file-mode 1))
 
 ;; Save a list of recent files visited.
 (use-package recentf
@@ -509,11 +676,6 @@
             (defun doom--recentf-add-dired-directory-h ()
               (recentf-add-file default-directory))))
 
-(use-package elec-pair
-  :hook (after-init . electric-pair-mode)
-  :config
-  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
-
 (use-package savehist
   :hook (after-init . savehist-mode)
   :config
@@ -525,78 +687,162 @@
                                        if (stringp item)
                                        collect (substring-no-properties item)
                                        else if item collect it)))))
-
-;; Never ever use tabs
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)            ;; but maintain correct apeparance
-
-;; warn when opening files bigger than 100MB
-(setq large-file-warning-threshold 100000000)
-
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
-
-;; uniquify:  provide meaningful names for buffers with the same name
 (use-package uniquify
   :straight nil
   :ensure nil
   :init
-  ;; (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
   (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
   (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
 
-;; use shift + arrow keys to switch between visible buffers
-(use-package windmove
-  :hook (after-init . windmove-default-keybindings))
-
-;; show-paren-mode: subtle highlighting of matching parens (global-mode)
-(use-package paren
-  :hook (after-init . show-paren-mode)
-  :config
-  (setq show-paren-delay 0.1
-        show-paren-style 'parenthesis
-        show-paren-highlight-openparen t
-        show-paren-when-point-inside-paren t
-        show-paren-when-point-in-periphery t))
-
-;; Save point position between sessions
 (use-package saveplace
   :straight nil
   :ensure nil
   :hook (after-init . save-place-mode))
 
-(use-package which-key
-  :hook (after-init . which-key-mode)
-  :init
-  (setq which-key-sort-order #'which-key-prefix-then-key-order
-        which-key-sort-uppercase-first nil
-        which-key-add-column-padding 1
-        which-key-max-display-columns nil
-        which-key-min-display-lines 6
-        which-key-idle-delay 0.75
-        which-key-idle-secondary-delay 0.05
-        which-key-side-window-slot -10)
+(use-package fasd
+  :hook (after-init . global-fasd-mode))
+
+(use-package super-save
+  :hook (after-init . super-save-mode)
   :config
-  (which-key-setup-side-window-bottom)
-  (setq which-key-max-description-length 45))
+  (setq super-save-auto-save-when-idle t))
 
-;; When popping the mark, continue popping until the cursor actually moves
-;; Also, if the last command was a copy - skip past all the expand-region cruft.
-(defadvice pop-to-mark-command (around ensure-new-position activate)
-  (let ((p (point)))
-    (when (eq last-command 'save-region-or-current-line)
-      ad-do-it
-      ad-do-it
-      ad-do-it)
-    (dotimes (i 10)
-      (when (= p (point)) ad-do-it))))
+(defun make-parent-directory ()
+  "Make sure the directory of `buffer-file-name' exists."
+  (make-directory (file-name-directory buffer-file-name) t))
 
-(bind-key "C-S-P" #'pop-to-mark-command)
+(add-hook 'find-file-not-found-functions #'make-parent-directory)
+
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+
+;;==================================================
+;; Window management
+;;==================================================
+
+(use-package winner
+  :hook (after-init . winner-mode))
+
+(use-package windmove
+  :hook (after-init . windmove-default-keybindings))
+
+(use-package window
+  :straight nil
+  :ensure nil
+  :bind (("C-0"            . delete-window)
+         ("C-1"            . delete-other-windows)
+         ("C-2"            . split-window-below)
+         ("C-3"            . split-window-right)
+         ("C-;"            . other-window)
+         ("S-C-<left>"     . shrink-window-horizontally)
+         ("S-C-<right>"    . enlarge-window-horizontally)
+         ("S-C-<down>"     . shrink-window)
+         ("S-C-<up>"       . enlarge-window)
+         ("C-x <C-return>" . window-swap-states))
+  :init
+  (unbind-key "C-x o"))
+
+(use-package jccb-windows
+  :straight nil
+  :ensure nil
+  :bind (("C-x |" . split-window-horizontally-instead)
+         ("C-x _" . split-window-vertically-instead)
+         ;; ("C-2"   . split-window-vertically-with-other-buffer)
+         ;; ("C-3"   . split-window-horizontally-with-other-buffer)
+         ("M-o" . quick-switch-buffer)))
+
+(use-package popper
+  :after doom-modeline
+  :bind (;(;"<f12>"   . popper-toggle-latest)
+         ("<f12>"   . popper-cycle)
+         ("C-<f12>" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "\\*Warnings\\*"
+          "\\*format-all-errors\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+          "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
+          "^\\*term.*\\*$"   term-mode   ;term as a popup
+          "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
+          help-mode
+          compilation-mode))
+  :init
+  (popper-mode +1)
+  (popper-echo-mode +1)
+  (setq popper-mode-line "")
+  (doom-modeline-def-segment popper
+    "The popper window type."
+    (when (popper-popup-p (current-buffer))
+      (concat
+       ;; (doom-modeline-spc)
+       (propertize (concat "POP" (doom-modeline-spc))
+                   'face (if (doom-modeline--active)
+                             'doom-modeline-panel
+                           'mode-line-inactive)))))
+
+  (doom-modeline-def-modeline 'main
+    '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
+    '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
+
+(use-package dimmer
+  :hook (after-init . dimmer-mode)
+  :config
+  (setq dimmer-fraction 0.25)
+  (dimmer-configure-which-key)
+  (dimmer-configure-magit))
+
+(setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
+      frame-resize-pixelwise t)
+
+;; The native border "consumes" a pixel of the fringe on righter-most splits,
+;; `window-divider' does not. Available since Emacs 25.1.
+(setq window-divider-default-places t
+      window-divider-default-bottom-width 1
+      window-divider-default-right-width 1)
+(add-hook 'window-setup-hook #'window-divider-mode)
+
+;; Favor vertical splits over horizontal ones. Screens are usually wide.
+(setq split-width-threshold 160
+      split-height-threshold nil)
+
+(setq resize-mini-windows 'grow-only
+      ;; But don't let the minibuffer grow beyond this size
+      max-mini-window-height 0.15)
+
+;;==================================================
+;; Buffer management
+;;==================================================
+
+(use-package ibuffer
+  :bind ("C-x C-b" . ibuffer)
+  :config
+  (setq ibuffer-show-empty-filter-groups nil
+        ibuffer-filter-group-name-face '(:inherit (success bold)))
+  (define-ibuffer-column size
+    (:name "Size"
+           :inline t
+           :header-mouse-map ibuffer-size-header-map)
+    (file-size-human-readable (buffer-size))))
+
+(use-package ibuffer-projectile
+  :hook (ibuffer . ibuffer-projectile-set-filter-groups)
+  :config
+  (when (display-graphic-p)
+    (setq ibuffer-projectile-prefix
+          (concat (all-the-icons-octicon
+                   "file-directory"
+                   :face ibuffer-filter-group-name-face
+                   :v-adjust -0.05)
+                  " "))))
 
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
+
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
   ;; left and right commands are meta
@@ -646,16 +892,6 @@
   (unbind-key "C-z")
   (unbind-key "C-x C-z"))
 
-(bind-key "RET" #'newline-and-indent)
-
-;;==================================================
-;; which-func-mode settings
-;;==================================================
-;; (use-package which-func
-;;   :defer 5
-;;   :config
-;;   (which-function-mode +1))
-
 ;;==================================================
 ;; git and magit settings
 ;;==================================================
@@ -690,8 +926,13 @@
     (turn-on-flyspell)
     (setq fill-column 70))
   (add-hook 'git-commit-mode-hook #'jccb/git-commit-mode-hook)
+  (add-hook 'magit-mode-hook
+            (lambda ()
+              "Show minimal modeline in magit-status buffer, no modeline elsewhere."
+              (if (eq major-mode 'magit-status-mode)
+                  (doom-modeline-set-vcs-modeline)
+                (hide-mode-line-mode))))
 
-  (add-hook 'magit-popup-mode-hook #'hide-mode-line-mode)
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
    magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
@@ -729,7 +970,7 @@
 (use-package git-gutter
   :hook (prog-mode . git-gutter-mode)
   :config
-  (setq git-gutter:update-interval 0.05))
+  (setq git-gutter:update-interval 2))
 
 (use-package git-gutter-fringe
   :config
@@ -737,16 +978,21 @@
   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
 
-
 (use-package git-timemachine
   :commands git-timemachine)
+
+;;==================================================
+;; Search settings
+;;=================================================
+
+(use-package ripgrep
+  :commands ripgrep-regexp)
 
 ;; use regexp isearch by default
 (bind-key [remap isearch-forward] #'isearch-forward-regexp)
 (bind-key [remap isearch-backward] #'isearch-backward-regexp)
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
-
 
 (use-package jccb-search
   :straight nil
@@ -771,15 +1017,19 @@
          ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp)
          ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp)))
 
-(use-package highlight-quoted
-  :hook (emacs-lisp-mode . highlight-quoted-mode))
+(use-package wgrep
+  :commands wgrep-change-to-wgrep-mode)
 
-(use-package aggressive-indent
-  :hook (emacs-lisp-mode . aggressive-indent-mode))
+(use-package ag
+  :after wgrep
+  :if (executable-find "ag")
+  :config
+  (use-package wgrep-ag)
+  (setq ag-highlight-search t))
 
-;; (use-package scss-mode
-;;   :config
-;;   (setq scss-compile-at-save nil))
+;;==================================================
+;; Dired
+;;=================================================
 
 (use-package dired
   :straight nil
@@ -844,14 +1094,9 @@
   :if (display-graphic-p)
   :hook (dired-mode . all-the-icons-dired-mode))
 
-
-(defun make-parent-directory ()
-  "Make sure the directory of `buffer-file-name' exists."
-  (make-directory (file-name-directory buffer-file-name) t))
-
-(add-hook 'find-file-not-found-functions #'make-parent-directory)
-
-
+;;==================================================
+;; Writing
+;;==================================================
 
 (use-package visual-fill-column
   :commands visual-fill-column-mode
@@ -900,6 +1145,29 @@
 (use-package grip-mode
   :commands grip-mode)
 
+;; (use-package darkroom
+;;   :commands (darkroom-mode darkroom-tentative-mode)
+;;   :config
+;;   (setq darkroom-text-scale-increase 1.1))
+
+;;==================================================
+;; Edit utilities
+;;==================================================
+
+(use-package elec-pair
+  :hook (after-init . electric-pair-mode)
+  :config
+  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
+
+(use-package paren
+  :hook (after-init . show-paren-mode)
+  :config
+  (setq show-paren-delay 0.1
+        show-paren-style 'parenthesis
+        show-paren-highlight-openparen t
+        show-paren-when-point-inside-paren t
+        show-paren-when-point-in-periphery t))
+
 (use-package multiple-cursors
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
          ("C->"           . mc/mark-next-like-this)
@@ -920,6 +1188,41 @@
   :ensure nil
   :bind ("M-z" . zap-up-to-char))
 
+(use-package so-long
+  :hook (after-init . global-so-long-mode))
+
+(use-package dtrt-indent
+  :hook (after-init . dtrt-indent-global-mode))
+
+(use-package browse-kill-ring
+  :hook (after-init . browse-kill-ring-default-keybindings))
+
+(use-package ialign
+  :commands ialign)
+
+(use-package dumb-jump
+  :config
+  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t)
+  (setq dumb-jump-selector 'completing-read)
+  (setq dumb-jump-prefer-searcher 'rg))
+
+(use-package xref
+  :hook (xref-after-jump . xref-pulse-momentarily)
+  :hook (xref-after-return . xref-pulse-momentarily))
+
+;; When popping the mark, continue popping until the cursor actually moves
+;; Also, if the last command was a copy - skip past all the expand-region cruft.
+(defadvice pop-to-mark-command (around ensure-new-position activate)
+  (let ((p (point)))
+    (when (eq last-command 'save-region-or-current-line)
+      ad-do-it
+      ad-do-it
+      ad-do-it)
+    (dotimes (i 10)
+      (when (= p (point)) ad-do-it))))
+
+(bind-key "C-S-P" #'pop-to-mark-command)
+
 (use-package jccb-misc
   :straight nil
   :ensure nil
@@ -930,77 +1233,8 @@
          ("C-M-o" . jccb/open-previous-line))
   :config (jccb/doctor))
 
-(use-package crux
-  :commands crux-find-shell-init-file
-  :bind (("C-a"          . crux-move-beginning-of-line)
-         ("S-<return>"   . crux-smart-open-line)
-         ("C-S-k"        . crux-kill-whole-line)
-         ("C-S-<return>" . crux-smart-open-line-above))
-  :config
-  (crux-with-region-or-buffer indent-region)
-  (crux-with-region-or-buffer untabify)
-  (crux-reopen-as-root-mode +1))
-
-(use-package jccb-windows
-  :straight nil
-  :ensure nil
-  :bind (("C-x |" . split-window-horizontally-instead)
-         ("C-x _" . split-window-vertically-instead)
-         ;; ("C-2"   . split-window-vertically-with-other-buffer)
-         ;; ("C-3"   . split-window-horizontally-with-other-buffer)
-         ("M-o" . quick-switch-buffer)))
-
-(use-package window
-  :straight nil
-  :ensure nil
-  :bind (("C-0"            . delete-window)
-         ("C-1"            . delete-other-windows)
-         ("C-2"            . split-window-below)
-         ("C-3"            . split-window-right)
-         ("C-;"            . other-window)
-         ("S-C-<left>"     . shrink-window-horizontally)
-         ("S-C-<right>"    . enlarge-window-horizontally)
-         ("S-C-<down>"     . shrink-window)
-         ("S-C-<up>"       . enlarge-window)
-         ("C-x <C-return>" . window-swap-states))
-  :init
-  (unbind-key "C-x o"))
-
-; ibuffer
-(use-package ibuffer
-  :bind ("C-x C-b" . ibuffer)
-  :config
-  (setq ibuffer-show-empty-filter-groups nil
-        ibuffer-filter-group-name-face '(:inherit (success bold)))
-  (define-ibuffer-column size
-    (:name "Size"
-           :inline t
-           :header-mouse-map ibuffer-size-header-map)
-    (file-size-human-readable (buffer-size))))
-
-(use-package ibuffer-projectile
-  :hook (ibuffer . ibuffer-projectile-set-filter-groups)
-  :config
-  (when (display-graphic-p)
-    (setq ibuffer-projectile-prefix
-          (concat (all-the-icons-octicon
-                   "file-directory"
-                   :face ibuffer-filter-group-name-face
-                   :v-adjust -0.05)
-                  " "))))
-
 (use-package shrink-whitespace
   :bind ("M-\\" . shrink-whitespace))
-
-;; (use-package beacon
-;;   :defer 2
-;;   :config
-;;   (setq beacon-color "#6F6F6F"
-;;         beacon-blink-when-focused  t)
-;;   (defun not-display-graphic-p ()
-;;     (not (display-graphic-p)))
-;;   (add-hook 'beacon-dont-blink-predicates #'not-display-graphic-p)
-;;   (beacon-mode))
 
 (use-package goggles
   :hook ((prog-mode text-mode) . goggles-mode)
@@ -1018,6 +1252,77 @@
   :hook ((prog-mode text-mode conf-mode) . whole-line-or-region-local-mode)
   :config
   (whole-line-or-region-global-mode +1))
+
+(use-package puni
+  :hook ((after-init . puni-global-mode)
+         (term-mode . puni-disable-puni-mode))
+  :bind (:map puni-mode-map
+              (;; puni-raise
+               ;; puni-split
+               ;; puni-transpose
+               ;; puni-convolute
+               ("C-<f9>" . puni-splice)
+               ("<f9>"   . puni-squeeze)
+               ("C-{"    . puni-slurp-backward)
+               ("C-}"    . puni-barf-backward)
+               ("M-C-{"  . puni-barf-forward)
+               ("M-C-}"  . puni-slurp-forward))))
+
+(use-package expand-region
+  :bind ("C-=" . er/expand-region)
+  :config
+  (setq expand-region-preferred-python-mode 'python-mode)
+  (setq expand-region-smart-cursor t))
+
+(use-package change-inner
+  :bind (("C-c i" . change-inner)
+         ("C-c o" . change-outer)))
+
+(use-package rainbow-mode
+  :hook (css-mode html-mode))
+
+(use-package highlight-symbol
+  :hook (prog-mode . highlight-symbol-mode)
+  :commands (highlight-symbol
+             highlight-symbol-query-replace
+             highlight-symbol-occur)
+  :config
+  (setq highlight-symbol-idle-delay 0.5))
+
+(use-package avy
+  :bind (("M-g g"   . avy-goto-line)
+         ("C-c C-j" . avy-resume)
+         ("C-c C-n" . avy-next)
+         ("C-c C-p" . avy-prev)
+         ("C-'"     . avy-goto-char-timer)
+         ("C-\""    . avy-goto-char))
+  :config
+  (setq avy-timeout-seconds 0.6)
+  (avy-setup-default))
+
+;; (use-package ace-window
+;;   :bind ("C-x o" . ace-window)
+;;   :config
+;;   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
+;;   (setq aw-dispatch-always nil))
+
+(defadvice comment-dwim (around comment-line-maybe activate)
+  "If invoked from the beginning of a line or the beginning of
+text on a line, comment the current line instead of appending a
+comment to the line."
+  (if (and (not (use-region-p))
+           (not (eq (line-end-position)
+                    (save-excursion (back-to-indentation) (point))))
+           (or (eq (point) (line-beginning-position))
+               (eq (point) (save-excursion (back-to-indentation) (point)))))
+      (comment-or-uncomment-region (line-beginning-position)
+                                   (line-end-position))
+    ad-do-it
+    (setq deactivate-mark nil)))
+
+;;==================================================
+;; Spell
+;;==================================================
 
 (use-package ispell
   :straight nil
@@ -1056,8 +1361,9 @@
   :bind (:map flyspell-mode-map
               ("C-:" . flyspell-correct-wrapper)))
 
-(use-package ripgrep
-  :commands ripgrep-regexp)
+;;==================================================
+;; Project management
+;;==================================================
 
 (use-package projectile
   :bind-keymap ("C-c p" . projectile-command-map)
@@ -1084,80 +1390,9 @@
   (projectile-mode +1)
   (setq projectile-require-project-file nil))
 
-(use-package dumb-jump
-  :config
-  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t)
-  (setq dumb-jump-selector 'completing-read)
-  (setq dumb-jump-prefer-searcher 'rg))
-
-(use-package xref
-  :hook (xref-after-jump . xref-pulse-momentarily)
-  :hook (xref-after-return . xref-pulse-momentarily))
-
-;; (use-package company
-;;   :defer 2
-;;   :commands (company-mode company-indent-or-complete-common)
-;;   :init
-;;   (add-hook 'prog-mode-hook
-;;             (lambda ()
-;;               (local-set-key (kbd "<tab>")
-;;                              #'company-indent-or-complete-common)))
-;;   :config
-;;   (setq company-idle-delay 0.6
-;;         company-show-numbers t
-;;         company-tooltip-limit 20
-;;         company-tooltip-align-annotations t
-;;         company-minimum-prefix-length 1
-;;         company-dabbrev-downcase nil)
-;;   (global-company-mode)
-;;   ;; use numbers 0-9 to select company completion candidates
-;;   (let ((map company-active-map))
-;;     (mapc (lambda (x) (define-key map (format "%d" x)
-;;                         `(lambda () (interactive) (company-complete-number ,x))))
-;;           (number-sequence 0 9))))
-
-;; (use-package company-terraform
-;;   :after (company terraform-mode)
-;;   :disabled t
-;;   :config
-;;   (add-to-list 'company-backends 'company-terraform))
-
-;; ;; (use-package company-quickhelp
-;; ;;  :hook
-;; ;;  (global-company-mode . company-quickhelp))
-
-;; (use-package company-box
-;;   :hook (company-mode . company-box-mode)
-;;   :config
-;;   ;; https://github.com/sebastiencs/company-box/issues/44
-;;   (defun jccb/fix-company-scrollbar (orig-fn &rest args)
-;;     "disable company-box scrollbar"
-;;     (cl-letf (((symbol-function #'display-buffer-in-side-window)
-;;                (symbol-function #'ignore)))
-;;       (apply orig-fn args)))
-
-;;   (advice-add #'company-box--update-scrollbar :around #'jccb/fix-company-scrollbar))
-
-;; (use-package yasnippet
-;;   :hook ((prog-mode text-mode) . yas-minor-mode)
-;;   :commands yas-hippie-try-expand
-;;   :init
-;;   (add-to-list 'hippie-expand-try-functions-list 'yas-hippie-try-expand)
-;;   :config
-;;   (yas-reload-all))
-
-;; (use-package consult-yasnippet
-;;   :after yasnippet)
-
-(use-package wgrep
-  :commands wgrep-change-to-wgrep-mode)
-
-(use-package ag
-  :after wgrep
-  :if (executable-find "ag")
-  :config
-  (use-package wgrep-ag)
-  (setq ag-highlight-search t))
+;;==================================================
+;; coding modes
+;;==================================================
 
 (use-package dockerfile-mode
   :mode "Dockerfile[a-zA-Z.-]*\\'")
@@ -1190,11 +1425,6 @@
 (use-package js2-mode
   :mode "\\.js\\'")
 
-;; (use-package jump-char
-;;   :config
-;;   :bind (("M-m" . jump-char-forward)
-;;          ("M-M" . jump-char-backward)))
-
 (use-package pip-requirements
   :mode "requirements\\.txt\\'")
 
@@ -1203,188 +1433,31 @@
 ;;   :config
 ;;   (setq paradox-column-width-package 40))
 
-(use-package highlight-symbol
-  :hook (prog-mode . highlight-symbol-mode)
-  :commands (highlight-symbol
-             highlight-symbol-query-replace
-             highlight-symbol-occur)
-  :config
-  (setq highlight-symbol-idle-delay 0.5))
-
 (use-package ssh-config-mode
   :mode (("/\\.ssh/config\\'"   . ssh-config-mode)
          ("/known_hosts\\'"     . ssh-known-hosts-mode)
          ("/authorized_keys\\'" . ssh-authorized-keys-mode)))
 
-(use-package avy
-  :bind (("M-g g"   . avy-goto-line)
-         ("C-c C-j" . avy-resume)
-         ("C-c C-n" . avy-next)
-         ("C-c C-p" . avy-prev)
-         ("C-'"     . avy-goto-char-timer)
-         ("C-\""    . avy-goto-char))
-  :config
-  (setq avy-timeout-seconds 0.6)
-  (avy-setup-default))
+(use-package csv-mode
+  :mode "\\.csv\\'")
 
-;; (use-package ace-window
-;;   :bind ("C-x o" . ace-window)
+(use-package typescript-mode
+  :mode (("\\.ts\\'" . typescript-mode))
+  :mode (("\\.tsx\\'" . typescript-mode)))
+
+;; (use-package scss-mode
 ;;   :config
-;;   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
-;;   (setq aw-dispatch-always nil))
+;;   (setq scss-compile-at-save nil))
 
-(use-package puni
-  :hook ((after-init . puni-global-mode)
-         (term-mode . puni-disable-puni-mode))
-  :bind (:map puni-mode-map
-              (;; puni-raise
-               ;; puni-split
-               ;; puni-transpose
-               ;; puni-convolute
-               ("C-<f9>" . puni-splice)
-               ("<f9>"   . puni-squeeze)
-               ("C-{"    . puni-slurp-backward)
-               ("C-}"    . puni-barf-backward)
-               ("M-C-{"  . puni-barf-forward)
-               ("M-C-}"  . puni-slurp-forward))))
+;;==================================================
+;; programming stuff
+;;==================================================
 
-(use-package expand-region
-  :bind ("C-=" . er/expand-region)
-  :config
-  (setq expand-region-preferred-python-mode 'python-mode)
-  (setq expand-region-smart-cursor t))
+(use-package highlight-quoted
+  :hook (emacs-lisp-mode . highlight-quoted-mode))
 
-(use-package change-inner
-  :bind (("C-c i" . change-inner)
-         ("C-c o" . change-outer)))
-
-(use-package rainbow-mode
-  :hook (css-mode html-mode))
-
-(defadvice comment-dwim (around comment-line-maybe activate)
-  "If invoked from the beginning of a line or the beginning of
-text on a line, comment the current line instead of appending a
-comment to the line."
-  (if (and (not (use-region-p))
-           (not (eq (line-end-position)
-                    (save-excursion (back-to-indentation) (point))))
-           (or (eq (point) (line-beginning-position))
-               (eq (point) (save-excursion (back-to-indentation) (point)))))
-      (comment-or-uncomment-region (line-beginning-position)
-                                   (line-end-position))
-    ad-do-it
-    (setq deactivate-mark nil)))
-
-
-;; load additional local settings (if they exist)
-(use-package jccb-local
-  :straight nil
-  :ensure nil
-  :load-path "site-lisp"
-  :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
-
-(use-package server
-  :if (display-graphic-p)
-  :hook (after-init . server-start))
-
-;; `keyboard-quit' is too much of a nuclear option. I wanted an ESC/C-g to
-;; do-what-I-mean. It serves four purposes (in order):
-;;
-;; 1. Quit active states; e.g. highlights, searches, snippets, iedit,
-;;    multiple-cursors, recording macros, etc.
-;; 2. Close popup windows remotely (if it is allowed to)
-;; 3. Refresh buffer indicators, like git-gutter and flycheck
-;; 4. Or fall back to `keyboard-quit'
-;;
-;; And it should do these things incrementally, rather than all at once. And it
-;; shouldn't interfere with recording macros or the minibuffer. This may require
-;; you press ESC/C-g two or three times on some occasions to reach
-;; `keyboard-quit', but this is much more intuitive.
-
-;; (defun doom/escape ()
-;;   "Run `doom-escape-hook'."
-;;   (interactive)
-;;   (cond ((minibuffer-window-active-p (minibuffer-window))
-;;          ;; quit the minibuffer if open.
-;;          (abort-recursive-edit))
-;;         ;; don't abort macros
-;;         ((or defining-kbd-macro executing-kbd-macro) nil)
-;;         ;; Back to the default
-;;         ((keyboard-quit))))
-
-;; (bind-key [remap keyboard-quit] #'doom/escape)
-
-;; Don't resize windows & frames in steps; it's prohibitive to prevent the user
-;; from resizing it to exact dimensions, and looks weird.
-(setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
-      frame-resize-pixelwise t)
-
-;; The native border "consumes" a pixel of the fringe on righter-most splits,
-;; `window-divider' does not. Available since Emacs 25.1.
-(setq window-divider-default-places t
-      window-divider-default-bottom-width 1
-      window-divider-default-right-width 1)
-(add-hook 'window-setup-hook #'window-divider-mode)
-
-;; Favor vertical splits over horizontal ones. Screens are usually wide.
-(setq split-width-threshold 160
-      split-height-threshold nil)
-
-(setq resize-mini-windows 'grow-only
-      ;; But don't let the minibuffer grow beyond this size
-      max-mini-window-height 0.15)
-
-;; Enable mouse in terminal Emacs
-;; (add-hook 'tty-setup-hook #'xterm-mouse-mode)
-
-(use-package hl-line
-  ;; Highlights the current line
-  :if (display-graphic-p)
-  :hook ((prog-mode text-mode conf-mode special-mode) . hl-line-mode)
-  :config
-  ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
-  ;; performance boost. I also don't need to see it in other buffers.
-  (setq hl-line-sticky-flag nil
-        global-hl-line-sticky-flag nil)
-
-  ;; Temporarily disable `hl-line' when selection is active, since it doesn't
-  ;; serve much purpose when the selection is so much more visible.
-  (defvar doom--hl-line-mode nil)
-
-  (add-hook 'activate-mark-hook
-            (defun doom-disable-hl-line-h ()
-              (when hl-line-mode
-                (setq-local doom--hl-line-mode t)
-                (hl-line-mode -1))))
-
-  (add-hook 'deactivate-mark-hook
-            (defun doom-enable-hl-line-maybe-h ()
-              (when doom--hl-line-mode
-                (hl-line-mode +1)))))
-
-
-(setq image-animate-loop t)
-
-;; Resolve symlinks when opening files, so that any operations are conducted
-;; from the file's true directory (like `find-file').
-(setq find-file-visit-truename t
-      vc-follow-symlinks t)
-
-;; Disable the warning "X and Y are the same file". It's fine to ignore this
-;; warning as it will redirect you to the existing buffer anyway.
-(setq find-file-suppress-same-file-warnings t)
-
-;; Allow UTF or composed text from the clipboard, even in the terminal or on
-;; non-X systems (like Windows or macOS), where only `STRING' is used.
-(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
-
-
-(use-package restart-emacs
-  :commands restart-emacs
-  :config
-  (defun jccb/disable-confirm-kill-emacs (&rest _)
-    (setq confirm-kill-emacs nil))
-  (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
+(use-package aggressive-indent
+  :hook (emacs-lisp-mode . aggressive-indent-mode))
 
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
@@ -1406,90 +1479,41 @@ comment to the line."
   (setq highlight-indent-guides-method 'character
         highlight-indent-guides-responsive 'top-edge))
 
-;; (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
-(add-hook 'Man-mode-hook #'hide-mode-line-mode)
+(use-package color-identifiers-mode
+  :commands color-identifiers-mode)
 
-(use-package vterm
-  :hook (vterm-mode . hide-mode-line-mode)
-  :commands vterm
-  :init
-  (add-to-list 'display-buffer-alist
-               '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-                 (display-buffer-reuse-window display-buffer-in-side-window)
-                 (side . bottom)
-                 ;;(dedicated . t) ;dedicated is supported in emacs27
-                 (reusable-frames . visible)
-                 (window-height . 0.3)))
+(use-package py-isort
+  :commands py-isort-buffer)
+
+;; (use-package blacken
+;;   :hook (python-mode . blacken-mode)
+;;   :commands blacken-mode blacken-buffer)
+
+(use-package format-all
+  :hook (python-mode . format-all-mode)
   :config
-  (unbind-key "<f12>" vterm-mode-map))
+  (setq-default format-all-formatters
+                '(("Python" yapf))))
 
-;; (use-package vterm-toggle
-;;   :bind (("<f12>" . vterm-toggle)
-;;          ("C-<f12>" . vterm-toggle-cd))
-;;   :config
-;;   (setq vterm-toggle-fullscreen-p nil))
+(use-package pyvenv
+  :config
+  (setq pyvenv-mode-line-indicator
+        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
+  (pyvenv-mode +1))
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
 
-(use-package copy-as-format
-  :commands copy-as-format)
 
-(use-package csv-mode
-  :mode "\\.csv\\'")
-
-(use-package ialign
-  :commands ialign)
-
-(use-package restart-emacs
-  :commands restart-emacs)
-
-;; (use-package smartscan
-;;   :bind (:map smartscan-map
-;;               ("M-[" . smartscan-symbol-go-backward)
-;;               ("M-]" . smartscan-symbol-go-forward))
-;;   :hook (after-init . global-smartscan-mode)
-;;   :config
-;;   (unbind-key "M-p" smartscan-map)
-;;   (unbind-key "M-n" smartscan-map))
-
-
-(use-package browse-kill-ring
-  :hook (after-init . browse-kill-ring-default-keybindings))
-
-;; (use-package clipetty
-;;   :commands (global-clipetty-mode clipetty-kill-ring-save))
-
-;; (use-package guru-mode
-;;   :hook (after-init . guru-global-mode)
-;;   :config
-;;   (setq guru-warn-only nil))
-
-(use-package typescript-mode
-  :mode (("\\.ts\\'" . typescript-mode))
-  :mode (("\\.tsx\\'" . typescript-mode)))
+;;==================================================
+;; lsp config
+;;==================================================
 
 (use-package flycheck
   :hook (prog-mode . flycheck-mode)
   :config
   (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
     [128 192 224 192 128] nil nil 'center))
-
-(use-package cape
-  ;; Bind dedicated completion commands
-  :bind (("<f8> s" . cape-symbol)
-         ("<f8> <f8>" . cape-dabbrev)
-         ("<f8> k" . cape-keyword)
-         ("<f8> f" . cape-file)
-         ("<f8> t" . complete-tag)
-         ("<f8> i" . cape-ispell)
-         ("<f8> a" . cape-abbrev)
-         ("<f8> l" . cape-line)
-         ("<f8> w" . cape-dict))
-  :commands cape-capf-buster
-  :init
-  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
-    (add-hook 'completion-at-point-functions cape 'append)))
 
 (use-package lsp-mode
   :custom
@@ -1573,222 +1597,9 @@ comment to the line."
 ;; (use-package goto-line-preview
 ;;   :bind ([remap goto-line] . goto-line-preview))
 
-(use-package try
-  :commands try)
-
-(use-package color-identifiers-mode
-  :commands color-identifiers-mode)
-
-(use-package py-isort
-  :commands py-isort-buffer)
-
-;; (use-package blacken
-;;   :hook (python-mode . blacken-mode)
-;;   :commands blacken-mode blacken-buffer)
-
-(use-package format-all
-  :hook (python-mode . format-all-mode)
-  :config
-  (setq-default format-all-formatters
-                '(("Python" yapf))))
-
-(use-package pyvenv
-  :config
-  (setq pyvenv-mode-line-indicator
-        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
-  (pyvenv-mode +1))
-
-(use-package keypression
-  :commands keypression-mode)
-
-(use-package command-log-mode
-  :commands command-log-mode)
-
-(use-package focus
-  :commands focus-mode
-  :config
-  (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
-
-(use-package dimmer
-  :hook (after-init . dimmer-mode)
-  :config
-  (setq dimmer-fraction 0.25)
-  (dimmer-configure-which-key)
-  (dimmer-configure-magit))
-
-;; (use-package selectrum-prescient
-;;   :commands selectrum-prescient-mode
-;;   :config
-;;   (setq prescient-filter-method '(literal regexp fuzzy))
-;;   (setq prescient-history-length 1000))
-
-(use-package marginalia
-  :init
-  (marginalia-mode))
-
-(use-package all-the-icons-completion
-  :after (marginalia all-the-icons)
-  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup)
-  :init
-  (all-the-icons-completion-mode))
-
-(use-package orderless
-  :config
-  ;; orderless-flex is probably more "flex" but this makes
-  ;; highlighting easier to understand (at least for me)
-  (defun jccb/orderless-flex-non-greedy (component)
-    (orderless--separated-by
-        '(minimal-match (zero-or-more nonl))
-      (cl-loop for char across component collect char)))
-
-  (defun jccb/orderless-dispatcher (pattern _index _total)
-    (cond ((string-suffix-p "!" pattern)
-           `(orderless-without-literal . ,(substring pattern 0 -1)))
-          ((string-suffix-p "~" pattern)
-           `(orderless-regexp . ,(substring pattern 0 -1)))
-          ((string-suffix-p "\\" pattern)
-           `(orderless-initialism . ,(substring pattern 0 -1)))
-          ((string-suffix-p "/" pattern)
-           `(orderless-prefixes . ,(substring pattern 0 -1)))
-          ((string-suffix-p "$" pattern)
-           `(orderless-regexp . ,pattern))
-          ((string-prefix-p "^" pattern)
-           `(orderless-regexp . ,pattern))
-          ((string-suffix-p "=" pattern)
-           `(orderless-literal . ,(substring pattern 0 -1)))))
-
-  (setq completion-styles '(orderless)
-        orderless-component-separator 'orderless-escapable-split-on-space
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion))))
-  (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
-        orderless-style-dispatchers '(jccb/orderless-dispatcher)))
-
-
-(use-package vertico
-  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
-                     :includes (vertico-indexed
-                                vertico-flat
-                                vertico-grid
-                                vertico-mouse
-                                vertico-quick
-                                vertico-buffer
-                                vertico-repeat
-                                vertico-reverse
-                                vertico-directory
-                                vertico-multiform
-                                vertico-unobtrusive))
-  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
-         (minibuffer-setup . vertico-repeat-save))
-  ;; :hook (after-init . vertico-multiform-mode)
-  :bind (:map vertico-map
-              ("M-q"   . vertico-quick-insert)
-              ("C-q"   . vertico-quick-exit)
-              ("S-SPC" . jccb/vertico-restrict-to-matches)
-              ("RET"   . vertico-directory-enter)
-              ("DEL"   . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
-  :bind ("C-c C-r" . vertico-repeat)
-  :custom
-  (vertico-count 15)
-  (vertico-cycle nil)
-  (vertico-grid-separator "       ")
-  (vertico-grid-lookahead 50)
-  (vertico-buffer-display-action '(display-buffer-reuse-window))
-  :init
-  (vertico-mode)
-  (defun jccb/vertico-restrict-to-matches ()
-    (interactive)
-    (let ((inhibit-read-only t))
-      (goto-char (point-max))
-      (insert " ")
-      (add-text-properties (minibuffer-prompt-end) (point-max)
-                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
-  (advice-add #'vertico--format-candidate :around
-              (lambda (orig cand prefix suffix index _start)
-                (setq cand (funcall orig cand prefix suffix index _start))
-                (concat
-                 (if (= vertico--index index)
-                     (propertize "» " 'face 'vertico-current)
-                   "  ")
-                 cand))))
-
-;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-;; Vertico commands are hidden in normal buffers.
-(setq read-extended-command-predicate
-      #'command-completion-default-include-p)
-
-(use-package corfu
-  :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
-  :bind ("M-/" . completion-at-point)
-  :bind (:map corfu-map
-              ("SPC" . corfu-insert-separator)
-              ("C-l" . corfu-show-location)
-              ("C-a" . corfu-beginning-of-prompt)
-              ("C-e" . corfu-end-of-prompt)
-              ("M-m" . corfu-move-to-minibuffer))
-  :custom
-  (corfu-cycle t)
-  (corfu-auto nil)
-  (corfu-min-width 50)
-  (corfu-max-width 100)
-  (corfu-echo-documentation nil)
-  :init
-  (corfu-global-mode)
-  (setq completion-cycle-threshold nil)
-  (setq tab-always-indent 'complete)
-  ;; (setq tab-first-completion 'word-or-paren-or-punct)
-
-  (defun corfu-move-to-minibuffer ()
-    (interactive)
-    (let ((completion-extra-properties corfu--extra)
-          completion-cycle-threshold completion-cycling)
-      (apply #'consult-completion-in-region completion-in-region--data)))
-
-  (defun corfu-beginning-of-prompt ()
-    "Move to beginning of completion input."
-    (interactive)
-    (corfu--goto -1)
-    (goto-char (car completion-in-region--data)))
-
-  (defun corfu-end-of-prompt ()
-    "Move to end of completion input."
-    (interactive)
-    (corfu--goto -1)
-    (goto-char (cadr completion-in-region--data)))
-
-  (defun corfu-enable-always-in-minibuffer ()
-    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
-    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
-                (bound-and-true-p vertico--input))
-      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
-      (corfu-mode 1)))
-
-  (set-face-attribute 'corfu-current nil
-                      :foreground 'unspecified
-                      :background 'unspecified
-                      :inherit 'vertico-current))
-
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-use-icons t)
-  (kind-icon-default-face 'corfu-default)
-  (kind-icon-blend-background nil)
-  (kind-icon-blend-frac 0.08)
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
-(use-package dabbrev
-  ;; :bind (;;("M-/" . dabbrev-completion)
-  ;;        ("C-M-/" . dabbrev-expand))
-  :init
-  (setq dabbrev-check-all-buffers t
-        dabbrev-check-other-buffers t))
-
-(setq read-extended-command-predicate
-      #'command-completion-default-include-p)
-(setq tab-always-indent 'complete)
+;;==================================================
+;; Embark + Consult + Tempel
+;;==================================================
 
 (use-package consult-flycheck
   :commands consult-flycheck)
@@ -1875,8 +1686,8 @@ comment to the line."
          ("C-x C-d" . consult-dir)))
 
 (use-package embark
-  :bind (("C-." . e^mbark-act)
-         ("M-." . embark-dwim)
+  :bind (("C-."   . embark-act)
+         ("M-."   . embark-dwim)
          ("C-h B" . embark-bindings))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
@@ -1890,142 +1701,6 @@ comment to the line."
   :ensure t
   :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
-
-;; (use-package org-plus-contrib
-;;   :pin org)
-
-;; (use-package org
-;;   :ensure org-plus-contrib
-;;   :pin org
-;;   ;; :hook (org-mode . org-indent-mode)
-;;   :commands org-agenda org-capture org-buffer-list
-;;   :bind (("<f12> a"     . org-agenda)
-;;          ("<f12> c"     . org-capture)
-;;          ("<f12> b"     . org-switchb)
-;;          ("<f12> <f11>" . jccb/org-agenda-switch-to-buffer)
-;;          ("<f12> <f12>" . jccb/capture-task)
-;;          ("<f12> w"     . jccb/org-agenda-work)
-;;          ("<f12> p"     . jccb/org-agenda-personal)
-;;          ("<f12> l"     . org-store-link)
-;;          :map org-agenda-mode-map
-;;          ("y" . org-agenda-todo-yesterday))
-;;   :init
-;;   (setq org-modules '(org-habit))
-;;   :config
-;;   (defun jccb/capture-task () (interactive) (org-capture nil "t"))
-;;   (defun jccb/org-agenda-work () (interactive) (org-agenda nil "w"))
-;;   (defun jccb/org-agenda-personal () (interactive) (org-agenda nil "p"))
-;;   (defun jccb/org-agenda-switch-to-buffer () (interactive) (switch-to-buffer "*Org Agenda*"))
-
-;;   (org-load-modules-maybe t)
-;;   (advice-add 'org-refile :after 'org-save-all-org-buffers)
-;;   ;; (add-hook 'org-agenda-finalize-hook 'hide-mode-line-mode)
-;;   (setq org-agenda-span 7
-;;         org-agenda-start-with-log-mode t
-;;         org-special-ctrl-a/e t
-;;         org-special-ctrl-k t
-;;         org-use-fast-todo-selection t
-;;         org-log-done 'time
-;;         org-log-into-drawer t
-;;         org-catch-invisible-edits 'show-and-error
-;;         org-habit-graph-column 50
-;;         org-habit-show-habits-only-for-today t
-;;         org-habit-show-all-today nil
-;;         org-habit-following-days 3
-;;         org-habit-show-done-always-green t
-;;         org-directory "~/org/"
-;;         org-default-notes-file "~/org/notes.org"
-;;         org-agenda-files (list org-directory)
-;;         org-agenda-start-on-weekday nil
-;;         org-ellipsis "…"
-;;         org-agenda-use-time-grid nil
-;;         org-refile-targets '((nil :maxlevel . 2)
-;;                              (org-agenda-files :maxlevel . 2))
-;;         org-outline-path-complete-in-steps nil
-;;         org-refile-use-outline-path 'file)
-
-;;   (setq org-todo-keywords
-;;         '((sequence "TODO(t)" "NEXT(n!)" "IN-PROGRESS(i!)" "|" "DONE(d!)")
-;;           (sequence "SOMETIME(s)" "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)")))
-
-;;   (setq org-todo-keyword-faces
-;;         `(("TODO"        . ,(doom-color 'yellow))
-;;           ("IN-PROGRESS" . ,(doom-color 'orange))
-;;           ("NEXT"        . ,(doom-color 'red))
-;;           ("SOMETIME"    . ,(doom-color 'base7))
-;;           ("WAITING"     . ,(doom-color 'base6))
-;;           ("HOLD"        . ,(doom-color 'base5))
-;;           ("DONE"        . ,(doom-color 'green))
-;;           ("CANCELED"    . ,(doom-color 'green)))
-;;         org-priority-faces
-;;         `((?A . ,(doom-color 'base8))
-;;           (?B . ,(doom-color 'base7))
-;;           (?C . ,(doom-color 'base6))))
-
-;;   (setq org-tag-alist '(("work"     . ?w)
-;;                         ("personal" . ?p)
-;;                         ("kb"       . ?k)
-;;                         ("idea"     . ?i)
-;;                         ("learn"    . ?l)))
-
-;;   (setq jccb/org-todo-sort-order '("NEXT"
-;;                                    "IN-PROGRESS"
-;;                                    "TODO"
-;;                                    "WAITING"
-;;                                    "HOLD"
-;;                                    "SOMETIME"
-;;                                    "DONE"
-;;                                    "CANCELED"))
-;;   (defun jccb/org-sort (a b)
-;;     (when-let ((state-a (get-text-property 14 'todo-state a))
-;;                (state-b (get-text-property 14 'todo-state b))
-;;                (cmp (--map (cl-position-if (lambda (x)
-;;                                              (equal x it))
-;;                                            jccb/org-todo-sort-order)
-;;                            (list state-a state-b))))
-;;       (cond ((apply '> cmp) 1)
-;;             ((apply '< cmp) -1)
-;;             (t nil))))
-;;   (setq org-agenda-cmp-user-defined #'jccb/org-sort
-;;         org-agenda-sorting-strategy '(user-defined-up priority-down timestamp-up))
-
-;;   (setq org-agenda-custom-commands
-;;         '(("w" "Work Agenda"
-;;            ((agenda "" nil)
-;;             (tags-todo "-habit"
-;;                        ((org-agenda-overriding-header "Tasks"))))
-;;            ((org-agenda-tag-filter-preset '("+work" "-xhome"))))
-;;           ("p" "Personal Agenda"
-;;            ((agenda "" nil)
-;;             (tags-todo "-habit"
-;;                        ((org-agenda-overriding-header "Tasks"))))
-;;            ((org-agenda-tag-filter-preset '("-work" "-xhome"))
-;;             (org-habit-show-habits-only-for-today t)
-;;             (org-habit-show-all-today t)
-;;             (org-agenda-span 1)))))
-
-;;   ;; make org work with shackle
-;;   (defun org-switch-to-buffer-other-window (&rest args)
-;;     (apply 'switch-to-buffer-other-window args)))
-
-(use-package so-long
-  :hook (after-init . global-so-long-mode))
-
-(use-package dtrt-indent
-  :hook (after-init . dtrt-indent-global-mode))
-
-;; (use-package go-mode)
-
-(use-package super-save
-  :hook (after-init . super-save-mode)
-  :config
-  (setq super-save-auto-save-when-idle t))
-
-(use-package darkroom
-  :commands (darkroom-mode darkroom-tentative-mode)
-  :config
-  (setq darkroom-text-scale-increase 1.1))
-
 
 (use-package tempel
   :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
@@ -2045,51 +1720,134 @@ comment to the line."
                 (cons #'tempel-expand
                       completion-at-point-functions))))
 
-(use-package fasd
-  :hook (after-init . global-fasd-mode))
 
+;;==================================================
+;; Misc
+;;==================================================
 
-(use-package popper
-  :after doom-modeline
-  :bind (;(;"<f12>"   . popper-toggle-latest)
-         ("<f12>"   . popper-cycle)
-         ("C-<f12>" . popper-toggle-type))
-  :init
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "\\*Warnings\\*"
-          "\\*format-all-errors\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
-          "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
-          "^\\*term.*\\*$"   term-mode   ;term as a popup
-          "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
-          help-mode
-          compilation-mode))
-  :config
-  (popper-mode +1)
-  (popper-echo-mode +1)
-  (setq popper-mode-line "")
-  (doom-modeline-def-segment popper
-    "The popper window type."
-    (when (popper-popup-p (current-buffer))
-      (concat
-       ;; (doom-modeline-spc)
-       (propertize (concat "POP" (doom-modeline-spc))
-                   'face (if (doom-modeline--active)
-                             'doom-modeline-panel
-                           'mode-line-inactive)))))
-
-  (doom-modeline-def-modeline 'main
-    '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
-    '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
-
-(use-package iedit
-  :commands iedit-mode)
-
-;; ;;; Don't show help for completions
-;; (setq completion-show-help nil)
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
+
+(use-package crux
+  :commands crux-find-shell-init-file
+  :bind (("C-a"          . crux-move-beginning-of-line)
+         ("S-<return>"   . crux-smart-open-line)
+         ("C-S-k"        . crux-kill-whole-line)
+         ("C-S-<return>" . crux-smart-open-line-above))
+  :config
+  (crux-with-region-or-buffer indent-region)
+  (crux-with-region-or-buffer untabify)
+  (crux-reopen-as-root-mode +1))
+
+(use-package helpful
+  :commands (helpful--read-symbol
+             helpful-callable)
+  :bind (([remap describe-command]  . helpful-command)
+         ([remap describe-key]      . helpful-key)
+         ([remap describe-symbol]   . helpful-symbol)
+         ([remap describe-function] . helpful-function)
+         ([remap describe-variable] . helpful-variable)
+         ("C-h ." . helpful-at-point))
+  :init
+  (with-eval-after-load 'apropos
+    ;; patch apropos buttons to call helpful instead of help
+    (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
+      (button-type-put
+       fun-bt 'action
+       (lambda (button)
+         (helpful-callable (button-get button 'apropos-symbol)))))
+    (dolist (var-bt '(apropos-variable apropos-user-option))
+      (button-type-put
+       var-bt 'action
+       (lambda (button)
+         (helpful-variable (button-get button 'apropos-symbol)))))))
+
+(use-package whitespace-cleanup-mode
+  :hook (after-init . global-whitespace-cleanup-mode))
+
+(defun sanityinc/no-trailing-whitespace ()
+  "Turn off display of trailing whitespace in this buffer."
+  (setq show-trailing-whitespace nil))
+
+;; But don't show trailing whitespace in SQLi, inf-ruby etc.
+(dolist (hook '(special-mode-hook
+                Info-mode-hook
+                term-mode-hook
+                comint-mode-hook
+                compilation-mode-hook
+                isearch-mode-hook
+                minibuffer-setup-hook
+                vterm-mode-hook))
+  (add-hook hook #'sanityinc/no-trailing-whitespace))
+
+(use-package which-key
+  :hook (after-init . which-key-mode)
+  :init
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-idle-delay 0.75
+        which-key-idle-secondary-delay 0.05
+        which-key-side-window-slot -10)
+  :config
+  (which-key-setup-side-window-bottom)
+  (setq which-key-max-description-length 45))
+
+(use-package copy-as-format
+  :commands copy-as-format)
+
+;; Allow UTF or composed text from the clipboard, even in the terminal or on
+;; non-X systems (like Windows or macOS), where only `STRING' is used.
+(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+
+(use-package restart-emacs
+  :commands restart-emacs
+  :config
+  (defun jccb/disable-confirm-kill-emacs (&rest _)
+    (setq confirm-kill-emacs nil))
+  (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
+
+;; (use-package vterm
+;;   :hook (vterm-mode . hide-mode-line-mode)
+;;   :commands vterm
+;;   :init
+;;   (add-to-list 'display-buffer-alist
+;;                '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+;;                  (display-buffer-reuse-window display-buffer-in-side-window)
+;;                  (side . bottom)
+;;                  ;;(dedicated . t) ;dedicated is supported in emacs27
+;;                  (reusable-frames . visible)
+;;                  (window-height . 0.3)))
+;;   :config
+;;   (unbind-key "<f12>" vterm-mode-map))
+
+;; (use-package vterm-toggle
+;;   :bind (("<f12>" . vterm-toggle)
+;;          ("C-<f12>" . vterm-toggle-cd))
+;;   :config
+;;   (setq vterm-toggle-fullscreen-p nil))
+
+(use-package keypression
+  :commands keypression-mode)
+
+(use-package command-log-mode
+  :commands command-log-mode)
+
+(use-package focus
+  :commands focus-mode
+  :config
+  (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
+
+(use-package server
+  :if (display-graphic-p)
+  :hook (after-init . server-start))
+
+;; load additional local settings (if they exist)
+(use-package jccb-local
+  :straight nil
+  :ensure nil
+  :load-path "site-lisp"
+  :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
 ;; use-package seq: init -> config
