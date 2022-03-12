@@ -467,6 +467,10 @@
       '(read-only t cursor-intangible t point-entered minibuffer-avoid-prompt face minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
+(defun crm-indicator (args)
+  (cons (concat "[Multi] " (car args)) (cdr args)))
+(advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -1471,32 +1475,60 @@ comment to the line."
   (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
     [128 192 224 192 128] nil nil 'center))
 
+(use-package cape
+  ;; Bind dedicated completion commands
+  :bind (("<f8> s" . cape-symbol)
+         ("<f8> <f8>" . cape-dabbrev)
+         ("<f8> k" . cape-keyword)
+         ("<f8> f" . cape-file)
+         ("<f8> t" . complete-tag)
+         ("<f8> i" . cape-ispell)
+         ("<f8> a" . cape-abbrev)
+         ("<f8> l" . cape-line)
+         ("<f8> w" . cape-dict))
+  :commands cape-capf-buster
+  :init
+  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
+    (add-hook 'completion-at-point-functions cape 'append)))
+
 (use-package lsp-mode
-  :after (orderless corfu cape)
-  :commands (lsp lsp-deferred)
-  :custom (lsp-completion-provider :none)
-  :hook (((typescript-mode js2-mode) . lsp)
-         (lsp-mode . lsp-enable-which-key-integration)
-         (lsp-completion-mode . jccb/corfu-lsp-setup))
-  :bind (:map corfu-map
-              ("M-m" . corfu-move-to-minibuffer))
+  :custom
+  (lsp-completion-provider :none)
+  :commands lsp
+  :hook
+  (lsp-completion-mode . jccb/lsp-mode-setup-completion)
+  (lsp-mode . lsp-enable-which-key-integration)
   :init
   (setq read-process-output-max (* 1024 1024)
         lsp-keymap-prefix "C-c l")
 
-  (defun jccb/corfu-lsp-setup ()
+  (defun jccb/orderless-dispatch-flex-first (_pattern index _total)
+    (and (eq index 0) 'orderless-flex))
+
+  (defun jccb/lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless)))
 
-  ;; optionally configure the cape-capf-buster.
+  (add-hook 'orderless-style-dispatchers #'jccb/orderless-dispatch-flex-first nil 'local)
   (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
 
   :config
-  (defun corfu-move-to-minibuffer ()
-    (interactive)
-    (let ((completion-extra-properties corfu--extra)
-          completion-cycle-threshold completion-cycling)
-      (apply #'consult-completion-in-region completion-in-region--data)))
+  (setq lsp-auto-guess-root t)
+  (setq lsp-log-io nil)
+  (setq lsp-restart 'auto-restart)
+  (setq lsp-enable-symbol-highlighting nil)
+  (setq lsp-enable-on-type-formatting nil)
+  (setq lsp-signature-auto-activate nil)
+  (setq lsp-signature-render-documentation nil)
+  ;; (setq lsp-eldoc-hook nil)
+  (setq lsp-modeline-code-actions-enable nil)
+  (setq lsp-modeline-diagnostics-enable nil)
+  (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-semantic-tokens-enable nil)
+  (setq lsp-enable-folding nil)
+  (setq lsp-enable-imenu t)
+  (setq lsp-enable-snippet nil)
+  (setq lsp-idle-delay 0.5)
 
   (setq lsp-headerline-breadcrumb-enable nil
         lsp-signature-render-documentation nil
@@ -1504,26 +1536,33 @@ comment to the line."
         ;; lsp-eldoc-render-all nil
         lsp-lens-enable nil))
 
-(use-package lsp-ui
-  :commands lsp-ui-mode
-  :config
-  (setq lsp-ui-sideline-show-hover t
-        lsp-ui-sideline-delay 1
-        lsp-ui-doc-delay 2
-        ;; lsp-ui-sideline-enable nil
-        lsp-ui-sideline-ignore-duplicates t
-        lsp-ui-doc-position 'bottom
-        lsp-ui-doc-alignment 'frame
-        lsp-ui-doc-header nil
-        lsp-ui-doc-include-signature t
-        lsp-ui-doc-use-childframe t))
+;; (use-package lsp-ui
+;;   :commands lsp-ui-mode
+;;   :config
+;;   (setq lsp-ui-sideline-show-hover t
+;;         lsp-ui-sideline-delay 1
+;;         lsp-ui-doc-delay 2
+;;         ;; lsp-ui-sideline-enable nil
+;;         lsp-ui-sideline-ignore-duplicates t
+;;         lsp-ui-doc-position 'bottom
+;;         lsp-ui-doc-alignment 'frame
+;;         lsp-ui-doc-header nil
+;;         lsp-ui-doc-include-signature t
+;;         lsp-ui-doc-use-childframe t))
 
+;; (use-package lsp-python-ms
+;;   :init (setq lsp-python-ms-auto-install-server t)
+;;   :hook (python-mode . (lambda ()
+;;                          (require 'lsp-python-ms)
+;;                          (lsp))))
 
-(use-package lsp-python-ms
-  :init (setq lsp-python-ms-auto-install-server t)
+(use-package lsp-pyright
   :hook (python-mode . (lambda ()
-                         (require 'lsp-python-ms)
-                         (lsp))))
+                         (require 'lsp-pyright)
+                         (lsp)))
+  :init
+  (when (executable-find "python3")
+    (setq lsp-pyright-python-executable-cmd "python3")))
 
 ;; (use-package lsp-jedi)
 
@@ -1584,186 +1623,14 @@ comment to the line."
 ;;   (setq prescient-history-length 1000))
 
 (use-package marginalia
-  :hook (after-init . marginalia-mode)
-  :bind (:map minibuffer-local-map ("C-M-a" . marginalia-cycle))
-  :config
-  (advice-add #'marginalia-cycle :after
-              (lambda () (when (bound-and-true-p selectrum-mode) (selectrum-exhibit))))
-  (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+  :init
+  (marginalia-mode))
 
 (use-package all-the-icons-completion
   :after (marginalia all-the-icons)
   :hook (marginalia-mode . all-the-icons-completion-marginalia-setup)
   :init
   (all-the-icons-completion-mode))
-
-
-(use-package vertico
-  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
-                     :includes (vertico-indexed
-                                vertico-flat
-                                vertico-grid
-                                vertico-mouse
-                                vertico-quick
-                                vertico-buffer
-                                vertico-repeat
-                                vertico-reverse
-                                vertico-directory
-                                vertico-multiform
-                                vertico-unobtrusive))
-  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
-         (minibuffer-setup . vertico-repeat-save))
-  :hook (after-init . vertico-mode)
-  ;; :hook (after-init . vertico-multiform-mode)
-  :bind (:map vertico-map
-              ("M-q"   . vertico-quick-insert)
-              ("C-q"   . vertico-quick-exit)
-              ("S-SPC" . jccb/vertico-restrict-to-matches)
-              ("RET"   . vertico-directory-enter)
-              ("DEL"   . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
-  :bind ("C-c C-r" . vertico-repeat)
-  :custom
-  ;; (vertico-multiform-categories
-  ;;  '((consult-grep buffer)
-  ;;    (consult-location)
-  ;;    (imenu buffer)
-  ;;    (library reverse indexed)
-  ;;    (t reverse)
-  ;;    ))
-  ;; (vertico-multiform-commands
-  ;;  '(("flyspell-correct-*" grid reverse)
-  ;;    (consult-yank-pop indexed)
-  ;;    (consult-flycheck)
-  ;;    (consult-lsp-diagnostics)))
-  (vertico-count 15)
-  (vertico-cycle nil)
-  (vertico-grid-separator "       ")
-  (vertico-grid-lookahead 50)
-  (vertico-buffer-display-action '(display-buffer-reuse-window))
-  :config
-  (defun jccb/vertico-restrict-to-matches ()
-    (interactive)
-    (let ((inhibit-read-only t))
-      (goto-char (point-max))
-      (insert " ")
-      (add-text-properties (minibuffer-prompt-end) (point-max)
-                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
-  (advice-add #'vertico--format-candidate :around
-              (lambda (orig cand prefix suffix index _start)
-                (setq cand (funcall orig cand prefix suffix index _start))
-                (concat
-                 (if (= vertico--index index)
-                     (propertize "» " 'face 'vertico-current)
-                   "  ")
-                 cand))))
-
-;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-;; Vertico commands are hidden in normal buffers.
-(setq read-extended-command-predicate
-      #'command-completion-default-include-p)
-
-(use-package corfu
-  :hook (after-init . corfu-global-mode)
-  :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
-  :bind ("M-/" . completion-at-point)
-  :bind (:map corfu-map
-              ("SPC" . corfu-insert-separator)
-              ("C-l" . corfu-show-location)
-              ("C-a" . corfu-beginning-of-prompt)
-              ("C-e" . corfu-end-of-prompt))
-  :custom
-  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  (corfu-auto nil)                 ;; Enable auto completion
-  (corfu-auto-delay 0.75)
-  (corfu-min-width 50)
-  (corfu-max-width 80)
-  (corfu-preview-current nil)
-  (corfu-echo-documentation nil)        ; Already use corfu-doc
-
-  :init
-  (setq completion-cycle-threshold nil)
-  (setq tab-always-indent 'complete)
-  ;; (setq tab-first-completion 'word-or-paren-or-punct)
-
-  (defun corfu-beginning-of-prompt ()
-    "Move to beginning of completion input."
-    (interactive)
-    (corfu--goto -1)
-    (goto-char (car completion-in-region--data)))
-
-  (defun corfu-end-of-prompt ()
-    "Move to end of completion input."
-    (interactive)
-    (corfu--goto -1)
-    (goto-char (cadr completion-in-region--data)))
-
-  (defun corfu-enable-always-in-minibuffer ()
-    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
-    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
-                (bound-and-true-p vertico--input))
-      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
-      (corfu-mode 1))))
-
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-use-icons t)
-  (kind-icon-default-face 'corfu-default)
-  (kind-icon-blend-background nil)
-  (kind-icon-blend-frac 0.08)
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
-;; (use-package corfu-doc
-;;   :straight (corfu-doc :type git :host github :repo "galeo/corfu-doc")
-;;   :after corfu
-;;   :hook (corfu-mode . corfu-doc-mode)
-;;   :bind (:map corfu-map
-;;               ;; This is a manual toggle for the documentation popup.
-;;               ([remap corfu-show-documentation] . corfu-doc-toggle)
-;;               ;; Scroll in the documentation window
-;;               ("M-n" . corfu-doc-scroll-up)
-;;               ("M-p" . corfu-doc-scroll-down))
-;;   :custom
-;;   (corfu-doc-delay 1.0)
-;;   (corfu-doc-max-width 70)
-;;   (corfu-doc-max-height 20)
-;;   (corfu-echo-documentation nil))
-
-(use-package dabbrev
-  ;; :bind (;;("M-/" . dabbrev-completion)
-  ;;        ("C-M-/" . dabbrev-expand))
-  :init
-  (setq dabbrev-check-all-buffers t
-        dabbrev-check-other-buffers t))
-
-(use-package cape
-  ;; Bind dedicated completion commands
-  :bind (("<f8> s" . cape-symbol)
-         ("<f8> <f8>" . cape-dabbrev)
-         ("<f8> k" . cape-keyword)
-         ("<f8> f" . cape-file)
-         ("<f8> t" . complete-tag)
-         ("<f8> i" . cape-ispell)
-         ("<f8> a" . cape-abbrev)
-         ("<f8> l" . cape-line)
-         ("<f8> w" . cape-dict))
-  :init
-  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
-    (add-hook 'completion-at-point-functions cape 'append)))
-
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
-;(setq completion-cycle-threshold 3)
-(setq read-extended-command-predicate
-      #'command-completion-default-include-p)
-(setq tab-always-indent 'complete)
 
 (use-package orderless
   :config
@@ -1798,26 +1665,130 @@ comment to the line."
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
 
+(use-package vertico
+  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
+                     :includes (vertico-indexed
+                                vertico-flat
+                                vertico-grid
+                                vertico-mouse
+                                vertico-quick
+                                vertico-buffer
+                                vertico-repeat
+                                vertico-reverse
+                                vertico-directory
+                                vertico-multiform
+                                vertico-unobtrusive))
+  :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy)
+         (minibuffer-setup . vertico-repeat-save))
+  ;; :hook (after-init . vertico-multiform-mode)
+  :bind (:map vertico-map
+              ("M-q"   . vertico-quick-insert)
+              ("C-q"   . vertico-quick-exit)
+              ("S-SPC" . jccb/vertico-restrict-to-matches)
+              ("RET"   . vertico-directory-enter)
+              ("DEL"   . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  :bind ("C-c C-r" . vertico-repeat)
+  :custom
+  (vertico-count 15)
+  (vertico-cycle nil)
+  (vertico-grid-separator "       ")
+  (vertico-grid-lookahead 50)
+  (vertico-buffer-display-action '(display-buffer-reuse-window))
+  :init
+  (vertico-mode)
+  (defun jccb/vertico-restrict-to-matches ()
+    (interactive)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert " ")
+      (add-text-properties (minibuffer-prompt-end) (point-max)
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+  (advice-add #'vertico--format-candidate :around
+              (lambda (orig cand prefix suffix index _start)
+                (setq cand (funcall orig cand prefix suffix index _start))
+                (concat
+                 (if (= vertico--index index)
+                     (propertize "» " 'face 'vertico-current)
+                   "  ")
+                 cand))))
 
-;; (use-package selectrum
-;;   :hook (after-init . jccb/selectrum-setup)
-;;   :bind ("C-c C-r" . selectrum-repeat)
-;;   :commands selectrum-mode
-;;   :config
-;;   (defun jccb/selectrum-setup ()
-;;     (setq selectrum-prescient-enable-filtering nil)
-;;     (setq selectrum-refine-candidates-function #'orderless-filter)
-;;     (setq orderless-skip-highlighting (lambda () selectrum-is-active))
-;;     (setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
-;;     (setq completion-styles '(orderless))
-;;     (selectrum-mode +1)
-;;     (selectrum-prescient-mode +1)
-;;     (prescient-persist-mode +1)
-;;     (marginalia-mode +1))
-;;   (setq selectrum-fix-vertical-window-height 15
-;;         ;; selectrum-num-candidates-displayed 15
-;;         selectrum-extend-current-candidate-highlight t
-;;         selectrum-show-indices nil))
+;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+;; Vertico commands are hidden in normal buffers.
+(setq read-extended-command-predicate
+      #'command-completion-default-include-p)
+
+(use-package corfu
+  :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
+  :bind ("M-/" . completion-at-point)
+  :bind (:map corfu-map
+              ("SPC" . corfu-insert-separator)
+              ("C-l" . corfu-show-location)
+              ("C-a" . corfu-beginning-of-prompt)
+              ("C-e" . corfu-end-of-prompt)
+              ("M-m" . corfu-move-to-minibuffer))
+  :custom
+  (corfu-cycle t)
+  (corfu-auto nil)
+  (corfu-min-width 50)
+  (corfu-max-width 100)
+  (corfu-echo-documentation nil)
+  :init
+  (corfu-global-mode)
+  (setq completion-cycle-threshold nil)
+  (setq tab-always-indent 'complete)
+  ;; (setq tab-first-completion 'word-or-paren-or-punct)
+
+  (defun corfu-move-to-minibuffer ()
+    (interactive)
+    (let ((completion-extra-properties corfu--extra)
+          completion-cycle-threshold completion-cycling)
+      (apply #'consult-completion-in-region completion-in-region--data)))
+
+  (defun corfu-beginning-of-prompt ()
+    "Move to beginning of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (car completion-in-region--data)))
+
+  (defun corfu-end-of-prompt ()
+    "Move to end of completion input."
+    (interactive)
+    (corfu--goto -1)
+    (goto-char (cadr completion-in-region--data)))
+
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
+                (bound-and-true-p vertico--input))
+      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
+      (corfu-mode 1)))
+
+  (set-face-attribute 'corfu-current nil
+                      :foreground 'unspecified
+                      :background 'unspecified
+                      :inherit 'vertico-current))
+
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-use-icons t)
+  (kind-icon-default-face 'corfu-default)
+  (kind-icon-blend-background nil)
+  (kind-icon-blend-frac 0.08)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+(use-package dabbrev
+  ;; :bind (;;("M-/" . dabbrev-completion)
+  ;;        ("C-M-/" . dabbrev-expand))
+  :init
+  (setq dabbrev-check-all-buffers t
+        dabbrev-check-other-buffers t))
+
+(setq read-extended-command-predicate
+      #'command-completion-default-include-p)
+(setq tab-always-indent 'complete)
 
 (use-package consult-flycheck
   :commands consult-flycheck)
@@ -2087,6 +2058,7 @@ comment to the line."
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "\\*Warnings\\*"
+          "\\*format-all-errors\\*"
           "Output\\*$"
           "\\*Async Shell Command\\*"
           "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
