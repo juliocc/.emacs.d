@@ -1521,8 +1521,8 @@ comment to the line."
   (lsp-completion-mode . jccb/lsp-mode-setup-completion)
   (lsp-mode . lsp-enable-which-key-integration)
   :init
-  (setq read-process-output-max (* 1024 1024)
-        lsp-keymap-prefix "C-c l")
+  (setq read-process-output-max (* 1024 1024))
+  (setq lsp-keymap-prefix "C-c l")
 
   (defun jccb/orderless-dispatch-flex-first (_pattern index _total)
     (and (eq index 0) 'orderless-flex))
@@ -1535,7 +1535,7 @@ comment to the line."
   (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
 
   :config
-  (setq lsp-auto-guess-root t)
+  ;; (setq lsp-auto-guess-root t)
   (setq lsp-log-io nil)
   (setq lsp-restart 'auto-restart)
   (setq lsp-enable-symbol-highlighting nil)
@@ -1543,25 +1543,25 @@ comment to the line."
   (setq lsp-signature-auto-activate nil)
   (setq lsp-signature-render-documentation nil)
   ;; (setq lsp-eldoc-hook nil)
-  (setq lsp-modeline-code-actions-enable nil)
-  (setq lsp-modeline-diagnostics-enable nil)
+  (setq lsp-modeline-code-actions-enable t)
+  ;; (setq lsp-modeline-diagnostics-enable t)
   (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-semantic-tokens-enable nil)
+  (setq lsp-semantic-tokens-enable t)
   (setq lsp-enable-folding nil)
-  (setq lsp-enable-imenu t)
+  ;; (setq lsp-enable-imenu t)
   (setq lsp-enable-snippet nil)
   (setq lsp-idle-delay 0.5)
-
-  (setq lsp-headerline-breadcrumb-enable nil
-        lsp-signature-render-documentation nil
-        ;; lsp-eldoc-enable-hover nil
-        ;; lsp-eldoc-render-all nil
-        lsp-lens-enable nil))
+  (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-signature-render-documentation nil)
+  (setq lsp-eldoc-enable-hover nil)
+  (setq lsp-eldoc-render-all nil)
+  (setq lsp-lens-enable nil))
 
 ;; (use-package lsp-ui
-;;   :commands lsp-ui-mode
+;;   :hook (lsp-mode . lsp-ui-mode)
 ;;   :config
-;;   (setq lsp-ui-sideline-show-hover t
+;;   (setq lsp-ui-sideline-enable nil
+;;         lsp-ui-sideline-show-code-actions nil
 ;;         lsp-ui-sideline-delay 1
 ;;         lsp-ui-doc-delay 2
 ;;         ;; lsp-ui-sideline-enable nil
@@ -1602,8 +1602,10 @@ comment to the line."
 (use-package consult-flycheck
   :commands consult-flycheck)
 
-;; (use-package consult-lsp
-;;   :commands (consult-lsp-symbols consult-lsp-diagnostics consult-lsp-file-symbols))
+(use-package consult-lsp
+  :commands (consult-lsp-symbols
+             consult-lsp-diagnostics
+             consult-lsp-file-symbols))
 
 (use-package consult
   :bind (("C-c h" . consult-history)
