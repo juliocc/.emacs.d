@@ -630,10 +630,8 @@
 ;; (setq ring-bell-function 'ignore)
 
 (use-package ns-auto-titlebar
-  :defer 1
-  :if *is-a-windowed-mac*
-  :config
-  (ns-auto-titlebar-mode +1))
+  :hook (after-init . ns-auto-titlebar-mode)
+  :if *is-a-windowed-mac*)
 
 (use-package reveal-in-osx-finder
   :if *is-a-mac*
@@ -649,10 +647,10 @@
 ;;==================================================
 ;; which-func-mode settings
 ;;==================================================
-(use-package which-func
-  :defer 5
-  :config
-  (which-function-mode +1))
+;; (use-package which-func
+;;   :defer 5
+;;   :config
+;;   (which-function-mode +1))
 
 ;;==================================================
 ;; git and magit settings
@@ -676,11 +674,10 @@
 ;;   (setq magit-delta-delta-args (append magit-delta-delta-args '("--features" "magit-delta"))))
 
 (use-package magit
-  ;;:after selectrum
-  :defer 5
+  :defer 1
   :bind (("C-c C-g" . magit-status)
          ;;("C-x C-z" . magit-status-quick)
-         ("C-c g" . magit-file-dispatch)
+         ("C-c g"   . magit-file-dispatch)
          ("C-c M-g" . magit-dispatch))
   :config
   (global-git-commit-mode +1)
@@ -924,8 +921,8 @@
   :ensure nil
   :defer 1
   :commands (chmod+x-this jccb/doctor)
-  :bind (("M-p" . goto-match-paren)
-         ("C-o" . jccb/open-next-line)
+  :bind (("M-p"   . goto-match-paren)
+         ("C-o"   . jccb/open-next-line)
          ("C-M-o" . jccb/open-previous-line))
   :config (jccb/doctor))
 
@@ -1422,11 +1419,11 @@ comment to the line."
   :config
   (unbind-key "<f12>" vterm-mode-map))
 
-  (use-package vterm-toggle
-    :bind (("<f12>" . vterm-toggle)
-           ("C-<f12>" . vterm-toggle-cd))
-    :config
-    (setq vterm-toggle-fullscreen-p nil))
+;; (use-package vterm-toggle
+;;   :bind (("<f12>" . vterm-toggle)
+;;          ("C-<f12>" . vterm-toggle-cd))
+;;   :config
+;;   (setq vterm-toggle-fullscreen-p nil))
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
@@ -1907,7 +1904,7 @@ comment to the line."
          ("C-x C-d" . consult-dir)))
 
 (use-package embark
-  :bind (("C-." . embark-act)
+  :bind (("C-." . e^mbark-act)
          ("M-." . embark-dwim)
          ("C-h B" . embark-bindings))
   :init
@@ -2080,27 +2077,47 @@ comment to the line."
 (use-package fasd
   :hook (after-init . global-fasd-mode))
 
-;; (use-package shackle
-;;   :defer 1
-;;   :config
-;;   (setq
-;;    shackle-inhibit-window-quit-on-same-windows t
-;;    shackle-rules
-;;    '((helpful-mode   :select t :same t)
-;;      ("*Org Agenda*" :select t :same t)))
-;;   (shackle-mode t))
 
-;; (use-package org-superstar
-;;   :after org
-;;   :hook (org-mode . org-superstart-mode))
+(use-package popper
+  :after doom-modeline
+  :bind (;(;"<f12>"   . popper-toggle-latest)
+         ("<f12>"   . popper-cycle)
+         ("C-<f12>" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "\\*Warnings\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+          "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
+          "^\\*term.*\\*$"   term-mode   ;term as a popup
+          "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
+          help-mode
+          compilation-mode))
+  :config
+  (popper-mode +1)
+  (popper-echo-mode +1)
+  (setq popper-mode-line "")
+  (doom-modeline-def-segment popper
+    "The popper window type."
+    (when (popper-popup-p (current-buffer))
+      (concat
+       ;; (doom-modeline-spc)
+       (propertize (concat "POP" (doom-modeline-spc))
+                   'face (if (doom-modeline--active)
+                             'doom-modeline-panel
+                           'mode-line-inactive)))))
 
-;; ;; Cycle completion on smaller number of candidates
-;; (setq completion-cycle-threshold 5)
+  (doom-modeline-def-modeline 'main
+    '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
+    '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
+
+(use-package iedit
+  :commands iedit-mode)
 
 ;; ;;; Don't show help for completions
 ;; (setq completion-show-help nil)
-
-
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
 
 ;; use-package seq: init -> config
