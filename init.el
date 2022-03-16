@@ -465,7 +465,8 @@
   :init
   (corfu-global-mode)
 
-  (setq completion-cycle-threshold nil)
+  (setq completion-cycle-threshold 3)
+  ;;(setq completion-cycle-threshold nil)
   (setq tab-always-indent 'complete)
   ;; (setq tab-first-completion 'word-or-paren-or-punct)
 
@@ -608,7 +609,9 @@
   :hook (after-init . global-highlight-parentheses-mode))
 
 (use-package iedit
-  :commands iedit-mode)
+  :commands iedit-mode
+  :custom
+  (iedit-toggle-key-default (kbd "C-c ;")))
 
 (use-package hl-line
   ;; Highlights the current line
@@ -754,13 +757,18 @@
 
 (use-package popper
   :after doom-modeline
-  :bind (;(;"<f12>"   . popper-toggle-latest)
-         ("<f12>"   . popper-cycle)
-         ("C-<f12>" . popper-toggle-type))
+  :bind (("<f12>"   . popper-toggle-latest)
+         ("C-<f12>"   . popper-cycle)
+         ;; ("C-<f12>" . popper-toggle-type)
+         )
   :init
+  (popper-mode +1)
+  (popper-echo-mode +1)
+
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "\\*Warnings\\*"
+          "\\*Python\\*"
           "\\*format-all-errors\\*"
           "Output\\*$"
           "\\*Async Shell Command\\*"
@@ -770,9 +778,6 @@
           "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
           help-mode
           compilation-mode))
-  :init
-  (popper-mode +1)
-  (popper-echo-mode +1)
   (setq popper-mode-line "")
   (doom-modeline-def-segment popper
     "The popper window type."
@@ -1154,10 +1159,10 @@
 ;; Edit utilities
 ;;==================================================
 
-(use-package elec-pair
-  :hook (after-init . electric-pair-mode)
-  :config
-  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
+;; (use-package elec-pair
+;;   :hook (after-init . electric-pair-mode)
+;;   :config
+;;   (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
 
 (use-package paren
   :hook (after-init . show-paren-mode)
@@ -1279,13 +1284,17 @@
 (use-package rainbow-mode
   :hook (css-mode html-mode))
 
-(use-package highlight-symbol
-  ;; :hook (prog-mode . highlight-symbol-mode)
-  :commands (highlight-symbol
-             highlight-symbol-query-replace
-             highlight-symbol-occur)
-  :config
-  (setq highlight-symbol-idle-delay 0.5))
+;; (use-package highlight-symbol
+;;   ;; :hook (prog-mode . highlight-symbol-mode)
+;;   :commands (highlight-symbol
+;;              highlight-symbol-query-replace
+;;              highlight-symbol-occur)
+;;   :config
+;;   (setq highlight-symbol-idle-delay 0.5))
+
+(use-package symbol-overlay
+  :commands (symbol-overlay-mode
+             symbol-overlay-put))
 
 (use-package avy
   :bind (("M-g g"   . avy-goto-line)
@@ -1443,6 +1452,9 @@ comment to the line."
   :mode (("\\.ts\\'" . typescript-mode))
   :mode (("\\.tsx\\'" . typescript-mode)))
 
+
+(setq-default python-indent-offset 2)
+
 ;; (use-package scss-mode
 ;;   :config
 ;;   (setq scss-compile-at-save nil))
@@ -1490,6 +1502,7 @@ comment to the line."
 (use-package format-all
   :hook (python-mode . format-all-mode)
   :config
+  (setq format-all-show-errors 'never)
   (setq-default format-all-formatters
                 '(("Python" yapf))))
 
@@ -1652,27 +1665,13 @@ comment to the line."
         register-preview-function #'consult-register-format)
 
   (consult-customize
-   consult-goto-line :preview-key 'any)
-
-  (consult-customize
    consult-ripgrep consult-git-grep consult-grep
+   consult-goto-line :preview-key 'any
    consult-bookmark consult-recent-file consult-xref
    consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
    :preview-key (kbd "M-."))
-  ;; (defun reduce-which-key-delay (fun &rest args)
-  ;;   (let ((timer (and consult-narrow-key
-  ;;                     (memq :narrow args)
-  ;;                     (run-at-time 0.01 0.01
-  ;;                                  (lambda ()
-  ;;                                    (when (eq last-input-event (elt consult-narrow-key 0))
-  ;;                                      (which-key--start-timer 0.001)))))))
-  ;;     (unwind-protect
-  ;;         (apply fun args)
-  ;;       (when timer
-  ;;         (cancel-timer timer)
-  ;;         (which-key--start-timer)))))
-  ;; (advice-add #'consult--read :around #'reduce-which-key-delay)
-
+  ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  (setq consult-narrow-key "<")
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
