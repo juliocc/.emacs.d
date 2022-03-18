@@ -460,6 +460,7 @@
   (corfu-auto nil)
   (corfu-min-width 50)
   (corfu-max-width 100)
+  (corfu-count 20)
   (corfu-echo-documentation nil)
 
   :init
@@ -1245,14 +1246,14 @@
   (setq-default goggles-pulse t))
 
 (use-package drag-stuff
-  :hook ((prog-mode text-mode conf-mode) . turn-on-drag-stuff-mode)
+  :hook (fundamental-mode . turn-on-drag-stuff-mode)
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-define-keys))
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :hook ((prog-mode text-mode conf-mode) . whole-line-or-region-local-mode)
+  :hook (fundamental-mode . whole-line-or-region-local-mode)
   :config
   (whole-line-or-region-global-mode +1))
 
@@ -1533,6 +1534,7 @@ comment to the line."
   :hook
   (lsp-completion-mode . jccb/lsp-mode-setup-completion)
   (lsp-mode . lsp-enable-which-key-integration)
+  (python-mode . lsp-deferred)
   :init
   (setq read-process-output-max (* 1024 1024))
   (setq lsp-keymap-prefix "C-c l")
@@ -1549,8 +1551,9 @@ comment to the line."
 
   :config
   ;; (setq lsp-auto-guess-root t)
-  (setq lsp-log-io nil)
-  (setq lsp-restart 'auto-restart)
+  ;; (setq lsp-log-io nil)
+  ;; (setq lsp-restart 'auto-restart)
+  (add-to-list 'lsp-enabled-clients 'pylsp)
   (setq lsp-enable-symbol-highlighting nil)
   (setq lsp-enable-on-type-formatting nil)
   (setq lsp-signature-auto-activate nil)
@@ -1584,20 +1587,6 @@ comment to the line."
 ;;         lsp-ui-doc-header nil
 ;;         lsp-ui-doc-include-signature t
 ;;         lsp-ui-doc-use-childframe t))
-
-;; (use-package lsp-python-ms
-;;   :init (setq lsp-python-ms-auto-install-server t)
-;;   :hook (python-mode . (lambda ()
-;;                          (require 'lsp-python-ms)
-;;                          (lsp))))
-
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                         (require 'lsp-pyright)
-                         (lsp)))
-  :init
-  (when (executable-find "python3")
-    (setq lsp-pyright-python-executable-cmd "python3")))
 
 ;; (use-package lsp-jedi)
 
@@ -1833,11 +1822,6 @@ comment to the line."
 
 (use-package command-log-mode
   :commands command-log-mode)
-
-(use-package focus
-  :commands focus-mode
-  :config
-  (add-to-list 'focus-mode-to-thing '(python-mode . paragraph)))
 
 (use-package server
   :if (display-graphic-p)
