@@ -207,14 +207,15 @@
   (blink-cursor-mode -1))
 
 
-(defvar jccb/fixed-font "Iosevka SS09")
-(when (find-font (font-spec :name jccb/fixed-font))
+(defvar jccb/font-name "Iosevka SS09")
+(defvar jccb/font-size (if *is-a-windowed-mac* 200 150))
+(when (find-font (font-spec :name jccb/font-name))
   (set-face-attribute 'default nil
-                      :font jccb/fixed-font
-                      :height (if *is-a-windowed-mac* 200 150))
+                      :font jccb/font-name
+                      :height jccb/font-size)
   (set-face-attribute 'fixed-pitch nil
-                      :font jccb/fixed-font
-                      :height (if *is-a-windowed-mac* 200 150)))
+                      :font jccb/font-name
+                      :height jccb/font-size))
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
