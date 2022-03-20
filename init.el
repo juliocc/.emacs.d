@@ -61,7 +61,7 @@
     (expand-file-name path user-emacs-directory)))
 
 ;; Silence compiler warnings as they can be pretty disruptive
-(setq native-comp-async-report-warnings-errors nil)
+(setq native-comp-async-report-warnings-errors jccb/debug)
 
 ;;==================================================
 ;; Setup package management tools
@@ -115,8 +115,8 @@
   :hook (emacs-startup . gcmh-mode)
   :config
   (setq gcmh-idle-delay 'auto
-        gcmh-auto-idle-delay-factor 10
-        gcmh-high-cons-threshold (* 32 1024 1024)
+        ;; gcmh-auto-idle-delay-factor 10
+        ;; gcmh-high-cons-threshold (* 32 1024 1024)
         gcmh-verbose jccb/debug))
 
 ;;==================================================
@@ -211,10 +211,10 @@
 (when (find-font (font-spec :name jccb/fixed-font))
   (set-face-attribute 'default nil
                       :font jccb/fixed-font
-                      :height 200)
+                      :height (if *is-a-windowed-mac* 200 150))
   (set-face-attribute 'fixed-pitch nil
                       :font jccb/fixed-font
-                      :height 200))
+                      :height (if *is-a-windowed-mac* 200 150)))
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
