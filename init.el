@@ -61,7 +61,7 @@
     (expand-file-name path user-emacs-directory)))
 
 ;; Silence compiler warnings as they can be pretty disruptive
-(setq native-comp-async-report-warnings-errors jccb/debug)
+(setq native-comp-async-report-warnings-errors 'silent)
 
 ;;==================================================
 ;; Setup package management tools
@@ -150,6 +150,7 @@
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
   (load-theme 'doom-vibrant t)
+  ;; (load-theme 'doom-one-light t)
   (doom-themes-visual-bell-config))
 
 ;; (use-package modus-themes
@@ -174,7 +175,7 @@
 ;;         modus-themes-diffs nil)
 ;;   (modus-themes-load-themes)
 ;;   :config
-;;   (modus-themes-load-vivendi))
+;;   (modus-themes-load-operandi))
 
 (use-package doom-modeline
   :hook ((after-init . doom-modeline-mode)
@@ -207,16 +208,22 @@
   (blink-cursor-mode -1))
 
 
-(defvar jccb/font-name "Iosevka SS09")
+(defun jccb/set-font (font-name font-size)
+  (when (find-font (font-spec :name font-name))
+    (set-face-attribute 'default nil
+                        :font font-name
+                        :height font-size)
+    (set-face-attribute 'fixed-pitch nil
+                        :font font-name
+                        :height font-size)))
+
+(defvar jccb/font-name "Inconsolata Nerd Font")
 (defvar jccb/font-size (if *is-a-windowed-mac* 200 150))
-(when (find-font (font-spec :name jccb/font-name))
-  (set-face-attribute 'default nil
-                      :font jccb/font-name
-                      :height jccb/font-size)
-  (set-face-attribute 'fixed-pitch nil
-                      :font jccb/font-name
-                      :height jccb/font-size))
+
+(jccb/set-font jccb/font-name jccb/font-size)
 (global-font-lock-mode +1)
+
+
 
 (use-package display-line-numbers
   :straight nil
@@ -386,10 +393,21 @@
           ((string-suffix-p "=" pattern)
            `(orderless-literal . ,(substring pattern 0 -1)))))
 
-  (setq completion-styles '(orderless)
+
+  (defun basic-remote-try-completion (string table pred point)
+    (and (vertico--remote-p string)
+         (completion-basic-try-completion string table pred point)))
+  (defun basic-remote-all-completions (string table pred point)
+    (and (vertico--remote-p string)
+         (completion-basic-all-completions string table pred point)))
+  (add-to-list
+   'completion-styles-alist
+   '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+
+  (setq completion-styles '(orderless basic)
         orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion))))
+        completion-category-overrides '((file (styles basic-remote partial-completion))))
   (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
         orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
@@ -447,7 +465,6 @@
 
 (use-package corfu
   :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
-
   :bind ("M-/" . completion-at-point)
   :bind (:map corfu-map
               ("SPC" . corfu-insert-separator)
@@ -465,7 +482,7 @@
   (corfu-echo-documentation nil)
 
   :init
-  (corfu-global-mode)
+  (global-corfu-mode)
 
   (setq completion-cycle-threshold 3)
   ;;(setq completion-cycle-threshold nil)
@@ -515,10 +532,11 @@
          ("<f8> w" . cape-dict))
   :commands cape-capf-buster
   :init
-  (dolist (cape '(cape-symbol cape-dabbrev cape-keyword cape-file))
-    (add-hook 'completion-at-point-functions cape 'append)))
+  (dolist (cape '(cape-file cape-keyword cape-symbol cape-dabbrev))
+    (add-hook 'completion-at-point-functions cape)))
 
 (use-package dabbrev
+  :bind ("C-M-/" . dabbrev-completion)
   :init
   (setq dabbrev-check-all-buffers t
         dabbrev-check-other-buffers t))
@@ -590,19 +608,36 @@
 
 ;; (bind-key "RET" #'newline-and-indent)
 
-(use-package undo-tree
-  :hook (after-init . global-undo-tree-mode)
+;; (use-package undo-tree
+;;   :hook (after-init . global-undo-tree-mode)
+;;   :config
+;;   ;; TODO:
+;;   ;; (defadvice undo-tree-make-history-save-file-name
+;;   ;;   (after undo-tree activate)
+;;   ;;   (setq ad-return-value (concat ad-return-value ".gz")))
+;;   ;; (advice-add #'undo-tree-save-history :around #'doom-shut-up-a)
+;;   (setq undo-tree-auto-save-history t
+;;         undo-limit 800000
+;;         undo-strong-limit 12000000
+;;         undo-outer-limit 120000000
+;;         undo-tree-enable-undo-in-region t))
+
+(use-package undo-fu
+  :bind (("C-/" . undo-fu-only-undo)
+         ("C-S-/".  undo-fu-only-redo))
+  :init
+  ;; Stop C-z from minimizing windows under OS X
+  (when *is-a-windowed-mac*
+    (unbind-key "C-z")
+    (unbind-key "C-x C-z"))
   :config
-  ;; TODO:
-  ;; (defadvice undo-tree-make-history-save-file-name
-  ;;   (after undo-tree activate)
-  ;;   (setq ad-return-value (concat ad-return-value ".gz")))
-  ;; (advice-add #'undo-tree-save-history :around #'doom-shut-up-a)
-  (setq undo-tree-auto-save-history t
-        undo-limit 800000
-        undo-strong-limit 12000000
-        undo-outer-limit 120000000
-        undo-tree-enable-undo-in-region t))
+  (setq undo-fu-allow-undo-in-region t))
+
+(use-package vundo
+  :bind ("C-x u" . vundo)
+  :config
+  (setq vundo-glyph-alist vundo-unicode-symbols)
+  (setq vundo-compact-display t))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -640,6 +675,13 @@
               (when doom--hl-line-mode
                 (hl-line-mode +1)))))
 
+
+(use-package lin
+  :straight (:type git :host gitlab :repo "protesilaos/lin")
+  :after vertico
+  :hook (after-init . lin-setup)
+  :config
+  (setq lin-face 'vertico-current))
 
 ;;==================================================
 ;; File management
@@ -894,11 +936,6 @@
   :if *is-a-mac*
   :commands reveal-in-osx-finder)
 
-;; Stop C-z from minimizing windows under OS X
-(when *is-a-windowed-mac*
-  (unbind-key "C-z")
-  (unbind-key "C-x C-z"))
-
 ;;==================================================
 ;; git and magit settings
 ;;==================================================
@@ -962,8 +999,8 @@
 ;;   (setq  forge-topic-list-limit '(100 . -10))
 ;;   :after magit)
 
-(use-package magit-todos
-  :after magit)
+;; (use-package magit-todos
+;;   :after magit)
 
 ;; (use-package git-gutter
 ;;   :commands git-gutter-mode
@@ -1213,9 +1250,9 @@
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
-(use-package xref
-  :hook (xref-after-jump . xref-pulse-momentarily)
-  :hook (xref-after-return . xref-pulse-momentarily))
+;; (use-package xref
+;;   :hook (xref-after-jump . xref-pulse-momentarily)
+;;   :hook (xref-after-return . xref-pulse-momentarily))
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
@@ -1241,37 +1278,37 @@
 (use-package shrink-whitespace
   :bind ("M-\\" . shrink-whitespace))
 
-(use-package goggles
-  :hook ((prog-mode text-mode) . goggles-mode)
-  :config
-  (setq-default goggles-pulse t))
+;; (use-package goggles
+;;   :hook ((prog-mode text-mode) . goggles-mode)
+;;   :config
+;;   (setq-default goggles-pulse t))
 
 (use-package drag-stuff
-  :hook (fundamental-mode . turn-on-drag-stuff-mode)
+  :hook ((text-mode prog-mode conf-mode) . turn-on-drag-stuff-mode)
   :config
   (setq drag-stuff-modifier '(meta super))
   (drag-stuff-define-keys))
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :hook (fundamental-mode . whole-line-or-region-local-mode)
+  :hook ((text-mode prog-mode conf-mode) . whole-line-or-region-local-mode)
+  ;;:bind ("C-w" . backward-kill-word)
   :config
   (whole-line-or-region-global-mode +1))
 
 (use-package puni
-  :hook ((after-init . puni-global-mode)
-         (term-mode . puni-disable-puni-mode))
-  :bind (:map puni-mode-map
-              (;; puni-raise
-               ;; puni-split
-               ;; puni-transpose
-               ;; puni-convolute
-               ("C-<f9>" . puni-splice)
-               ("<f9>"   . puni-squeeze)
-               ("C-{"    . puni-slurp-backward)
-               ("C-}"    . puni-barf-backward)
-               ("M-C-{"  . puni-barf-forward)
-               ("M-C-}"  . puni-slurp-forward))))
+  ;; :hook ((after-init . puni-global-mode)
+  ;;        (term-mode . puni-disable-puni-mode))
+  :bind (;; puni-raise
+         ;; puni-split
+         ;; puni-transpose
+         ;; puni-convolute
+         ("C-<f9>" . puni-splice)
+         ("<f9>"   . puni-squeeze)
+         ("C-{"    . puni-slurp-backward)
+         ("C-}"    . puni-barf-backward)
+         ("M-C-{"  . puni-barf-forward)
+         ("M-C-}"  . puni-slurp-forward)))
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region)
@@ -1407,7 +1444,11 @@ comment to the line."
   :mode "Dockerfile[a-zA-Z.-]*\\'")
 
 (use-package terraform-mode
-  :hook (terraform-mode . terraform-format-on-save-mode))
+  :hook (terraform-mode . terraform-format-on-save-mode)
+  :config
+  (defun jccb/tf-capf-setup ()
+    (setq-local completion-at-point-functions '(cape-dabbrev cape-keyword))))
+
 
 (use-package rust-mode
   :mode "\\.rs\\'")
@@ -1555,6 +1596,9 @@ comment to the line."
   ;; (setq lsp-log-io nil)
   ;; (setq lsp-restart 'auto-restart)
   (add-to-list 'lsp-enabled-clients 'pylsp)
+
+  (setq lsp-pylsp-plugins-flake8-enabled nil)
+
   (setq lsp-enable-symbol-highlighting nil)
   (setq lsp-enable-on-type-formatting nil)
   (setq lsp-signature-auto-activate nil)
@@ -1661,7 +1705,7 @@ comment to the line."
    consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
    :preview-key (kbd "M-."))
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-  (setq consult-narrow-key "<")
+  ;;(setq consult-narrow-key "<")
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
@@ -1691,23 +1735,23 @@ comment to the line."
   :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
-(use-package tempel
-  :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
-         ("M-*" . tempel-insert))
+;; (use-package tempel
+;;   :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
+;;          ("M-*" . tempel-insert))
 
-  :hook ((prog-mode text-mode) . tempel-setup-capf)
-  :config
-  ;; Setup completion at point
-  (defun tempel-setup-capf ()
-    ;; Add the Tempel Capf to `completion-at-point-functions'. `tempel-expand'
-    ;; only triggers on exact matches. Alternatively use `tempel-complete' if
-    ;; you want to see all matches, but then Tempel will probably trigger too
-    ;; often when you don't expect it.
-    ;; NOTE: We add `tempel-expand' *before* the main programming mode Capf,
-    ;; such that it will be tried first.
-    (setq-local completion-at-point-functions
-                (cons #'tempel-expand
-                      completion-at-point-functions))))
+;;   :hook ((prog-mode text-mode) . tempel-setup-capf)
+;;   :config
+;;   ;; Setup completion at point
+;;   (defun tempel-setup-capf ()
+;;     ;; Add the Tempel Capf to `completion-at-point-functions'. `tempel-expand'
+;;     ;; only triggers on exact matches. Alternatively use `tempel-complete' if
+;;     ;; you want to see all matches, but then Tempel will probably trigger too
+;;     ;; often when you don't expect it.
+;;     ;; NOTE: We add `tempel-expand' *before* the main programming mode Capf,
+;;     ;; such that it will be tried first.
+;;     (setq-local completion-at-point-functions
+;;                 (cons #'tempel-expand
+;;                       completion-at-point-functions))))
 
 
 ;;==================================================
@@ -1715,6 +1759,9 @@ comment to the line."
 ;;==================================================
 
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
+
+(use-package kmacro-x
+  :hook (after-init . kmacro-x-atomic-undo-mode))
 
 (use-package crux
   :commands crux-find-shell-init-file
@@ -1791,6 +1838,7 @@ comment to the line."
 ;; non-X systems (like Windows or macOS), where only `STRING' is used.
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 
+;; this is now included in emacs-29
 (use-package restart-emacs
   :commands restart-emacs
   :config
