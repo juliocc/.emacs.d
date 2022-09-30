@@ -564,8 +564,17 @@
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 
+;; (defun crm-indicator (args)
+;;   (cons (concat "[Multi] " (car args)) (cdr args)))
+;; (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
 (defun crm-indicator (args)
-  (cons (concat "[Multi] " (car args)) (cdr args)))
+  (cons (format "[CRM%s] %s"
+                (replace-regexp-in-string
+                 "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                 crm-separator)
+                (car args))
+        (cdr args)))
 (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
 
 ;; don't let the cursor go into minibuffer prompt
