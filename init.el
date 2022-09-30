@@ -217,7 +217,7 @@
                         :font font-name
                         :height font-size)))
 
-(defvar jccb/font-name "Inconsolata Nerd Font")
+(defvar jccb/font-name "InconsolataGo Nerd Font")
 (defvar jccb/font-size (if *is-a-windowed-mac* 200 150))
 
 (jccb/set-font jccb/font-name jccb/font-size)
@@ -278,6 +278,8 @@
   ;; sane trackpad/mouse scroll settings
   (setq mac-redisplay-dont-reset-vscroll t
         mac-mouse-wheel-smooth-scroll nil))
+
+(defvar jccb/fd-command (if *is-a-linux* "fdfind" "fd"))
 
 ;;==================================================
 ;; General settings
@@ -1424,8 +1426,8 @@ comment to the line."
   (setq projectile-completion-system 'auto)
   (setq projectile-sort-order 'recently-active)
   (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
-  (when (executable-find "fd")
-    (let ((fd-command "fd . --type f --print0 --color=never"))
+  (when (executable-find jccb/fd-command)
+    (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never")))
       (setq projectile-hg-command fd-command)
       (setq projectile-git-command fd-command)
       (setq projectile-fossil-command fd-command)

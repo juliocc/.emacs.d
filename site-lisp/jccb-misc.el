@@ -25,7 +25,7 @@
                          (backward-char 1)))))))))
 
 (defun jccb/doctor ()
-  (dolist (exe '("rg" "ag" "fd" "git" "terraform" "aspell"
+  (dolist (exe `("rg" "ag" ,jccb/fd-command "git" "terraform" "aspell"
                  "grip" "markdown" "yapf" "isort"))
     (unless (executable-find exe)
       (display-warning 'jc/doctor
