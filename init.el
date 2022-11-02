@@ -981,12 +981,12 @@
     (turn-on-flyspell)
     (setq fill-column 70))
   (add-hook 'git-commit-mode-hook #'jccb/git-commit-mode-hook)
-  (add-hook 'magit-mode-hook
-            (lambda ()
-              "Show minimal modeline in magit-status buffer, no modeline elsewhere."
-              (if (eq major-mode 'magit-status-mode)
-                  (doom-modeline-set-vcs-modeline)
-                (hide-mode-line-mode))))
+  ;; (add-hook 'magit-mode-hook
+  ;;           (lambda ()
+  ;;             "Show minimal modeline in magit-status buffer, no modeline elsewhere."
+  ;;             (if (eq major-mode 'magit-status-mode)
+  ;;                 (doom-modeline-set-vcs-modeline)
+  ;;               (hide-mode-line-mode))))
 
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
