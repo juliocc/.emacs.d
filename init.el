@@ -145,7 +145,7 @@
   ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
   ;; (link                           ((t (:foreground "#3794ff"))))
   (vertical-border                ((t (:foreground "black" :background "black"))))
-  (fringe                         ((t (:background nil))))
+  (fringe                         ((t (:background unspecified))))
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
@@ -690,9 +690,10 @@
 (use-package lin
   :straight (:type git :host gitlab :repo "protesilaos/lin")
   :after vertico
-  :hook (after-init . lin-setup)
+  :hook (after-init . lin-global-mode)
   :config
-  (setq lin-face 'vertico-current))
+  (customize-set-variable 'lin-face 'vertico-current))
+
 
 ;;==================================================
 ;; File management
@@ -810,43 +811,43 @@
          ;; ("C-3"   . split-window-horizontally-with-other-buffer)
          ("M-o" . quick-switch-buffer)))
 
-(use-package popper
-  :after doom-modeline
-  :bind (("<f12>"   . popper-toggle-latest)
-         ("C-<f12>"   . popper-cycle)
-         ;; ("C-<f12>" . popper-toggle-type)
-         )
-  :init
-  (popper-mode +1)
-  (popper-echo-mode +1)
+;; (use-package popper
+;;   :after doom-modeline
+;;   :bind (("<f12>"   . popper-toggle-latest)
+;;          ("C-<f12>"   . popper-cycle)
+;;          ;; ("C-<f12>" . popper-toggle-type)
+;;          )
+;;   :init
+;;   (popper-mode +1)
+;;   (popper-echo-mode +1)
 
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "\\*Warnings\\*"
-          "\\*Python\\*"
-          "\\*format-all-errors\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
-          "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
-          "^\\*term.*\\*$"   term-mode   ;term as a popup
-          "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
-          help-mode
-          compilation-mode))
-  (setq popper-mode-line "")
-  (doom-modeline-def-segment popper
-    "The popper window type."
-    (when (popper-popup-p (current-buffer))
-      (concat
-       ;; (doom-modeline-spc)
-       (propertize (concat "POP" (doom-modeline-spc))
-                   'face (if (doom-modeline--active)
-                             'doom-modeline-panel
-                           'mode-line-inactive)))))
+;;   (setq popper-reference-buffers
+;;         '("\\*Messages\\*"
+;;           "\\*Warnings\\*"
+;;           "\\*Python\\*"
+;;           "\\*format-all-errors\\*"
+;;           "Output\\*$"
+;;           "\\*Async Shell Command\\*"
+;;           "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
+;;           "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
+;;           "^\\*term.*\\*$"   term-mode   ;term as a popup
+;;           "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
+;;           help-mode
+;;           compilation-mode))
+;;   (setq popper-mode-line "")
+;;   (doom-modeline-def-segment popper
+;;     "The popper window type."
+;;     (when (popper-popup-p (current-buffer))
+;;       (concat
+;;        ;; (doom-modeline-spc)
+;;        (propertize (concat "POP" (doom-modeline-spc))
+;;                    'face (if (doom-modeline--active)
+;;                              'doom-modeline-panel
+;;                            'mode-line-inactive)))))
 
-  (doom-modeline-def-modeline 'main
-    '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
-    '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
+;;   (doom-modeline-def-modeline 'main
+;;     '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
+;;     '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
 
 (use-package dimmer
   :hook (after-init . dimmer-mode)
@@ -1033,8 +1034,8 @@
   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
 
-(use-package git-timemachine
-  :commands git-timemachine)
+;; (use-package git-timemachine
+;;   :commands git-timemachine)
 
 ;;==================================================
 ;; Search settings
@@ -1264,6 +1265,7 @@
 ;; (use-package xref
 ;;   :hook (xref-after-jump . xref-pulse-momentarily)
 ;;   :hook (xref-after-return . xref-pulse-momentarily))
+
 
 ;; When popping the mark, continue popping until the cursor actually moves
 ;; Also, if the last command was a copy - skip past all the expand-region cruft.
@@ -1679,7 +1681,7 @@ comment to the line."
          ("C-x r b"  . consult-bookmark)
 
          ("M-g f"    . consult-flycheck)
-         ("M-g g"    . consult-goto-line)             ;; orig. goto-line
+         ;; ("M-g g"    . consult-goto-line)             ;; orig. goto-line
          ("M-g M-g"  . consult-goto-line)           ;; orig. goto-line
          ("M-g o"    . consult-outline)
          ("M-g m"    . consult-mark)
@@ -1886,6 +1888,19 @@ comment to the line."
 (use-package server
   :if (display-graphic-p)
   :hook (after-init . server-start))
+
+(use-package hideshow
+  :hook (prog-mode . hs-minor-mode)
+  :bind ("C-<tab>" . toggle-fold)
+  :init
+  (defun toggle-fold ()
+    (interactive)
+    (save-excursion
+      (end-of-line)
+      (hs-toggle-hiding))))
+
+
+(use-package syntactic-close)
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
