@@ -473,7 +473,12 @@
               ("C-l" . corfu-show-location)
               ("C-a" . corfu-beginning-of-prompt)
               ("C-e" . corfu-end-of-prompt)
-              ("M-m" . corfu-move-to-minibuffer))
+              ("M-m" . corfu-move-to-minibuffer)
+              ("TAB" . corfu-next)
+              ([tab] . corfu-next)
+              ("S-TAB" . corfu-previous)
+              ([backtab] . corfu-previous)
+              )
 
   :custom
   (corfu-cycle t)
@@ -481,6 +486,7 @@
   (corfu-min-width 50)
   (corfu-max-width 100)
   (corfu-count 20)
+  (corfu-preview-current nil)
   (corfu-echo-documentation nil)
 
   :init
@@ -633,16 +639,27 @@
 ;;         undo-outer-limit 120000000
 ;;         undo-tree-enable-undo-in-region t))
 
+;; Stop C-z from minimizing windows under OS X
+(when *is-a-windowed-mac*
+  (unbind-key "C-z")
+  (unbind-key "C-x C-z"))
+
 (use-package undo-fu
   :bind (("C-/" . undo-fu-only-undo)
          ("C-S-/".  undo-fu-only-redo))
-  :init
-  ;; Stop C-z from minimizing windows under OS X
-  (when *is-a-windowed-mac*
-    (unbind-key "C-z")
-    (unbind-key "C-x C-z"))
   :config
+  (setq undo-limit 400000           ; 400kb (default is 160kb)
+        undo-strong-limit 3000000   ; 3mb   (default is 240kb)
+        undo-outer-limit 48000000)  ; 48mb  (default is 24mb)
+
   (setq undo-fu-allow-undo-in-region t))
+
+(use-package undo-fu-session
+  :hook (after-init . global-undo-fu-session-mode)
+  :config
+  (when (executable-find "zstd")
+    (setq undo-fu-session-compression 'zst)))
+;; (setq undo-fu-session-incompatible-files '("/COMMIT_EDITMSG\\'" "/git-rebase-todo\\'"))
 
 (use-package vundo
   :bind ("C-x u" . vundo)
@@ -1731,13 +1748,51 @@ comment to the line."
          ("C-x C-f" . consult-dir-jump-file)
          ("C-x C-d" . consult-dir)))
 
+
 (use-package embark
+  :after which-key
   :bind (("C-."   . embark-act)
          ("M-."   . embark-dwim)
          ("C-h B" . embark-bindings))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
   :config
+  (defun embark-which-key-indicator ()
+    "An embark indicator that displays keymaps using which-key.
+The which-key help message will show the type and value of the
+current target followed by an ellipsis if there are further
+targets."
+    (lambda (&optional keymap targets prefix)
+      (if (null keymap)
+          (which-key--hide-popup-ignore-command)
+        (which-key--show-keymap
+         (if (eq (plist-get (car targets) :type) 'embark-become)
+             "Become"
+           (format "Act on %s '%s'%s"
+                   (plist-get (car targets) :type)
+                   (embark--truncate-target (plist-get (car targets) :target))
+                   (if (cdr targets) "…" "")))
+         (if prefix
+             (pcase (lookup-key keymap prefix 'accept-default)
+               ((and (pred keymapp) km) km)
+               (_ (key-binding prefix 'accept-default)))
+           keymap)
+         nil nil t (lambda (binding)
+                     (not (string-suffix-p "-argument" (cdr binding))))))))
+
+  (remove-hook 'embark-indicators #'embark-mixed-indicator)
+  (add-hook 'embark-indicators #'embark-which-key-indicator)
+
+  (defun embark-hide-which-key-indicator (fn &rest args)
+    "Hide the which-key indicator immediately when using the completing-read prompter."
+    (which-key--hide-popup-ignore-command)
+    (let ((embark-indicators
+           (remq #'embark-which-key-indicator embark-indicators)))
+      (apply fn args)))
+
+  (advice-add #'embark-completing-read-prompter
+              :around #'embark-hide-which-key-indicator)
+
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
@@ -1745,7 +1800,7 @@ comment to the line."
 
 (use-package embark-consult
   :ensure t
-  :after (embark consult)
+  ;; :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 ;; (use-package tempel
@@ -1794,7 +1849,7 @@ comment to the line."
   :bind (([remap describe-command]  . helpful-command)
          ([remap describe-key]      . helpful-key)
          ([remap describe-symbol]   . helpful-symbol)
-         ([remap describe-function] . helpful-function)
+         ([remap describe-function] . helpful-callable)
          ([remap describe-variable] . helpful-variable)
          ("C-h ." . helpful-at-point))
   :init

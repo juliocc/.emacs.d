@@ -26,7 +26,7 @@
 
 (defun jccb/doctor ()
   (dolist (exe `("rg" "ag" ,jccb/fd-command "git" "terraform" "aspell"
-                 "grip" "markdown" "yapf" "isort"))
+                 "grip" "markdown" "yapf" "isort" "zstd"))
     (unless (executable-find exe)
       (display-warning 'jc/doctor
                        (format "Can't find %s" exe)))))
