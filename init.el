@@ -140,7 +140,7 @@
 (use-package doom-themes
   :custom-face
   (region                         ((t (:extend nil))))
-  (font-lock-comment-face         ((t (:italic t))))
+  ;; (font-lock-comment-face         ((t (:italic t :background unspecified))))
   ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
   ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
   ;; (link                           ((t (:foreground "#3794ff"))))
@@ -208,22 +208,20 @@
   (blink-cursor-mode -1))
 
 
-(defun jccb/set-font (font-name font-size)
-  (when (find-font (font-spec :name font-name))
-    (set-face-attribute 'default nil
-                        :font font-name
-                        :height font-size)
-    (set-face-attribute 'fixed-pitch nil
-                        :font font-name
-                        :height font-size)))
-
 (defvar jccb/font-name "InconsolataGo Nerd Font")
 (defvar jccb/font-size (if *is-a-windowed-mac* 200 150))
+(defun jccb/set-font nil
+  (when (member jccb/font-name (font-family-list))
+    (set-face-attribute 'default nil
+                        :font jccb/font-name
+                        :height jccb/font-size)
+    (set-face-attribute 'fixed-pitch nil
+                        :font jccb/font-name
+                        :height jccb/font-size)))
 
-(jccb/set-font jccb/font-name jccb/font-size)
+
+(jccb/set-font)
 (global-font-lock-mode +1)
-
-
 
 (use-package display-line-numbers
   :straight nil
@@ -371,6 +369,11 @@
 ;;=================================================
 
 (use-package orderless
+  :custom-face
+  (orderless-match-face-0 ((default :weight bold :background unspecified)))
+  (orderless-match-face-1 ((default :weight bold :background unspecified)))
+  (orderless-match-face-2 ((default :weight bold :background unspecified)))
+  (orderless-match-face-3 ((default :weight bold :background unspecified)))
   :config
   ;; orderless-flex is probably more "flex" but this makes
   ;; highlighting easier to understand (at least for me)
@@ -625,20 +628,6 @@
 
 ;; (bind-key "RET" #'newline-and-indent)
 
-;; (use-package undo-tree
-;;   :hook (after-init . global-undo-tree-mode)
-;;   :config
-;;   ;; TODO:
-;;   ;; (defadvice undo-tree-make-history-save-file-name
-;;   ;;   (after undo-tree activate)
-;;   ;;   (setq ad-return-value (concat ad-return-value ".gz")))
-;;   ;; (advice-add #'undo-tree-save-history :around #'doom-shut-up-a)
-;;   (setq undo-tree-auto-save-history t
-;;         undo-limit 800000
-;;         undo-strong-limit 12000000
-;;         undo-outer-limit 120000000
-;;         undo-tree-enable-undo-in-region t))
-
 ;; Stop C-z from minimizing windows under OS X
 (when *is-a-windowed-mac*
   (unbind-key "C-z")
@@ -680,7 +669,7 @@
 
 (use-package hl-line
   ;; Highlights the current line
-  :if (display-graphic-p)
+  ;; :if (display-graphic-p)
   :hook ((prog-mode text-mode conf-mode special-mode) . hl-line-mode)
   :config
   ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
@@ -1164,8 +1153,11 @@
               ("." . dired-hide-dotfiles-mode)))
 
 (use-package all-the-icons-dired
-  :if (display-graphic-p)
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . jccb/maybe-enable-dired-icons)
+  :init
+  (defun jccb/maybe-enable-dired-icons nil
+    (when (display-graphic-p)
+      (all-the-icons-dired-mode))))
 
 ;;==================================================
 ;; Writing
@@ -1476,6 +1468,19 @@ comment to the line."
 (use-package terraform-mode
   :hook (terraform-mode . terraform-format-on-save-mode)
   :config
+  (defun jccb/tf-format-region (&optional b e)
+    "Run terraform fmt on the region"
+    (interactive "r")
+    (shell-command-on-region b e "terraform fmt -" t t))
+
+
+  (defun jccb/tf-format-current-block nil
+    "Run terraform fmt on the current markdown fenced code block"
+    (interactive)
+    (let ((b (search-backward "```hcl"))
+          (e (search-forward "```" nil t 2)))
+      (jccb/tf-format-region (+ b 7) (- e 3))))
+
   (defun jccb/tf-capf-setup ()
     (setq-local completion-at-point-functions '(cape-dabbrev cape-keyword))))
 
@@ -1627,7 +1632,7 @@ comment to the line."
   ;; (setq lsp-restart 'auto-restart)
   (add-to-list 'lsp-enabled-clients 'pylsp)
 
-  (setq lsp-pylsp-plugins-flake8-enabled nil)
+  (setq lsp-pylsp-plugins-flake8-enabled t)
 
   (setq lsp-enable-symbol-highlighting nil)
   (setq lsp-enable-on-type-formatting nil)
@@ -1956,6 +1961,8 @@ targets."
 
 
 (use-package syntactic-close)
+
+(repeat-mode t)
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
