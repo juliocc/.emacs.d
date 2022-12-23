@@ -224,8 +224,8 @@
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
-  :straight nil
-  :ensure nil
+  ;; :straight nil
+  ;; :ensure nil
   :hook ((prog-mode text-mode conf-mode) . display-line-numbers-mode)
   :config
   ;; Explicitly define a width to reduce computation
@@ -292,7 +292,6 @@
       auto-revert-verbose nil               ; and be quiet about it
       eval-expression-print-level nil
       echo-keystrokes 0.02                  ; Show keystrokes in progress
-      confirm-kill-emacs 'yes-or-no-p       ; ask me before closing
       history-length 2000                   ; looong history
       use-dialog-box nil                    ; never show a dialog box
       use-file-dialog nil
@@ -303,7 +302,7 @@
       fill-column 80
       compilation-scroll-output t
       grep-highlight-matches t
-      set-mark-command-repeat-p t
+      set-mark-command-repeat-pop t
       isearch-allow-scroll t
       blink-matching-paren-distance 51200
       confirm-nonexistent-file-or-buffer nil
@@ -322,6 +321,10 @@
       find-file-visit-truename t
       vc-follow-symlinks t
       ind-file-suppress-same-file-warnings t)
+
+(setq confirm-kill-emacs (lambda (prompt)
+                           (y-or-n-p-with-timeout prompt 2 nil)))
+
 
 ;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
 ;; indicates misconfiguration (or that the user needs to stop relying on case
@@ -358,6 +361,7 @@
 
 ;; confirm with y/n only
 (defalias 'yes-or-no-p 'y-or-n-p)
+(setq use-short-answers t)
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
@@ -418,19 +422,9 @@
 
 
 (use-package vertico
-  :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
-                     :includes (vertico-indexed
-                                vertico-flat
-                                vertico-grid
-                                vertico-mouse
-                                vertico-quick
-                                vertico-buffer
-                                vertico-repeat
-                                vertico-reverse
-                                vertico-directory
-                                vertico-multiform
-                                vertico-unobtrusive))
-
+  :straight (vertico :files (:defaults "extensions/*.el")) ; Special recipe to load extensions conveniently
+  :after (savehist)
+  ;;:commands vertico-mode
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
   :hook (minibuffer-setup . vertico-repeat-save)
 
@@ -440,7 +434,25 @@
               ("S-SPC" . jccb/vertico-restrict-to-matches)
               ("RET"   . vertico-directory-enter)
               ("DEL"   . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
+              ("M-DEL" . vertico-directory-delete-word)
+              ("C-M-n"   . vertico-next-group)
+              ("C-M-p"   . vertico-previous-group)
+
+              ;; stuff from karthink
+              ;; ("C-j"     . (lambda () (interactive)
+              ;;                (if minibuffer--require-match
+              ;;                    (minibuffer-complete-and-exit)
+              ;;                  (exit-minibuffer))))
+              ("C->"     . embark-become)
+              ;; (">"         . embark-become)
+              ("C-<tab>"   . embark-act-with-completing-read)
+              ;; ("C-o"     . embark-minimal-act)
+              ("C-M-o"   . embark-act-noquit)
+              ("C-*"     . embark-act-all)
+              ;; ("M-s o"   . embark-export)
+              ;; ("C-c C-o" . embark-export)
+              ("C-o"     . embark-export)
+              )
   :bind ("C-c C-r" . vertico-repeat)
 
   :custom
@@ -466,9 +478,12 @@
                  (if (= vertico--index index)
                      (propertize "» " 'face 'vertico-current)
                    "  ")
-                 cand)))  )
+                 cand)))
+  :config
+  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
 (use-package corfu
+  :commands global-corfu-mode
   :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
   :bind ("M-/" . completion-at-point)
   :bind (:map corfu-map
@@ -490,7 +505,6 @@
   (corfu-max-width 100)
   (corfu-count 20)
   (corfu-preview-current nil)
-  (corfu-echo-documentation nil)
 
   :init
   (global-corfu-mode)
@@ -530,6 +544,35 @@
                       :background 'unspecified
                       :inherit 'vertico-current))
 
+(use-package corfu-history
+  :straight (:local-repo "corfu/extensions")
+  :after (corfu savehist)
+  :init
+  (corfu-history-mode 1)
+  (add-to-list 'savehist-additional-variables 'corfu-history))
+
+(use-package corfu-echo
+  :straight (:local-repo "corfu/extensions")
+  :after (corfu)
+  :init
+  (corfu-echo-mode 1))
+
+;; (use-package prescient
+;;   :config
+;;   (prescient-persist-mode +1)
+;;   (setq prescient-history-length 1000)
+;;   (setq prescient-sort-full-matches-first t))
+
+;; (use-package vertico-prescient
+;;   :after vertico
+;;   :config
+;;   (vertico-prescient-mode +1))
+
+;; (use-package corfu-prescient
+;;   :after corfu
+;;   :config
+;;   (corfu-prescient-mode +1))
+
 (use-package cape
   ;; Bind dedicated completion commands
   :bind (("<f8> s" . cape-symbol)
@@ -547,12 +590,19 @@
     (add-hook 'completion-at-point-functions cape)))
 
 (use-package dabbrev
-  :bind ("C-M-/" . dabbrev-completion)
+  ;;:bind ("C-M-/" . dabbrev-completion)
   :init
   (setq dabbrev-check-all-buffers t
         dabbrev-check-other-buffers t))
 
 (use-package marginalia
+  :after vertico
+  :bind (:map vertico-map
+              ("M-]" . marginalia-cycle))
+  :config
+  (setq-default marginalia_ellipsis "…"    ; Nicer ellipsis
+                marginalia-align 'right     ; right alignment
+                marginalia-align-offset -1)
   :init
   (marginalia-mode))
 
@@ -564,6 +614,7 @@
 
 (use-package kind-icon
   :after corfu
+  :commands kind-icon-margin-formatter
   :custom
   (kind-icon-use-icons t)
   (kind-icon-default-face 'corfu-default)
@@ -595,23 +646,22 @@
       #'command-completion-default-include-p)
 
 
-;; (use-package hippie-exp
-;;   :ensure nil
-;;   :straight nil
-;;   :bind (("M-/"   . hippie-expand)
-;;          ("C-M-/" . dabbrev-completion))
-;;   :init
-;;   (setq hippie-expand-try-functions-list '(try-expand-dabbrev-visible
-;;                                            try-expand-dabbrev
-;;                                            try-expand-dabbrev-all-buffers
-;;                                            try-complete-file-name-partially
-;;                                            try-complete-file-name
-;;                                            try-expand-all-abbrevs
-;;                                            try-expand-list
-;;                                            ;;try-expand-line
-;;                                            try-expand-dabbrev-from-kill
-;;                                            try-complete-lisp-symbol-partially
-;;                                            try-complete-lisp-symbol)))
+(use-package hippie-exp
+  :straight nil
+  :bind ("C-M-/"   . hippie-expand)
+  :init
+  (setq hippie-expand-try-functions-list
+        '(try-expand-dabbrev-visible
+          try-expand-dabbrev
+          try-expand-dabbrev-all-buffers
+          try-complete-file-name-partially
+          try-complete-file-name
+          try-expand-all-abbrevs
+          try-expand-list
+          ;;try-expand-line
+          try-expand-dabbrev-from-kill
+          try-complete-lisp-symbol-partially
+          try-complete-lisp-symbol)))
 
 ;;==================================================
 ;; Editor
@@ -700,7 +750,6 @@
   :config
   (customize-set-variable 'lin-face 'vertico-current))
 
-
 ;;==================================================
 ;; File management
 ;;==================================================
@@ -708,7 +757,6 @@
 ;; Backup settings
 (use-package files
   :straight nil
-  :ensure nil
   :init
   (setq backup-by-copying t
         delete-old-versions t
@@ -744,8 +792,23 @@
 (use-package savehist
   :hook (after-init . savehist-mode)
   :config
+  (dolist (var '(kill-ring
+                 command-history
+                 set-variable-value-history
+                 custom-variable-history
+                 query-replace-history
+                 read-expression-history
+                 minibuffer-history
+                 read-char-history
+                 face-name-history
+                 bookmark-history
+                 file-name-history
+                 search-ring
+                 regexp-search-ring))
+    (add-to-list 'savehist-additional-variables var))
+
   (setq savehist-save-minibuffer-history t
-        savehist-additional-variables '(kill-ring search-ring regexp-search-ring))
+        history-delete-duplicates t)
   (add-hook 'kill-emacs-hook
             (defun doom-unpropertize-kill-ring-h ()
               (setq kill-ring (cl-loop for item in kill-ring
@@ -754,7 +817,6 @@
                                        else if item collect it)))))
 (use-package uniquify
   :straight nil
-  :ensure nil
   :init
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
@@ -763,7 +825,6 @@
 
 (use-package saveplace
   :straight nil
-  :ensure nil
   :hook (after-init . save-place-mode))
 
 (use-package fasd
@@ -772,7 +833,9 @@
 (use-package super-save
   :hook (after-init . super-save-mode)
   :config
-  (setq super-save-auto-save-when-idle t))
+  (setq super-save-triggers '(windmove-up windmove-down windmove-left windmove-right next-buffer previous-buffer))
+  (setq super-save-auto-save-when-idle nil)
+  (setq super-save-remote-files nil))
 
 (defun make-parent-directory ()
   "Make sure the directory of `buffer-file-name' exists."
@@ -780,7 +843,7 @@
 
 (add-hook 'find-file-not-found-functions #'make-parent-directory)
 
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+(add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
 
 ;;==================================================
 ;; Window management
@@ -790,27 +853,27 @@
   :hook (after-init . winner-mode))
 
 (use-package windmove
-  :hook (after-init . windmove-default-keybindings))
+  :hook (after-init . windmove-default-keybindings)
+  :hook (after-init . windmove-swap-states-default-keybindings))
 
 (use-package window
   :straight nil
-  :ensure nil
   :bind (("C-0"            . delete-window)
          ("C-1"            . delete-other-windows)
          ("C-2"            . split-window-below)
          ("C-3"            . split-window-right)
-         ("C-;"            . other-window)
+         ;;("C-;"            . other-window)
          ("S-C-<left>"     . shrink-window-horizontally)
          ("S-C-<right>"    . enlarge-window-horizontally)
          ("S-C-<down>"     . shrink-window)
          ("S-C-<up>"       . enlarge-window)
          ("C-x <C-return>" . window-swap-states))
   :init
-  (unbind-key "C-x o"))
+  ;;(unbind-key "C-x o")
+  )
 
 (use-package jccb-windows
   :straight nil
-  :ensure nil
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
          ;; ("C-2"   . split-window-vertically-with-other-buffer)
@@ -889,6 +952,18 @@
   :config
   (setq ibuffer-show-empty-filter-groups nil
         ibuffer-filter-group-name-face '(:inherit (success bold)))
+  (setq ibuffer-expert t)
+  (setq ibuffer-show-empty-filter-groups nil)
+  (setq ibuffer-default-sorting-mode 'filename/process)
+  (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
+  (add-to-list 'ibuffer-help-buffer-modes 'Man-mode)
+  ;; (setq ibuffer-display-summary nil)
+  (setq ibuffer-use-other-window t)
+  ;; (setq ibuffer-movement-cycle nil)
+  ;; (setq ibuffer-default-shrink-to-minimum-size t)
+  ;; (setq ibuffer-saved-filter-groups nil)
+
+  ;; (setq ibuffer-display-summary nil)
   (define-ibuffer-column size
     (:name "Size"
            :inline t
@@ -964,7 +1039,10 @@
 
 (use-package git-modes)
 
-(with-eval-after-load 'ediff
+(use-package ediff
+  :straight nil
+  :functions ediff-setup-windows-plain
+  :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
@@ -1029,16 +1107,37 @@
 ;;     (unless (file-remote-p default-directory)
 ;;       (git-gutter-mode))))
 
-(use-package git-gutter
-  :hook (prog-mode . git-gutter-mode)
-  :config
-  (setq git-gutter:update-interval 2))
+;; (use-package git-gutter
+;;   :hook (prog-mode . git-gutter-mode)
+;;   :config
+;;   (setq git-gutter:update-interval 2))
 
-(use-package git-gutter-fringe
+;; (use-package git-gutter-fringe
+;;   :config
+;;   (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+;;   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+;;   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+
+(use-package diff-hl
+  :straight t
+  :after magit
+  :hook (dired-mode . diff-hl-dired-mode)
+  :hook (after-init . global-diff-hl-mode)
+  :init
+  (setq diff-hl-draw-borders t)
+  (setq-default diff-hl-inline-popup--height 4)
   :config
-  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+  (diff-hl-flydiff-mode 1)
+
+  (advice-add 'diff-hl-next-hunk :after
+              (defun my/diff-hl-recenter
+                  (&optional _) (recenter)))
+
+  ;; Integration with magit
+  (with-eval-after-load 'magit
+    (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
+    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
+
 
 ;; (use-package git-timemachine
 ;;   :commands git-timemachine)
@@ -1056,9 +1155,13 @@
 
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
+(use-package isearch
+  :straight nil
+  :config
+  (setq isearch-allow-scroll 'unlimited))
+
 (use-package jccb-search
   :straight nil
-  :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :bind (:map isearch-mode-map
               ("M-z" . zap-to-isearch)
@@ -1070,6 +1173,11 @@
 
 ;; DEL during isearch should edit the search string, not jump back to the previous result
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
+
+(use-package replace
+  :straight nil
+  :bind (:map occur-mode-map
+              ("C-x C-q" . occur-edit-mode)))
 
 (use-package anzu
   :hook (after-init . global-anzu-mode)
@@ -1095,7 +1203,6 @@
 
 (use-package dired
   :straight nil
-  :ensure nil
   :bind (("C-x C-j" . dired-jump))
   :hook (dired-mode . dired-collapse-mode)
   :init
@@ -1109,7 +1216,6 @@
 
 (use-package dired-x
   :straight nil
-  :ensure nil
   :after dired
   :hook (dired-mode . dired-omit-mode)
   :bind (:map dired-mode-map
@@ -1170,10 +1276,7 @@
          visual-fill-column-center-text t))
 
 (use-package markdown-mode
-  :hook ((markdown-mode . turn-on-flyspell)
-         (markdown-mode . visual-line-mode)
-         (markdown-mode . visual-fill-column-mode-map)
-         (markdown-mode . jccb/markdown-setup))
+  :hook (markdown-mode . jccb/markdown-setup)
   :bind (:map markdown-mode-command-map
               ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
@@ -1184,7 +1287,7 @@
     (message "jccb-mdown mode")
     (turn-on-flyspell)
     (visual-line-mode +1)
-    (visual-fill-column-mode +1)
+    ;; (visual-fill-column-mode +1)
     (dolist (face '((markdown-header-face-1 . 1.3)
                     (markdown-header-face-2 . 1.2)
                     (markdown-header-face-3 . 1.1)
@@ -1250,7 +1353,6 @@
 
 (use-package misc
   :straight nil
-  :ensure nil
   :bind ("M-z" . zap-up-to-char))
 
 (use-package so-long
@@ -1266,8 +1368,11 @@
   :commands ialign)
 
 (use-package dumb-jump
+  :commands dumb-jump-xref-activate
+  :init
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
-  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t)
+  (message "--->loaded dumb-jump")
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
@@ -1291,7 +1396,6 @@
 
 (use-package jccb-misc
   :straight nil
-  :ensure nil
   :defer 1
   :commands (chmod+x-this jccb/doctor)
   :bind (("M-p"   . goto-match-paren))
@@ -1299,11 +1403,6 @@
 
 (use-package shrink-whitespace
   :bind ("M-\\" . shrink-whitespace))
-
-;; (use-package goggles
-;;   :hook ((prog-mode text-mode) . goggles-mode)
-;;   :config
-;;   (setq-default goggles-pulse t))
 
 (use-package drag-stuff
   :hook ((text-mode prog-mode conf-mode) . turn-on-drag-stuff-mode)
@@ -1394,28 +1493,28 @@ comment to the line."
 
 (use-package ispell
   :straight nil
-  :ensure nil
   ;; :bind ("C-." . jccb/cycle-ispell-languages)
+  :hook (after-init . jccb/config-spell)
   :config
-  (setq ispell-program-name "aspell"
-        ispell-extra-args '("--sug-mode=ultra"
-                            "--run-together"))
+  (defun jccb/config-spell nil
+    (setq ispell-program-name "aspell"
+          ispell-extra-args '("--sug-mode=ultra"
+                              "--run-together"))
 
-  (defvar jccb/ispell-langs (make-ring 2))
-  (ring-insert jccb/ispell-langs "american")
-  (ring-insert jccb/ispell-langs "castellano8")
+    (defvar jccb/ispell-langs (make-ring 2))
+    (ring-insert jccb/ispell-langs "american")
+    (ring-insert jccb/ispell-langs "castellano8")
 
-  (defun jccb/cycle-ispell-languages ()
-    (interactive)
-    (let ((lang (ring-ref jccb/ispell-langs -1)))
-      (ring-insert jccb/ispell-langs lang)
-      (ispell-change-dictionary lang)
-      (flyspell-buffer)
-      (message "Spell language changed to %s" lang))))
+    (defun jccb/cycle-ispell-languages ()
+      (interactive)
+      (let ((lang (ring-ref jccb/ispell-langs -1)))
+        (ring-insert jccb/ispell-langs lang)
+        (ispell-change-dictionary lang)
+        (flyspell-buffer)
+        (message "Spell language changed to %s" lang)))))
 
 (use-package flyspell
   :straight nil
-  :ensure nil
   :hook ((text-mode . flyspell-mode)
          ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
   :config
@@ -1585,14 +1684,24 @@ comment to the line."
                 '(("Python" yapf))))
 
 (use-package pyvenv
+  :hook (after-init . pyvenv-mode)
   :config
   (setq pyvenv-mode-line-indicator
-        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
-  (pyvenv-mode +1))
+        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] "))))
+
+
+(use-package imenu
+  :config
+  (setq imenu-use-markers t
+        imenu-auto-rescan t
+        imenu-max-item-length 100
+        imenu-use-popup-menu nil
+        imenu-eager-completion-buffer t
+        imenu-space-replacement "SPACE"
+        imenu-level-separator "LEVEL SEP"))
 
 (use-package imenu-list
   :commands imenu-list-minor-mode)
-
 
 ;;==================================================
 ;; lsp config
@@ -1756,12 +1865,26 @@ comment to the line."
 
 (use-package embark
   :after which-key
+  :commands (embark-act-with-completing-read embark-act-noquit)
   :bind (("C-."   . embark-act)
          ("M-."   . embark-dwim)
          ("C-h B" . embark-bindings))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
   :config
+
+  (defun embark-act-with-completing-read (&optional arg)
+    (interactive "P")
+    (let* ((embark-prompter 'embark-completing-read-prompter)
+           (embark-indicators '(embark-minimal-indicator)))
+      (embark-act arg)))
+
+  (defun embark-act-noquit ()
+    "Run action but don't quit the minibuffer afterwards."
+    (interactive)
+    (let ((embark-quit-after-action nil))
+      (embark-act)))
+
   (defun embark-which-key-indicator ()
     "An embark indicator that displays keymaps using which-key.
 The which-key help message will show the type and value of the
@@ -1804,7 +1927,6 @@ targets."
                  (window-parameters (mode-line-format . none)))))
 
 (use-package embark-consult
-  :ensure t
   ;; :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
@@ -1851,6 +1973,10 @@ targets."
 (use-package helpful
   :commands (helpful--read-symbol
              helpful-callable)
+  ;; TODO: move this hooks somewhere else
+  :hook ((help-mode . visual-line-mode)
+         (Custom-mode . visual-line-mode)
+         (helpful-mode . visual-line-mode))
   :bind (([remap describe-command]  . helpful-command)
          ([remap describe-key]      . helpful-key)
          ([remap describe-symbol]   . helpful-symbol)
@@ -1896,7 +2022,7 @@ targets."
         which-key-sort-uppercase-first nil
         which-key-add-column-padding 1
         which-key-max-display-columns nil
-        which-key-min-display-lines 6
+        which-key-min-display-lines 8
         which-key-idle-delay 0.75
         which-key-idle-secondary-delay 0.05
         which-key-side-window-slot -10)
@@ -1911,11 +2037,12 @@ targets."
 ;; non-X systems (like Windows or macOS), where only `STRING' is used.
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 
-;; this is now included in emacs-29
-(use-package restart-emacs
-  :commands restart-emacs
-  :config
+
+(use-package files
+  :straight nil
+  :init
   (defun jccb/disable-confirm-kill-emacs (&rest _)
+    (message "disable confirm kill emacs")
     (setq confirm-kill-emacs nil))
   (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
 
@@ -1960,14 +2087,104 @@ targets."
       (hs-toggle-hiding))))
 
 
-(use-package syntactic-close)
+(use-package pulsar
+  :hook (after-init . pulsar-global-mode)
+  :init
+  (setq pulsar-pulse t)
+  (setq pulsar-delay 0.055)
+  (setq pulsar-iterations 10)
+  (setq pulsar-face 'pulsar-magenta)
+  (setq pulsar-highlight-face 'pulsar-yellow)
+  (pulsar-global-mode 1)
+  (add-hook 'next-error-hook #'pulsar-pulse-line)
 
-(repeat-mode t)
+  ;; integration with the `consult' package:
+  (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
+  (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
+
+  ;; integration with the built-in `imenu':
+  (add-hook 'imenu-after-jump-hook #'pulsar-recenter-top)
+  (add-hook 'imenu-after-jump-hook #'pulsar-reveal-entry)
+
+  (pulsar-global-mode 1))
+
+(use-package string-inflection
+  :bind (:repeat-map jccb/string-inflection-repeat-map
+                     ("s" . jccb/string-inflection-cycle)
+                     ("u" . string-inflection-underscore)
+                     ("U" . string-inflection-upcase)
+                     ("k" . string-inflection-kebab-case)
+                     ("c" . string-inflection-camelcase))
+  :bind ("C-c s" . jccb/string-inflection-cycle)
+  :config
+
+  (defun jccb/string-inflection-cycle ()
+    "switching by major-mode"
+    (interactive)
+    (cond
+     ((eq major-mode 'emacs-lisp-mode)
+      (string-inflection-all-cycle))
+     ((eq major-mode 'python-mode)
+      kj      (string-inflection-python-style-cycle))
+     (t
+      (string-inflection-all-cycle)))))
+
+
+
+(use-package syntactic-close
+  :bind ("C-)" . syntactic-close))
+
+(use-package dot-mode
+  :hook (after-init . global-dot-mode)
+  :bind (:repeat-map jccb/dot-mode-repeat-map
+                     ("." . dot-mode-execute))
+  :bind (:map dot-mode-map
+              ("C-c ." . dot-mode-execute)
+              ("C-."   . nil)
+              ("C-M-." . nil)))
+
+(use-package transpose-frame)
+(use-package goto-chg
+  :commands goto-last-change)
+
+(use-package hydra
+  :disabled)
+
+(use-package piper
+  :straight (:type git :host gitlab :repo "howardabrams/emacs-piper")
+  :disabled)
+;; pretty print lisp stuff
+(use-package pp  :disabled)
+
+(use-package repeat
+  :hook (after-init . repeat-mode))
+
+
+;; TODO: move somewhere
+(bind-key "C-x k" #'kill-current-buffer)
+(setq recenter-positions '(5 bottom))
+
+
+;; Make sure clipboard works properly in tty mode on OSX.stolen from
+;; rougier.
+;; (defun my/paste-from-osx ()
+;;   (shell-command-to-string "pbpaste"))
+
+;; (defun my/copy-to-osx (text &optional push)
+;;   (let ((process-connection-type nil))
+;;     (let ((proc (start-process "pbcopy" "*Messages*" "pbcopy")))
+;;       (process-send-string proc text)
+;;       (process-send-eof proc))))
+
+;; (when (and (not (display-graphic-p))
+;;            (eq system-type 'darwin))
+;;   (setq interprogram-cut-function   #'my/copy-to-osx
+;;         interprogram-paste-function #'my/paste-from-osx))
+
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
   :straight nil
-  :ensure nil
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
