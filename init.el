@@ -192,8 +192,8 @@
     (setq-default mode-line-format nil)))
 
 ;; switch windows with C-x w <number>
-(use-package winum
-  :hook (after-init . winum-mode))
+;; (use-package winum
+;;   :hook (after-init . winum-mode))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
