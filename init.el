@@ -758,7 +758,8 @@
 (use-package files
   :straight nil
   :init
-  (setq backup-by-copying t
+  (setq insert-directory-program "gls"
+        backup-by-copying t
         delete-old-versions t
         kept-new-versions 6
         kept-old-versions 2
@@ -1000,7 +1001,6 @@
   ;; function key is hyper
   (setq mac-function-modifier 'hyper)
   (setq default-input-method "MacOSX")
-  (setq insert-directory-program "gls")  ; dired works better with gls
   (setq default-directory (getenv "HOME")))
 
 (when *is-a-windowed-mac*
@@ -1206,7 +1206,7 @@
   :bind (("C-x C-j" . dired-jump))
   :hook (dired-mode . dired-collapse-mode)
   :init
-  (setq dired-listing-switches "--time-style long-iso -alhF --group-directories-first"
+  (setq dired-listing-switches "--time-style long-iso -alhFgG --group-directories-first"
         dired-auto-revert-buffer t
         dired-kill-when-opening-new-dired-buffer t
         dired-hide-details-hide-symlink-targets nil
