@@ -208,8 +208,8 @@
   (blink-cursor-mode -1))
 
 
-(defvar jccb/font-name "InconsolataGo Nerd Font")
-(defvar jccb/font-size (if *is-a-windowed-mac* 200 150))
+(defvar jccb/font-name "Iosevka SS04")
+(defvar jccb/font-size (if *is-a-windowed-mac* 180 150))
 (defun jccb/set-font nil
   (when (member jccb/font-name (font-family-list))
     (set-face-attribute 'default nil
@@ -374,10 +374,10 @@
 
 (use-package orderless
   :custom-face
-  (orderless-match-face-0 ((default :weight bold :background unspecified)))
-  (orderless-match-face-1 ((default :weight bold :background unspecified)))
-  (orderless-match-face-2 ((default :weight bold :background unspecified)))
-  (orderless-match-face-3 ((default :weight bold :background unspecified)))
+  (orderless-match-face-0 ((default :weight medium :background unspecified)))
+  (orderless-match-face-1 ((default :weight medium :background unspecified)))
+  (orderless-match-face-2 ((default :weight medium :background unspecified)))
+  (orderless-match-face-3 ((default :weight medium :background unspecified)))
   :config
   ;; orderless-flex is probably more "flex" but this makes
   ;; highlighting easier to understand (at least for me)
@@ -385,6 +385,17 @@
     (orderless--separated-by
         '(minimal-match (zero-or-more nonl))
       (cl-loop for char across component collect char)))
+
+  ;; let orderless suffixes work with consult disambiguation suffixes
+  (defun jccb/consult-orderless-fix-suffix (args)
+    (if (member (substring (car args) -1) '("!" "?" "~" "$"))
+        ;; (string-suffix-p "$" (car args))
+        (list (format "%s[%c-%c]*$"
+                      (substring (car args) 0 -1)
+                      consult--tofu-char
+                      (+ consult--tofu-char consult--tofu-range -1)))
+      args))
+  (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
 
   (defun jccb/orderless-dispatcher (pattern _index _total)
     (cond ((string-suffix-p "!" pattern)
@@ -667,11 +678,12 @@
 ;; Editor
 ;;==================================================
 
+(setq default-directory "~/")
 (delete-selection-mode +1)
 (global-auto-revert-mode +1)
 (auto-compression-mode +1)
 (transient-mark-mode +1)
-(minibuffer-depth-indicate-mode +1)
+;; (minibuffer-depth-indicate-mode +1) ;; replaced with recursion-indicator-mode
 (electric-indent-mode -1)
 ;; (size-indication-mode +1)
 ;; (global-subword-mode 1)
@@ -793,6 +805,7 @@
 (use-package savehist
   :hook (after-init . savehist-mode)
   :config
+  (setq kill-ring-max 2500)
   (dolist (var '(kill-ring
                  command-history
                  set-variable-value-history
@@ -922,7 +935,7 @@
 (use-package dimmer
   :hook (after-init . dimmer-mode)
   :config
-  (setq dimmer-fraction 0.25)
+  (setq dimmer-fraction 0.35)
   (dimmer-configure-which-key)
   (dimmer-configure-magit))
 
@@ -985,7 +998,6 @@
 ;;==================================================
 ;; Mac-specific settings
 ;;==================================================
-
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
   ;; left and right commands are meta
@@ -1000,8 +1012,7 @@
   (setq mac-right-control-modifier 'left)
   ;; function key is hyper
   (setq mac-function-modifier 'hyper)
-  (setq default-input-method "MacOSX")
-  (setq default-directory (getenv "HOME")))
+  (setq default-input-method "MacOSX"))
 
 (when *is-a-windowed-mac*
   (setq visible-bell nil) ;; The default
@@ -1209,7 +1220,10 @@
   (setq dired-listing-switches "--time-style long-iso -alhFgG --group-directories-first"
         dired-auto-revert-buffer t
         dired-kill-when-opening-new-dired-buffer t
+        dired-clean-confirm-killing-deleted-buffers nil
+        dired-confirm-shell-command nil
         dired-hide-details-hide-symlink-targets nil
+        dired-recursive-deletes 'always
         dired-recursive-copies 'always)
   (setq-default diredp-hide-details-initially-flag nil
                 dired-dwim-target t))
@@ -1313,11 +1327,6 @@
 (use-package grip-mode
   :commands grip-mode)
 
-;; (use-package darkroom
-;;   :commands (darkroom-mode darkroom-tentative-mode)
-;;   :config
-;;   (setq darkroom-text-scale-increase 1.1))
-
 ;;==================================================
 ;; Edit utilities
 ;;==================================================
@@ -1361,8 +1370,10 @@
 (use-package dtrt-indent
   :hook (after-init . dtrt-indent-global-mode))
 
-(use-package browse-kill-ring
-  :hook (after-init . browse-kill-ring-default-keybindings))
+;; (use-package browse-kill-ring
+;;   :hook (after-init . browse-kill-ring-default-keybindings)
+;;   :init
+;;   (setq kill-ring-max 2500))
 
 (use-package ialign
   :commands ialign)
@@ -1545,15 +1556,15 @@ comment to the line."
   (setq projectile-completion-system 'auto)
   (setq projectile-sort-order 'recently-active)
   (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
-  (when (executable-find jccb/fd-command)
-    (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never")))
-      (setq projectile-hg-command fd-command)
-      (setq projectile-git-command fd-command)
-      (setq projectile-fossil-command fd-command)
-      (setq projectile-bzr-command fd-command)
-      (setq projectile-darcs-command fd-command)
-      (setq projectile-svn-command fd-command)
-      (setq projectile-generic-command fd-command)))
+  ;; (when (executable-find jccb/fd-command)
+  ;;   (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never ")))
+  ;;     (setq projectile-hg-command fd-command)
+  ;;     (setq projectile-git-command fd-command)
+  ;;     (setq projectile-fossil-command fd-command)
+  ;;     (setq projectile-bzr-command fd-command)
+  ;;     (setq projectile-darcs-command fd-command)
+  ;;     (setq projectile-svn-command fd-command)
+  ;;     (setq projectile-generic-command fd-command)))
   (projectile-mode +1)
   (setq projectile-require-project-file nil))
 
@@ -1566,6 +1577,8 @@ comment to the line."
 
 (use-package terraform-mode
   :hook (terraform-mode . terraform-format-on-save-mode)
+  :bind (:map terraform-mode-map
+              ("C-c C-f" . jccb/tf-fabric-find-module-file))
   :config
   (defun jccb/tf-format-region (&optional b e)
     "Run terraform fmt on the region"
@@ -1579,6 +1592,15 @@ comment to the line."
     (let ((b (search-backward "```hcl"))
           (e (search-forward "```" nil t 2)))
       (jccb/tf-format-region (+ b 7) (- e 3))))
+
+  (defun jccb/tf-fabric-find-module-file nil
+    (interactive)
+    (let* ((path "~/code/cloud-foundation-fabric/modules")
+           (modules (f-directories path))
+           (module (completing-read "Module name: " (mapcar #'f-filename modules))))
+      (find-file (read-file-name
+                  (format "Open file in module %s: " module)
+                  (f-slash (f-join path module))))))
 
   (defun jccb/tf-capf-setup ()
     (setq-local completion-at-point-functions '(cape-dabbrev cape-keyword))))
@@ -1643,6 +1665,18 @@ comment to the line."
 (use-package highlight-quoted
   :hook (emacs-lisp-mode . highlight-quoted-mode))
 
+;; (use-package highlight-defined
+;;   :hook (emacs-lisp-mode . highlight-defined-mode))
+
+(use-package ipretty
+  :hook (after-init . ipretty-mode))
+
+(use-package highlight-sexp
+  :commands highlight-sexp-mode)
+
+(use-package eros
+  :commands eros-mode)
+
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
 
@@ -1659,9 +1693,8 @@ comment to the line."
           ("DEPRECATED" font-lock-doc-face bold))))
 
 (use-package highlight-indent-guides
-  :disabled
+  ;;:disabled
   :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
-  :commands highlight-indent-guides-mode
   :init
   (setq highlight-indent-guides-method 'character
         highlight-indent-guides-responsive 'top-edge))
@@ -1812,6 +1845,7 @@ comment to the line."
          ("C-x r b"  . consult-bookmark)
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
 
+         ("M-y" . consult-yank-pop)
          ("M-g e" . consult-compile-error)
          ("M-g f"    . consult-flycheck)
          ;; ("M-g g"    . consult-goto-line)             ;; orig. goto-line
@@ -1849,25 +1883,49 @@ comment to the line."
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   (advice-add #'register-preview :override #'consult-register-window)
-  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
   :config
   (setq consult-narrow-key "`"
         register-preview-delay 0
-        consult-preview-key (kbd "<C-return>")
+        ;;consult-preview-key (kbd "<C-return>")
         register-preview-function #'consult-register-format)
 
   (consult-customize
-   consult-ripgrep consult-git-grep consult-grep
+   consult-theme :preview-key '(:debounce 0.2 any)
    consult-goto-line :preview-key 'any
+   consult-buffer consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
-   :preview-key (kbd "M-."))
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   :preview-key (kbd "C-<return>"))
+  ;;:preview-key '(:debounce 0.4 any))
+
+  ;; narrow to files by default
+  (dolist (src consult-buffer-sources)
+    (unless (eq src 'consult--source-buffer)
+      (set src (plist-put (symbol-value src) :hidden t))))
+
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-  ;;(setq consult-narrow-key "<")
   (advice-add #'register-preview :override #'consult-register-window)
   (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root))
+  (setq consult-project-root-function #'projectile-project-root)
+
+  (defun immediate-which-key-for-narrow (fun &rest args)
+    (let* ((refresh t)
+           (timer (and consult-narrow-key
+                       (memq :narrow args)
+                       (run-at-time 0.05 0.05
+                                    (lambda ()
+                                      (if (eq last-input-event (elt consult-narrow-key 0))
+                                          (when refresh
+                                            (setq refresh nil)
+                                            (which-key--update))
+                                        (setq refresh t)))))))
+      (unwind-protect
+          (apply fun args)
+        (when timer
+          (cancel-timer timer)))))
+  (advice-add #'consult--read :around #'immediate-which-key-for-narrow))
 
 (use-package consult-dir
   :after consult
@@ -2033,12 +2091,14 @@ targets."
   :hook (after-init . which-key-mode)
   :init
   (setq which-key-sort-order #'which-key-prefix-then-key-order
-        which-key-sort-uppercase-first nil
+        which-key-sort-uppercase-first t
         which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 8
-        which-key-idle-delay 0.75
+        which-key-idle-delay 1.0
         which-key-idle-secondary-delay 0.05
+        which-key-use-C-h-commands t
+        which-key-side-window-max-height 0.3
         which-key-side-window-slot -10)
   :config
   (which-key-setup-side-window-bottom)
@@ -2060,25 +2120,32 @@ targets."
     (setq confirm-kill-emacs nil))
   (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
 
-;; (use-package vterm
-;;   :hook (vterm-mode . hide-mode-line-mode)
-;;   :commands vterm
-;;   :init
-;;   (add-to-list 'display-buffer-alist
-;;                '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-;;                  (display-buffer-reuse-window display-buffer-in-side-window)
-;;                  (side . bottom)
-;;                  ;;(dedicated . t) ;dedicated is supported in emacs27
-;;                  (reusable-frames . visible)
-;;                  (window-height . 0.3)))
-;;   :config
-;;   (unbind-key "<f12>" vterm-mode-map))
+(use-package vterm
+  :hook (vterm-mode . hide-mode-line-mode)
+  :commands vterm
+  :init
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+  ;;                (display-buffer-reuse-window display-buffer-in-side-window)
+  ;;                (side . bottom)
+  ;;                ;;(dedicated . t) ;dedicated is supported in emacs27
+  ;;                (reusable-frames . visible)
+  ;;                (window-height . 0.3)))
+  ;; :config
+  ;; (unbind-key "<f12>" vterm-mode-map)
+  )
 
-;; (use-package vterm-toggle
-;;   :bind (("<f12>" . vterm-toggle)
-;;          ("C-<f12>" . vterm-toggle-cd))
-;;   :config
-;;   (setq vterm-toggle-fullscreen-p nil))
+;; (add-hook 'vterm-mode-hook #'jccb/vterm-face)
+;; (defun jccb/vterm-face nil
+;;   (set (make-local-variable 'buffer-face-mode-face) 'fancy-compilation-default-face)
+;;   (buffer-face-mode t))
+
+
+(use-package vterm-toggle
+  :bind (("<f2>" . vterm-toggle)
+         ("C-<f2>" . vterm-toggle-cd))
+  :config
+  (setq vterm-toggle-fullscreen-p nil))
 
 (use-package keypression
   :commands keypression-mode)
@@ -2144,10 +2211,6 @@ targets."
       (string-inflection-all-cycle)))))
 
 
-
-(use-package syntactic-close
-  :bind ("C-)" . syntactic-close))
-
 (use-package dot-mode
   :hook (after-init . global-dot-mode)
   :bind (:repeat-map jccb/dot-mode-repeat-map
@@ -2195,6 +2258,26 @@ targets."
 ;;   (setq interprogram-cut-function   #'my/copy-to-osx
 ;;         interprogram-paste-function #'my/paste-from-osx))
 
+(defun jccb/replace-copyright nil
+  (interactive)
+  (save-excursion
+    (beginning-of-buffer)
+    (when (and (re-search-forward "Copyright [0-9]+" nil t) (nth 4 (syntax-ppss)))
+      (replace-match (concat "Copyright " (format-time-string "%Y"))))))
+(add-hook 'before-save-hook #'jccb/replace-copyright)
+
+
+(use-package recursion-indicator
+  :hook (after-init . recursion-indicator-mode))
+
+(use-package beginend
+  :hook (after-init . beginend-global-mode))
+
+(use-package free-keys
+  :commands free-keys)
+
+(use-package fancy-compilation
+  :commands (fancy-compilation-mode))
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
