@@ -1575,11 +1575,31 @@ comment to the line."
 (use-package dockerfile-mode
   :mode "Dockerfile[a-zA-Z.-]*\\'")
 
+(use-package compile
+  :straight nil
+  :bind ("<f12>" . compile))
+
+;; (use-package ansi-color
+;;   :hook (compilation-filter . ansi-color-compilation-filter))
+
 (use-package terraform-mode
   :hook (terraform-mode . terraform-format-on-save-mode)
+  ;; :hook (terraform-mode . jccb/terraform-mode-hook)
   :bind (:map terraform-mode-map
               ("C-c C-f" . jccb/tf-fabric-find-module-file))
+  :init
+  (with-eval-after-load 'compile
+    (add-to-list 'compilation-error-regexp-alist '("on \\([a-z0-9A-Z/._-]+\\) line \\([0-9]+\\)" 1 2)))
   :config
+
+  ;; (defun jccb/terraform-mode-hook nil
+  ;;   (set (make-local-variable 'compile-command)
+  ;;        "terraform apply -refresh=false"))
+
+  ;; (defun jccb/terraform-compile nil
+  ;;   (interactive)
+  ;;   (compile "terraform apply -refresh=false" t))
+
   (defun jccb/tf-format-region (&optional b e)
     "Run terraform fmt on the region"
     (interactive "r")
@@ -2120,8 +2140,12 @@ targets."
     (setq confirm-kill-emacs nil))
   (advice-add 'restart-emacs :before #'jccb/disable-confirm-kill-emacs))
 
+(defun jccb/set-black-bg nil
+  (face-remap-add-relative 'default '(:background "black")))
+
 (use-package vterm
   :hook (vterm-mode . hide-mode-line-mode)
+  :hook (vterm-mode . jccb/set-black-bg)
   :commands vterm
   :init
   ;; (add-to-list 'display-buffer-alist
@@ -2134,12 +2158,6 @@ targets."
   ;; :config
   ;; (unbind-key "<f12>" vterm-mode-map)
   )
-
-;; (add-hook 'vterm-mode-hook #'jccb/vterm-face)
-;; (defun jccb/vterm-face nil
-;;   (set (make-local-variable 'buffer-face-mode-face) 'fancy-compilation-default-face)
-;;   (buffer-face-mode t))
-
 
 (use-package vterm-toggle
   :bind (("<f2>" . vterm-toggle)
@@ -2277,12 +2295,32 @@ targets."
   :commands free-keys)
 
 (use-package fancy-compilation
-  :commands (fancy-compilation-mode))
+  :after compile
+  :hook (after-init . fancy-compilation-mode)
+  :hook ((compilation-mode coming-mode) . jccb/set-black-bg))
+
+(use-package eshell
+  :straight nil
+  :hook (eshell-mode . jccb/set-black-bg))
+
+(use-package shell
+  :straight nil
+  :hook (shell-mode . jccb/set-black-bg))
+
+(use-package term
+  :straight nil
+  :hook (term-mode . jccb/set-black-bg))
+
+(use-package comint
+  :straight nil
+  :hook (comint-mode . jccb/set-black-bg))
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
   :straight nil
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
+
+;;compilation-ask-about-save
 
 ;; use-package seq: init -> config
