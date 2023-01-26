@@ -123,8 +123,9 @@
 ;; Appearance settings
 ;;==================================================
 
-(use-package hide-mode-line
-  :hook (Man-mode . hide-mode-line-mode))
+
+;; (use-package hide-mode-line
+;;   :hook (Man-mode . hide-mode-line-mode))
 
 (use-package all-the-icons
   :if (display-graphic-p)
@@ -144,6 +145,7 @@
   ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
   ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
   ;; (link                           ((t (:foreground "#3794ff"))))
+
   (vertical-border                ((t (:foreground "black" :background "black"))))
   (fringe                         ((t (:background unspecified))))
   :config
@@ -292,7 +294,8 @@
       auto-revert-verbose nil               ; and be quiet about it
       eval-expression-print-level nil
       echo-keystrokes 0.02                  ; Show keystrokes in progress
-      history-length 2000                   ; looong history
+      history-length 2500                   ; looong history
+      kill-ring-max 2500
       use-dialog-box nil                    ; never show a dialog box
       use-file-dialog nil
       mark-even-if-inactive t
@@ -371,6 +374,25 @@
 ;;==================================================
 ;; Completion
 ;;=================================================
+
+(use-package savehist
+  :config
+  (dolist (var '(kill-ring
+                 search-ring
+                 regexp-search-ring))
+    (add-to-list 'savehist-additional-variables var))
+
+  (setq savehist-save-minibuffer-history t
+        history-delete-duplicates t)
+  (add-hook 'kill-emacs-hook
+            (defun doom-unpropertize-kill-ring-h ()
+              (setq kill-ring (cl-loop for item in kill-ring
+                                       if (stringp item)
+                                       collect (substring-no-properties item)
+                                       else if item collect it))))
+
+  (savehist-mode t))
+
 
 (use-package orderless
   :custom-face
@@ -699,10 +721,9 @@
   :bind (("C-/" . undo-fu-only-undo)
          ("C-S-/".  undo-fu-only-redo))
   :config
-  (setq undo-limit 400000           ; 400kb (default is 160kb)
-        undo-strong-limit 3000000   ; 3mb   (default is 240kb)
-        undo-outer-limit 48000000)  ; 48mb  (default is 24mb)
-
+  (setq undo-limit 6710886400) ;; 64mb.
+  (setq undo-strong-limit 100663296) ;; 96mb.
+  (setq undo-outer-limit 1006632960) ;; 960mb.
   (setq undo-fu-allow-undo-in-region t))
 
 (use-package undo-fu-session
@@ -770,7 +791,7 @@
 (use-package files
   :straight nil
   :init
-  (setq insert-directory-program "gls"
+  (setq insert-directory-program (if *is-a-mac* "gls" "ls")
         backup-by-copying t
         delete-old-versions t
         kept-new-versions 6
@@ -780,7 +801,7 @@
 
 ;; Useful modes
 (use-package image-file
-  :defer 5
+  ;;:defer 5
   :config
   (auto-image-file-mode 1))
 
@@ -802,33 +823,6 @@
             (defun doom--recentf-add-dired-directory-h ()
               (recentf-add-file default-directory))))
 
-(use-package savehist
-  :hook (after-init . savehist-mode)
-  :config
-  (setq kill-ring-max 2500)
-  (dolist (var '(kill-ring
-                 command-history
-                 set-variable-value-history
-                 custom-variable-history
-                 query-replace-history
-                 read-expression-history
-                 minibuffer-history
-                 read-char-history
-                 face-name-history
-                 bookmark-history
-                 file-name-history
-                 search-ring
-                 regexp-search-ring))
-    (add-to-list 'savehist-additional-variables var))
-
-  (setq savehist-save-minibuffer-history t
-        history-delete-duplicates t)
-  (add-hook 'kill-emacs-hook
-            (defun doom-unpropertize-kill-ring-h ()
-              (setq kill-ring (cl-loop for item in kill-ring
-                                       if (stringp item)
-                                       collect (substring-no-properties item)
-                                       else if item collect it)))))
 (use-package uniquify
   :straight nil
   :init
@@ -840,9 +834,6 @@
 (use-package saveplace
   :straight nil
   :hook (after-init . save-place-mode))
-
-(use-package fasd
-  :hook (after-init . global-fasd-mode))
 
 (use-package super-save
   :hook (after-init . super-save-mode)
@@ -932,12 +923,12 @@
 ;;     '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
 ;;     '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
 
-(use-package dimmer
-  :hook (after-init . dimmer-mode)
-  :config
-  (setq dimmer-fraction 0.35)
-  (dimmer-configure-which-key)
-  (dimmer-configure-magit))
+;; (use-package dimmer
+;;   :hook (after-init . dimmer-mode)
+;;   :config
+;;   (setq dimmer-fraction 0.35)
+;;   (dimmer-configure-which-key)
+;;   (dimmer-configure-magit))
 
 (setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
       frame-resize-pixelwise t)
@@ -945,8 +936,8 @@
 ;; The native border "consumes" a pixel of the fringe on righter-most splits,
 ;; `window-divider' does not. Available since Emacs 25.1.
 (setq window-divider-default-places t
-      window-divider-default-bottom-width 1
-      window-divider-default-right-width 1)
+      window-divider-default-bottom-width 2
+      window-divider-default-right-width 2)
 (add-hook 'window-setup-hook #'window-divider-mode)
 
 ;; Favor vertical splits over horizontal ones. Screens are usually wide.
@@ -1065,24 +1056,35 @@
 ;;   (setq magit-delta-delta-args (append magit-delta-delta-args '("--features" "magit-delta"))))
 
 (use-package magit
-  :defer 1
+  ;;:defer 1
   :bind (("C-c C-g" . magit-status)
          ;;("C-x C-z" . magit-status-quick)
          ("C-c g"   . magit-file-dispatch)
          ("C-c M-g" . magit-dispatch))
+  :hook (magit-mode . endless/add-PR-fetch)
+  :hook (git-commit-mode . jccb/git-commit-mode-hook)
   :config
   (global-git-commit-mode +1)
   (setq git-commit-summary-max-length 70)
   (defun jccb/git-commit-mode-hook ()
     (turn-on-flyspell)
     (setq fill-column 70))
-  (add-hook 'git-commit-mode-hook #'jccb/git-commit-mode-hook)
-  ;; (add-hook 'magit-mode-hook
-  ;;           (lambda ()
-  ;;             "Show minimal modeline in magit-status buffer, no modeline elsewhere."
-  ;;             (if (eq major-mode 'magit-status-mode)
-  ;;                 (doom-modeline-set-vcs-modeline)
-  ;;               (hide-mode-line-mode))))
+  (defun endless/add-PR-fetch ()
+    "If refs/pull is not defined on a GH repo, define it."
+    (let ((fetch-address
+           "+refs/pull/*/head:refs/pull/origin/*")
+          (magit-remotes
+           (magit-get-all "remote" "origin" "fetch")))
+      (unless (or (not magit-remotes)
+                  (member fetch-address magit-remotes))
+        (when (string-match
+               "github" (magit-get "remote" "origin" "url"))
+          (message "configuring repo to pull GH refs/prs")
+          (magit-git-string
+           "config" "--add" "remote.origin.fetch"
+           fetch-address)))))
+
+  ;;(add-hook 'magit-mode-hook #'endless/add-PR-fetch)
 
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
@@ -1228,6 +1230,13 @@
   (setq-default diredp-hide-details-initially-flag nil
                 dired-dwim-target t))
 
+(use-package dired-git-info
+  :bind (:map dired-mode-map
+              (")" . dired-git-info-mode)))
+
+;; (use-package diredfl
+;;   :hook (after-init . diredfl-global-mode))
+
 (use-package dired-x
   :straight nil
   :after dired
@@ -1298,7 +1307,6 @@
          ("\\.markdown\\'" . markdown-mode))
   :config
   (defun jccb/markdown-setup ()
-    (message "jccb-mdown mode")
     (turn-on-flyspell)
     (visual-line-mode +1)
     ;; (visual-fill-column-mode +1)
@@ -1346,6 +1354,7 @@
         show-paren-when-point-in-periphery t))
 
 (use-package multiple-cursors
+  ;; TODO: repeat-mode this?
   :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
          ("C->"           . mc/mark-next-like-this)
          ("C-<"           . mc/mark-previous-like-this)
@@ -1407,7 +1416,7 @@
 
 (use-package jccb-misc
   :straight nil
-  :defer 1
+  ;;:defer 1
   :commands (chmod+x-this jccb/doctor)
   :bind (("M-p"   . goto-match-paren))
   :config (jccb/doctor))
@@ -1577,7 +1586,28 @@ comment to the line."
 
 (use-package compile
   :straight nil
-  :bind ("<f12>" . compile))
+  :bind ("<f12>" . compile)
+  :config
+
+  (defun compile-yamllint--find-filename ()
+    "Find the filename for current error."
+    (save-match-data
+      (save-excursion
+        (when (re-search-backward (rx bol (group (or "/" ".") (+ any)) eol))
+          (list (match-string 1))))))
+
+
+  (let ((form `(yamllint
+                ,(rx-to-string
+                  '(and (group (group (+ digit)) ":" (group (+ digit)))
+                        (+ " ") (or "error" "warning")))
+                compile-yamllint--find-filename
+                2 3 2 1)))
+    (if (assq 'yamllint compilation-error-regexp-alist-alist)
+        (setf (cdr (assq 'yamllint compilation-error-regexp-alist-alist)) (cdr form))
+      (push form compilation-error-regexp-alist-alist)))
+
+  (push 'yamllint compilation-error-regexp-alist))
 
 ;; (use-package ansi-color
 ;;   :hook (compilation-filter . ansi-color-compilation-filter))
@@ -1609,9 +1639,10 @@ comment to the line."
   (defun jccb/tf-format-current-block nil
     "Run terraform fmt on the current markdown fenced code block"
     (interactive)
-    (let ((b (search-backward "```hcl"))
-          (e (search-forward "```" nil t 2)))
-      (jccb/tf-format-region (+ b 7) (- e 3))))
+    (save-excursion
+      (let ((b (search-backward "```hcl"))
+            (e (search-forward "```" nil t 2)))
+        (jccb/tf-format-region (+ b 7) (- e 3)))))
 
   (defun jccb/tf-fabric-find-module-file nil
     (interactive)
@@ -1713,7 +1744,7 @@ comment to the line."
           ("DEPRECATED" font-lock-doc-face bold))))
 
 (use-package highlight-indent-guides
-  ;;:disabled
+  :disabled
   :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
   :init
   (setq highlight-indent-guides-method 'character
@@ -2144,7 +2175,7 @@ targets."
   (face-remap-add-relative 'default '(:background "black")))
 
 (use-package vterm
-  :hook (vterm-mode . hide-mode-line-mode)
+  ;;:hook (vterm-mode . hide-mode-line-mode)
   :hook (vterm-mode . jccb/set-black-bg)
   :commands vterm
   :init
@@ -2155,9 +2186,8 @@ targets."
   ;;                ;;(dedicated . t) ;dedicated is supported in emacs27
   ;;                (reusable-frames . visible)
   ;;                (window-height . 0.3)))
-  ;; :config
-  ;; (unbind-key "<f12>" vterm-mode-map)
-  )
+  :config
+  (setq vterm-max-scrollback 5000))
 
 (use-package vterm-toggle
   :bind (("<f2>" . vterm-toggle)
@@ -2279,7 +2309,7 @@ targets."
 (defun jccb/replace-copyright nil
   (interactive)
   (save-excursion
-    (beginning-of-buffer)
+    (goto-char (point-min))
     (when (and (re-search-forward "Copyright [0-9]+" nil t) (nth 4 (syntax-ppss)))
       (replace-match (concat "Copyright " (format-time-string "%Y"))))))
 (add-hook 'before-save-hook #'jccb/replace-copyright)
@@ -2295,9 +2325,7 @@ targets."
   :commands free-keys)
 
 (use-package fancy-compilation
-  :after compile
-  :hook (after-init . fancy-compilation-mode)
-  :hook ((compilation-mode coming-mode) . jccb/set-black-bg))
+  :hook (after-init . fancy-compilation-mode))
 
 (use-package eshell
   :straight nil
@@ -2320,6 +2348,10 @@ targets."
   :straight nil
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
+
+(use-package flycheck-yamllint
+  :after (flycheck compile)
+  :hook (flycheck-mode . flycheck-yamllint-setup))
 
 ;;compilation-ask-about-save
 
