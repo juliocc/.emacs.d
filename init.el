@@ -1162,6 +1162,9 @@
 (use-package ripgrep
   :commands ripgrep-regexp)
 
+(use-package deadgrep
+  :bind ("M-s R" . deadgrep))
+
 ;; use regexp isearch by default
 (bind-key [remap isearch-forward] #'isearch-forward-regexp)
 (bind-key [remap isearch-backward] #'isearch-backward-regexp)
@@ -1203,12 +1206,12 @@
 (use-package wgrep
   :commands wgrep-change-to-wgrep-mode)
 
-(use-package ag
-  :after wgrep
-  :if (executable-find "ag")
-  :config
-  (use-package wgrep-ag)
-  (setq ag-highlight-search t))
+;; (use-package ag
+;;   :after wgrep
+;;   :if (executable-find "ag")
+;;   :config
+;;   (use-package wgrep-ag)
+;;   (setq ag-highlight-search t))
 
 ;;==================================================
 ;; Dired
