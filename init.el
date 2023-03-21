@@ -401,12 +401,20 @@
   (orderless-match-face-2 ((default :weight medium :background unspecified)))
   (orderless-match-face-3 ((default :weight medium :background unspecified)))
   :config
+
   ;; orderless-flex is probably more "flex" but this makes
   ;; highlighting easier to understand (at least for me)
-  (defun jccb/orderless-flex-non-greedy (component)
-    (orderless--separated-by
-        '(minimal-match (zero-or-more nonl))
-      (cl-loop for char across component collect char)))
+  ;; (defun jccb/orderless-flex-non-greedy (component)
+  ;;   (orderless--separated-by
+  ;;       '(minimal-match (zero-or-more nonl))
+  ;;     (cl-loop for char across component collect char)))
+
+  (defun jccb/orderless-flex-non-greedy2 (component)
+    (rx-to-string
+     `(seq
+       ,@(cdr (cl-loop for char across component
+                       append `((minimal-match (zero-or-more (not ,char))) (group ,char)))))))
+
 
   ;; let orderless suffixes work with consult disambiguation suffixes
   (defun jccb/consult-orderless-fix-suffix (args)
@@ -426,6 +434,8 @@
            `(orderless-regexp . ,(substring pattern 0 -1)))
           ((string-suffix-p "\\" pattern)
            `(orderless-initialism . ,(substring pattern 0 -1)))
+          ((string-suffix-p "%" pattern)
+           `(char-fold-to-regexp . ,(substring pattern 0 -1)))
           ((string-suffix-p "/" pattern)
            `(orderless-prefixes . ,(substring pattern 0 -1)))
           ((string-suffix-p "$" pattern)
@@ -450,8 +460,11 @@
         orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
         completion-category-overrides '((file (styles basic-remote partial-completion))))
-  (setq orderless-matching-styles '(jccb/orderless-flex-non-greedy)
-        orderless-style-dispatchers '(jccb/orderless-dispatcher)))
+  (setq
+   ;; orderless-matching-styles '(jccb/orderless-flex-non-greedy)
+   orderless-matching-styles '(jccb/orderless-flex-non-greedy2)
+   ;; orderless-matching-styles '(orderless-flex)
+   orderless-style-dispatchers '(jccb/orderless-dispatcher)))
 
 
 (use-package vertico
@@ -1443,6 +1456,7 @@
 (use-package puni
   ;; :hook ((after-init . puni-global-mode)
   ;;        (term-mode . puni-disable-puni-mode))
+  :hook ((prog-mode sgml-mode nxml-mode tex-mode eval-expression-minibuffer-setup) . puni-mode)
   :bind (;; puni-raise
          ;; puni-split
          ;; puni-transpose
@@ -1452,13 +1466,16 @@
          ("C-{"    . puni-slurp-backward)
          ("C-}"    . puni-barf-backward)
          ("M-C-{"  . puni-barf-forward)
-         ("M-C-}"  . puni-slurp-forward)))
-
-(use-package expand-region
-  :bind ("C-=" . er/expand-region)
+         ("M-C-}"  . puni-slurp-forward)
+         ("C-="    . puni-expand-region))
   :config
-  (setq expand-region-preferred-python-mode 'python-mode)
-  (setq expand-region-smart-cursor t))
+  (setq puni-confirm-when-delete-unbalanced-active-region nil))
+
+;; (use-package expand-region
+;;   :bind ("C-=" . er/expand-region)
+;;   :config
+;;   (setq expand-region-preferred-python-mode 'python-mode)
+;;   (setq expand-region-smart-cursor t))
 
 (use-package change-inner
   :bind (("C-c i" . change-inner)
@@ -1940,18 +1957,19 @@ comment to the line."
   :config
   (setq consult-narrow-key "`"
         register-preview-delay 0
-        ;;consult-preview-key (kbd "<C-return>")
+        consult-preview-key "C-S-P"
         register-preview-function #'consult-register-format)
 
   (consult-customize
-   consult-theme :preview-key '(:debounce 0.2 any)
-   consult-goto-line :preview-key 'any
+   consult-theme consult-imenu consult-goto-line
+   :preview-key '(:debounce 0.2 any)
+
    consult-buffer consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   :preview-key (kbd "C-<return>"))
-  ;;:preview-key '(:debounce 0.4 any))
+   :preview-key '("C-S-P"
+                  :debounce 0.5 "<up>" "<down>" "C-n" "C-p"))
 
   ;; narrow to files by default
   (dolist (src consult-buffer-sources)
