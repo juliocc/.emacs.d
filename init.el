@@ -1109,7 +1109,7 @@
    magit-branch-prefer-remote-upstream '("master" "main")
    magit-delete-by-moving-to-trash t
    magit-git-executable (executable-find magit-git-executable)
-   magit-revision-insert-related-refs nil
+   magit-revision-insert-related-refs 'all
    magit-save-repository-buffers nil))
 
 ;; (use-package forge
@@ -1467,7 +1467,10 @@
          ("C-}"    . puni-barf-backward)
          ("M-C-{"  . puni-barf-forward)
          ("M-C-}"  . puni-slurp-forward)
-         ("C-="    . puni-expand-region))
+         ("C-="    . puni-expand-region)
+         :map puni-mode-map
+         ("C-M-<right>"  . puni-forward-sexp)
+         ("C-M-<left>"   . puni-backward-sexp))
   :config
   (setq puni-confirm-when-delete-unbalanced-active-region nil))
 
@@ -2374,6 +2377,9 @@ targets."
   :after (flycheck compile)
   :hook (flycheck-mode . flycheck-yamllint-setup))
 
+(use-package query-replace-many
+  :straight (:type git :host github :repo "slotThe/query-replace-many")
+  :commands query-replace-many)
 ;;compilation-ask-about-save
 
 ;; use-package seq: init -> config
