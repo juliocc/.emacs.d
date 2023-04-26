@@ -40,3 +40,5 @@
       (insert (shell-command-to-string
                (format "python %s --example ~/tmp/code.tf"
                        (f-join fabric-path "tools/plan_summary.py")))))))
+
+(provide 'jccb-fabric)

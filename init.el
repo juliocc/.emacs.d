@@ -1023,7 +1023,8 @@
   (setq ns-use-native-fullscreen nil)
   (setq ns-use-fullscreen-animation nil)
   (setq ns-pop-up-frames nil)
-
+  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark))
   ;; set my path manually on mac
   ;; (Deprecated in favor of fix-mac-path.sh)
   ;; (setenv "LANG" "en_US.UTF-8")
@@ -1035,10 +1036,6 @@
 
 ;; breaks doom theme
 ;; (setq ring-bell-function 'ignore)
-
-(use-package ns-auto-titlebar
-  :hook (after-init . ns-auto-titlebar-mode)
-  :if *is-a-windowed-mac*)
 
 (use-package reveal-in-osx-finder
   :if *is-a-mac*
@@ -1678,6 +1675,11 @@ comment to the line."
 
   (defun jccb/tf-capf-setup ()
     (setq-local completion-at-point-functions '(cape-dabbrev cape-keyword))))
+
+
+(use-package jccb-fabric
+  :straight nil
+  :load-path "site-lisp")
 
 
 (use-package rust-mode
