@@ -155,30 +155,6 @@
   ;; (load-theme 'doom-one-light t)
   (doom-themes-visual-bell-config))
 
-;; (use-package modus-themes
-;;   :init
-;;   (setq modus-themes-syntax '(green-strings alt-syntax)
-;;         modus-themes-italic-constructs t
-;;         modus-themes-bold-constructs t
-;;         modus-themes-subtle-line-numbers nil
-;;         modus-themes-intense-markup t
-;;         modus-themes-tabs-accented t
-;;         modus-themes-fringes nil
-;;         modus-themes-hl-line nil
-;;         modus-themes-paren-match '(bold intense)
-;;         modus-themes-links '(neutral-underline background)
-;;         modus-themes-lang-checkers '(faint)
-;;         modus-themes-prompts '(intense)
-;;         modus-themes-completions '((matches . (semibold intense))
-;;                                    (selection . (semibold intense accented))
-;;                                    (popup . (accented)))
-;;         modus-themes-region '(bg-only no-extend)
-;;         modus-themes-mode-line '(borderless)
-;;         modus-themes-diffs nil)
-;;   (modus-themes-load-themes)
-;;   :config
-;;   (modus-themes-load-operandi))
-
 (use-package doom-modeline
   :hook ((after-init . doom-modeline-mode)
          (doom-modeline-mode . size-indication-mode) ; filesize in modeline
@@ -393,6 +369,8 @@
 
   (savehist-mode t))
 
+;; (use-package typo
+;;   :straight (:type git :host sourcehut :repo "pkal/typo"))
 
 (use-package orderless
   :custom-face
@@ -525,8 +503,23 @@
                      (propertize "» " 'face 'vertico-current)
                    "  ")
                  cand)))
+
+  (require 'vertico-multiform)
+  (add-to-list 'vertico-multiform-categories
+               '(jinx grid (vertico-grid-annotate . 20)))
+  ;; (setq vertico-multiform-commands
+  ;;       '((consult-imenu buffer indexed)
+  ;;         (execute-extended-command unobtrusive)))
+  ;; (setq vertico-multiform-categories
+  ;;       '((file grid)
+  ;;         (consult-grep buffer)))
+  (vertico-multiform-mode 1)
   :config
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
+
+;; (use-package vertico-truncate
+;;   :straight (:host github :repo "jdtsmith/vertico-truncate")
+;;   :hook (after-init . vertico-truncate-mode))
 
 (use-package corfu
   :commands global-corfu-mode
@@ -1317,6 +1310,7 @@
               ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\.erb\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :config
   (defun jccb/markdown-setup ()
@@ -1531,42 +1525,47 @@ comment to the line."
 ;; Spell
 ;;==================================================
 
-(use-package ispell
-  :straight nil
-  ;; :bind ("C-." . jccb/cycle-ispell-languages)
-  :hook (after-init . jccb/config-spell)
-  :config
-  (defun jccb/config-spell nil
-    (setq ispell-program-name "aspell"
-          ispell-extra-args '("--sug-mode=ultra"
-                              "--run-together"))
+;; (use-package ispell
+;;   :straight nil
+;;   ;; :bind ("C-." . jccb/cycle-ispell-languages)
+;;   :hook (after-init . jccb/config-spell)
+;;   :config
+;;   (defun jccb/config-spell nil
+;;     (setq ispell-program-name "aspell"
+;;           ispell-extra-args '("--sug-mode=ultra"
+;;                               "--run-together"))
 
-    (defvar jccb/ispell-langs (make-ring 2))
-    (ring-insert jccb/ispell-langs "american")
-    (ring-insert jccb/ispell-langs "castellano8")
+;;     (defvar jccb/ispell-langs (make-ring 2))
+;;     (ring-insert jccb/ispell-langs "american")
+;;     (ring-insert jccb/ispell-langs "castellano8")
 
-    (defun jccb/cycle-ispell-languages ()
-      (interactive)
-      (let ((lang (ring-ref jccb/ispell-langs -1)))
-        (ring-insert jccb/ispell-langs lang)
-        (ispell-change-dictionary lang)
-        (flyspell-buffer)
-        (message "Spell language changed to %s" lang)))))
+;;     (defun jccb/cycle-ispell-languages ()
+;;       (interactive)
+;;       (let ((lang (ring-ref jccb/ispell-langs -1)))
+;;         (ring-insert jccb/ispell-langs lang)
+;;         (ispell-change-dictionary lang)
+;;         (flyspell-buffer)
+;;         (message "Spell language changed to %s" lang)))))
 
-(use-package flyspell
-  :straight nil
-  :hook ((text-mode . flyspell-mode)
-         ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
-  :config
-  (unbind-key "C-;" flyspell-mode-map)
-  (unbind-key "C-." flyspell-mode-map)
-  (setq flyspell-issue-welcome-flag nil
-        flyspell-issue-message-flag nil))
+;; ;; TODO: this takes a couple of seconds to load. why?
+;; (use-package flyspell
+;;   :straight nil
+;;   :hook ((text-mode . flyspell-mode)
+;;          ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
+;;   :config
+;;   (unbind-key "C-;" flyspell-mode-map)
+;;   (unbind-key "C-." flyspell-mode-map)
+;;   (setq flyspell-issue-welcome-flag nil
+;;         flyspell-issue-message-flag nil))
 
-(use-package flyspell-correct
-  :after flyspell
-  :bind (:map flyspell-mode-map
-              ("C-:" . flyspell-correct-wrapper)))
+;; (use-package flyspell-correct
+;;   :after flyspell
+;;   :bind (:map flyspell-mode-map
+;;               ("C-:" . flyspell-correct-wrapper)))
+
+(use-package jinx
+  :hook (emacs-startup . global-jinx-mode)
+  :bind (("C-," . jinx-correct)))
 
 ;;==================================================
 ;; Project management
@@ -2369,6 +2368,25 @@ targets."
   :straight nil
   :hook (comint-mode . jccb/set-black-bg))
 
+(use-package go-mode
+  :mode (("\\.go\\'" . go-mode)
+         ("\\.go\\.erb\\'" . go-mode)))
+
+(use-package mmm-mode
+  :config
+  (require 'mmm-auto)
+  (require 'mmm-erb)
+  ;; (define-derived-mode go-erb-mode go-mode "ERB-GO"
+  ;;   (set (make-local-variable 'mmm-indent-line-function) #'mmm-erb-indent-line)
+  ;;   (add-hook 'mmm-after-syntax-propertize-functions
+  ;;             #'html-erb-after-syntax-propertize nil t))
+
+  (setq mmm-global-mode 'maybe)
+  (mmm-add-mode-ext-class 'go-mode nil 'erb)
+  (mmm-add-mode-ext-class 'markdown-mode "\\.markdown\\.erb" 'erb)
+  ;;(mmm-add-mode-ext-class 'go-erb-mode nil 'erb)
+  )
+
 ;; load additional local settings (if they exist)
 (use-package jccb-local
   :straight nil
@@ -2382,6 +2400,17 @@ targets."
 (use-package query-replace-many
   :straight (:type git :host github :repo "slotThe/query-replace-many")
   :commands query-replace-many)
+
+;; (use-package devil
+;;   :straight (:type git :host github :repo "susam/devil")
+;;   :hook (after-init . global-devil-mode)
+;;   :bind ("C-," . global-devil-mode))
+
+
 ;;compilation-ask-about-save
 
 ;; use-package seq: init -> config
+
+;; Local Variables:
+;; jinx-local-words: "flyspell"
+;; End:
