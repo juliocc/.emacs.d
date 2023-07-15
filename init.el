@@ -184,6 +184,7 @@
 
 
 (defvar jccb/font-name "Iosevka SS04")
+;; (defvar jccb/font-name "JetBrains Mono NL")
 (defvar jccb/font-size (if *is-a-windowed-mac* 180 150))
 (defun jccb/set-font nil
   (when (member jccb/font-name (font-family-list))
@@ -866,7 +867,7 @@
   :init
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
-  (setq uniquify-after-kill-buffer-p t)     ; rename after killing uniquified
+  (setq uniquify-after-kill-buffer-p nil)
   (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
 
 (use-package saveplace
@@ -1076,6 +1077,7 @@
   :functions ediff-setup-windows-plain
   :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
+        ediff-keep-variants nil ; Kill variants upon quitting an Ediff session
         ediff-split-window-function #'split-window-horizontally
         ediff-window-setup-function #'ediff-setup-windows-plain))
 
@@ -1115,6 +1117,8 @@
            fetch-address)))))
 
   ;;(add-hook 'magit-mode-hook #'endless/add-PR-fetch)
+  (magit-add-section-hook
+   'magit-status-sections-hook 'magit-insert-tracked-files nil 'append)
 
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
@@ -1127,7 +1131,7 @@
    magit-delete-by-moving-to-trash t
    magit-git-executable (executable-find magit-git-executable)
    magit-revision-insert-related-refs 'all
-   magit-save-repository-buffers nil))
+   magit-save-repository-buffers 'dontask))
 
 ;; (use-package forge
 ;;   :config
@@ -1220,11 +1224,25 @@
 ;; DEL during isearch should edit the search string, not jump back to the previous result
 (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
-(use-package replace
-  :straight nil
-  :bind (:map occur-mode-map
-              ("C-x C-q" . occur-edit-mode)))
 
+(use-package occur
+  :straight nil
+  :commands occur
+  ;; :init
+  ;; (bind-key "<f2>" 'my-occur-dwim)
+  :bind (:map occur-mode-map
+              ("n" . occur-next)
+              ("p" . occur-prev)
+              ("C-x C-q" . occur-edit-mode)
+              ("o" . occur-mode-display-occurrence))
+  :config
+  (advice-add 'isearch-occur :after
+              '(lambda (origin &rest args)
+                 (isearch-exit)
+                 (select-window (get-buffer-window "*Occur*"))
+                 (goto-char (point-min)))))
+
+;; alternative: (setq isearch-lazy-count t)
 (use-package anzu
   :hook (after-init . global-anzu-mode)
   :bind (([remap query-replace-regexp] . anzu-query-replace)
@@ -1250,7 +1268,7 @@
 (use-package dired
   :straight nil
   :bind (("C-x C-j" . dired-jump))
-  :hook (dired-mode . dired-collapse-mode)
+  ;; :hook (dired-mode . dired-collapse-mode)
   :init
   (setq dired-listing-switches "--time-style long-iso -alhFgG --group-directories-first"
         dired-auto-revert-buffer t
@@ -1263,9 +1281,9 @@
   (setq-default diredp-hide-details-initially-flag nil
                 dired-dwim-target t))
 
-(use-package dired-git-info
-  :bind (:map dired-mode-map
-              (")" . dired-git-info-mode)))
+;; (use-package dired-git-info
+;;   :bind (:map dired-mode-map
+;;               (")" . dired-git-info-mode)))
 
 ;; (use-package diredfl
 ;;   :hook (after-init . diredfl-global-mode))
@@ -1304,15 +1322,25 @@
   :after dired)
 
 (use-package dired-collapse
+  :after dired
   :commands dired-collapse-mode)
 
 (use-package peep-dired
+  :after dired
   :bind (:map dired-mode-map
               ("P" . peep-dired)))
 
 (use-package dired-hide-dotfiles
+  :after dired
   :bind (:map dired-mode-map
               ("." . dired-hide-dotfiles-mode)))
+
+(use-package dired-subtree
+  :after dired
+  :config
+  (setq dired-subtree-use-backgrounds nil)
+  (bind-key "<tab>" #'dired-subtree-toggle dired-mode-map)
+  (bind-key "<backtab>" #'dired-subtree-cycle dired-mode-map))
 
 (use-package nerd-icons-dired
   :hook
@@ -1964,7 +1992,6 @@ comment to the line."
          ("M-s G" . consult-git-grep)
          ("M-s l" . consult-line)
          ("M-s L" . consult-line-multi)
-         ("M-s m" . consult-multi-occur)
          ("M-s k" . consult-keep-lines)
          ("M-s u" . consult-focus-lines)
          ("M-s e" . consult-isearch-history)
@@ -1979,7 +2006,6 @@ comment to the line."
          )
   :commands consult-ref
   :init
-  (fset 'multi-occur #'consult-multi-occur)
   (fset 'projectile-ripgrep #'consult-ripgrep)
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
@@ -1989,6 +2015,9 @@ comment to the line."
         register-preview-delay 0
         consult-preview-key "C-S-P"
         register-preview-function #'consult-register-format)
+
+  ;; show filtered buffers with SPC
+  (add-to-list 'consult-buffer-filter "^\\*")
 
   (consult-customize
    consult-theme consult-imenu consult-goto-line
@@ -2432,6 +2461,14 @@ targets."
 ;;   :hook (after-init . global-devil-mode)
 ;;   :bind ("C-," . global-devil-mode))
 
+
+
+;; (use-package man
+;;   :straight nil
+;;   :config
+;;   ;; use gman on macos. Download man-db and run mandb regularly
+;;   (setq manual-program (if *is-a-mac* "gman" "man")
+;;         Man-notifiy-method 'aggressive))
 
 ;;compilation-ask-about-save
 
