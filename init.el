@@ -183,18 +183,21 @@
   (blink-cursor-mode -1))
 
 
-(defvar jccb/font-name "Iosevka SS04")
+;; (defvar jccb/font-name "Iosevka SS04")
+;; (defvar jccb/font-name "Iosevka SS08")
+(defvar jccb/font-name "Iosvmata")
+;; (defvar jccb/font-name "Pragmasevka")
 ;; (defvar jccb/font-name "JetBrains Mono NL")
 (defvar jccb/font-size (if *is-a-windowed-mac* 180 150))
 (defun jccb/set-font nil
-  (when (member jccb/font-name (font-family-list))
-    (set-face-attribute 'default nil
-                        :font jccb/font-name
-                        :height jccb/font-size)
-    (set-face-attribute 'fixed-pitch nil
-                        :font jccb/font-name
-                        :height jccb/font-size)))
-
+  (if (member jccb/font-name (font-family-list))
+      (progn (set-face-attribute 'default nil
+                                 :font jccb/font-name
+                                 :height jccb/font-size)
+             (set-face-attribute 'fixed-pitch nil
+                                 :font jccb/font-name
+                                 :height jccb/font-size))
+    (message "Can't find font %s" jccb/font-name)))
 
 (jccb/set-font)
 (global-font-lock-mode +1)
@@ -532,8 +535,7 @@
               ("TAB" . corfu-next)
               ([tab] . corfu-next)
               ("S-TAB" . corfu-previous)
-              ([backtab] . corfu-previous)
-              )
+              ([backtab] . corfu-previous))
 
   :custom
   (corfu-cycle t)
@@ -542,7 +544,6 @@
   (corfu-max-width 100)
   (corfu-count 20)
   (corfu-preview-current nil)
-
   :init
   (global-corfu-mode)
 
@@ -625,6 +626,7 @@
   :init
   (dolist (cape '(cape-file cape-keyword cape-symbol cape-dabbrev))
     (add-hook 'completion-at-point-functions cape)))
+
 
 (use-package dabbrev
   ;;:bind ("C-M-/" . dabbrev-completion)
@@ -1451,7 +1453,6 @@
   :init
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
-  (message "--->loaded dumb-jump")
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
@@ -1548,7 +1549,10 @@
          ("C-c C-n" . avy-next)
          ("C-c C-p" . avy-prev)
          ("C-'"     . avy-goto-char-timer)
-         ("C-\""    . avy-goto-char))
+         ("C-\""    . avy-goto-word-0)
+         :map isearch-mode-map
+         (""     . avy-isearch)
+         )
   :config
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
@@ -2013,7 +2017,7 @@ comment to the line."
   :config
   (setq consult-narrow-key "`"
         register-preview-delay 0
-        consult-preview-key "C-S-P"
+        consult-preview-key "C-S-<return>"
         register-preview-function #'consult-register-format)
 
   ;; show filtered buffers with SPC
@@ -2027,7 +2031,7 @@ comment to the line."
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   :preview-key '("C-S-P"
+   :preview-key '("C-S-<return>"
                   :debounce 0.5 "<up>" "<down>" "C-n" "C-p"))
 
   ;; narrow to files by default
@@ -2063,7 +2067,10 @@ comment to the line."
   :bind (("C-x C-d" . consult-dir)
          :map vertico-map
          ("C-x C-f" . consult-dir-jump-file)
-         ("C-x C-d" . consult-dir)))
+         ("C-x C-d" . consult-dir))
+  :config
+  (setq consult-dir-project-list-function #'consult-dir-projectile-dirs)
+  (setq consult-dir-shadow-filenames nil))
 
 
 (use-package embark
@@ -2297,6 +2304,7 @@ targets."
 
 
 (use-package pulsar
+  :after consult
   :hook (after-init . pulsar-global-mode)
   :init
   (setq pulsar-pulse t)
@@ -2460,7 +2468,6 @@ targets."
 ;;   :straight (:type git :host github :repo "susam/devil")
 ;;   :hook (after-init . global-devil-mode)
 ;;   :bind ("C-," . global-devil-mode))
-
 
 
 ;; (use-package man
