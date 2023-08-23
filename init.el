@@ -135,32 +135,73 @@
   )
 
 
-(use-package doom-themes
-  :custom-face
-  (region                         ((t (:extend nil))))
-  ;; (font-lock-comment-face         ((t (:italic t :background unspecified))))
-  ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
-  ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
-  ;; (link                           ((t (:foreground "#3794ff"))))
+;; (use-package doom-themes
+;;   :custom-face
+;;   (region                         ((t (:extend nil))))
+;;   ;; (font-lock-comment-face         ((t (:italic t :background unspecified))))
+;;   ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
+;;   ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
+;;   ;; (link                           ((t (:foreground "#3794ff"))))
 
-  (vertical-border                ((t (:foreground "black" :background "black"))))
-  (fringe                         ((t (:background unspecified))))
+;;   (vertical-border                ((t (:foreground "black" :background "black"))))
+;;   (fringe                         ((t (:background unspecified))))
+;;   :config
+;;   (setq doom-themes-enable-bold t
+;;         doom-themes-enable-italic t)
+;;   (load-theme 'doom-one t)
+;;   ;; (load-theme 'doom-one-light t)
+;;   ;; (load-theme 'doom-material-dark t)
+;;   ;; doom-nord, doom-material-dark
+;;   (doom-themes-visual-bell-config))
+
+
+;; (use-package ef-themes
+;;   :config
+;;   ;; dark
+;;   ;; duo-dark
+;;   ;; elea-dark
+;;   (setq ef-themes-region '(intense))
+;;   (ef-themes-select 'ef-elea-dark))
+(use-package modus-themes
   :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (load-theme 'doom-one t)
-  ;; (load-theme 'doom-one-light t)
-  (doom-themes-visual-bell-config))
+  (setq modus-themes-italic-constructs nil
+        modus-themes-bold-constructs nil
+        modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi-tinted)
+        modus-operandi-tinted-palette-overrides
+        '((string green-intense))
+        modus-vivendi-tinted-palette-overrides
+        '((string green-faint))
+        modus-themes-common-palette-overrides
+        '((comment fg-dim)
+          ;;(fringe bg-dim)
+          (bg-region bg-active)
+          (fg-region unspecified)
+          (bg-hl-line bg-dim)
+          (underline-err red-faint)
+          (underline-warning yellow-faint)
+          (underline-note cyan-faint)
+          ;; (bg-mode-line-active bg-lavender)
+          ;; (border-mode-line-active bg-lavender)
+          ;; (bg-mode-line-inactive bg-dim)
+          ;; (border-mode-line-inactive bg-inactive)
+          (fg-line-number-inactive fg-dim)
+          (bg-line-number-inactive bg-dim)
+          (fg-line-number-active info)
+          (bg-line-number-active unspecified)))
+  ;; (setq modus-themes-common-palette-overrides
+  ;;       modus-themes-preset-overrides-warmer)
+  (load-theme 'modus-vivendi-tinted))
 
 (use-package doom-modeline
   :hook ((after-init . doom-modeline-mode)
          (doom-modeline-mode . size-indication-mode) ; filesize in modeline
          (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
-  (setq doom-modeline-bar-width 2
+  (setq doom-modeline-bar-width 0
         doom-modeline-buffer-file-name-style 'buffer-name
-        ;;doom-modeline-project-detection
+        ;; doom-modeline-project-detection t
         doom-modeline-minor-modes nil
+        doom-modeline-indent-info t
         doom-modeline-enable-word-count t)
 
   (unless after-init-time
@@ -245,6 +286,8 @@
       ;; mouse
       mouse-wheel-scroll-amount '(5 ((shift) . 2))
       mouse-wheel-progressive-speed nil)  ; don't accelerate scrolling
+
+(pixel-scroll-precision-mode 1)
 
 ;; Remove hscroll-margin in shells, otherwise it causes jumpiness
 (dolist (hook '(eshell-mode-hook term-mode-hook))
@@ -1119,8 +1162,8 @@
            fetch-address)))))
 
   ;;(add-hook 'magit-mode-hook #'endless/add-PR-fetch)
-  (magit-add-section-hook
-   'magit-status-sections-hook 'magit-insert-tracked-files nil 'append)
+  ;; (magit-add-section-hook
+  ;;  'magit-status-sections-hook 'magit-insert-tracked-files nil 'append)
 
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
@@ -1537,22 +1580,25 @@
 ;;              highlight-symbol-query-replace
 ;;              highlight-symbol-occur)
 ;;   :config
-;;   (setq highlight-symbol-idle-delay 0.5))
 
+;;   (setq highlight-symbol-idle-delay 0.5))
 (use-package symbol-overlay
   :commands (symbol-overlay-mode
              symbol-overlay-put))
 
 (use-package avy
+  :bind (:repeat-map jccb/avy-repeat-map
+                     ("r" . avy-resume)
+                     ("n" . avy-next)
+                     ("p" . avy-prev))
   :bind (("M-g g"   . avy-goto-line)
-         ("C-c C-j" . avy-resume)
-         ("C-c C-n" . avy-next)
-         ("C-c C-p" . avy-prev)
+         ("M-g C-j" . avy-resume)
+         ("M-g C-n" . avy-next)
+         ("M-g C-p" . avy-prev)
          ("C-'"     . avy-goto-char-timer)
          ("C-\""    . avy-goto-word-0)
          :map isearch-mode-map
-         (""     . avy-isearch)
-         )
+         (""     . avy-isearch))
   :config
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
@@ -1807,11 +1853,108 @@ comment to the line."
 (use-package highlight-sexp
   :commands highlight-sexp-mode)
 
+(use-package hs-minor-mode
+  :straight nil
+  :hook (emacs-lisp . hs-minor-mode))
+
 (use-package eros
-  :commands eros-mode)
+  :commands (eros-mode eros-eval-last-sexp eros-eval-region eros-eval-defun)
+  :bind (:map emacs-lisp-mode-map
+              ("C-M-x" . im-eval-dwim))
+  :init
+  :config
+  (defun im-eval-dwim ()
+    (interactive)
+    (cond
+     ((use-region-p)
+      (call-interactively 'eros-eval-region))
+     ((or (-contains? '(?\) ?\") (char-before))
+          (-contains? '(?\ ?\)) (char-after)))
+      (call-interactively 'eros-eval-last-sexp))
+     (t
+      (call-interactively 'eros-eval-defun)))))
 
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
+
+
+;;https://github.com/Fuco1/.emacs.d/blob/master/site-lisp/my-redef.el#LL18C1-L100C62
+(eval-after-load "lisp-mode"
+  '(defun lisp-indent-function (indent-point state)
+     "This function is the normal value of the variable `lisp-indent-function'.
+The function `calculate-lisp-indent' calls this to determine
+if the arguments of a Lisp function call should be indented specially.
+
+INDENT-POINT is the position at which the line being indented begins.
+Point is located at the point to indent under (for default indentation);
+STATE is the `parse-partial-sexp' state for that position.
+
+If the current line is in a call to a Lisp function that has a non-nil
+property `lisp-indent-function' (or the deprecated `lisp-indent-hook'),
+it specifies how to indent.  The property value can be:
+
+* `defun', meaning indent `defun'-style
+  \(this is also the case if there is no property and the function
+  has a name that begins with \"def\", and three or more arguments);
+
+* an integer N, meaning indent the first N arguments specially
+  (like ordinary function arguments), and then indent any further
+  arguments like a body;
+
+* a function to call that returns the indentation (or nil).
+  `lisp-indent-function' calls this function with the same two arguments
+  that it itself received.
+
+This function returns either the indentation to use, or nil if the
+Lisp function does not specify a special indentation."
+     (let ((normal-indent (current-column))
+           (orig-point (point)))
+       (goto-char (1+ (elt state 1)))
+       (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
+       (cond
+        ;; car of form doesn't seem to be a symbol, or is a keyword
+        ((and (elt state 2)
+              (or (not (looking-at "\\sw\\|\\s_"))
+                  (looking-at ":")))
+         (if (not (> (save-excursion (forward-line 1) (point))
+                     calculate-lisp-indent-last-sexp))
+             (progn (goto-char calculate-lisp-indent-last-sexp)
+                    (beginning-of-line)
+                    (parse-partial-sexp (point)
+                                        calculate-lisp-indent-last-sexp 0 t)))
+         ;; Indent under the list or under the first sexp on the same
+         ;; line as calculate-lisp-indent-last-sexp.  Note that first
+         ;; thing on that line has to be complete sexp since we are
+         ;; inside the innermost containing sexp.
+         (backward-prefix-chars)
+         (current-column))
+        ((and (save-excursion
+                (goto-char indent-point)
+                (skip-syntax-forward " ")
+                (not (looking-at ":")))
+              (save-excursion
+                (goto-char orig-point)
+                (looking-at ":")))
+         (save-excursion
+           (goto-char (+ 2 (elt state 1)))
+           (current-column)))
+        (t
+         (let ((function (buffer-substring (point)
+                                           (progn (forward-sexp 1) (point))))
+               method)
+           (setq method (or (function-get (intern-soft function)
+                                          'lisp-indent-function)
+                            (get (intern-soft function) 'lisp-indent-hook)))
+           (cond ((or (eq method 'defun)
+                      (and (null method)
+                           (> (length function) 3)
+                           (string-match "\\`def" function)))
+                  (lisp-indent-defform state indent-point))
+                 ((integerp method)
+                  (lisp-indent-specform method state
+                                        indent-point normal-indent))
+                 (method
+                  (funcall method indent-point state)))))))))
 
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
@@ -2180,6 +2323,9 @@ targets."
   (crux-with-region-or-buffer untabify)
   (crux-reopen-as-root-mode +1))
 
+(use-package elisp-demos
+  :commands elisp-demos-advice-helpful-update)
+
 (use-package helpful
   :commands (helpful--read-symbol
              helpful-callable)
@@ -2205,7 +2351,8 @@ targets."
       (button-type-put
        var-bt 'action
        (lambda (button)
-         (helpful-variable (button-get button 'apropos-symbol)))))))
+         (helpful-variable (button-get button 'apropos-symbol))))))
+  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
 
 (use-package whitespace-cleanup-mode
   :hook (after-init . global-whitespace-cleanup-mode))
@@ -2233,7 +2380,7 @@ targets."
         which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 8
-        which-key-idle-delay 1.0
+        which-key-idle-delay 0.5
         which-key-idle-secondary-delay 0.05
         which-key-use-C-h-commands t
         which-key-side-window-max-height 0.3
@@ -2306,11 +2453,13 @@ targets."
 (use-package pulsar
   :after consult
   :hook (after-init . pulsar-global-mode)
+  ;; :hook (minibuffer-setup . pulsar-pulse-line-blue)
+  ;; :commands (pulsar-recenter-top pulsar-reveal-entry)
   :init
   (setq pulsar-pulse t)
   (setq pulsar-delay 0.055)
   (setq pulsar-iterations 10)
-  (setq pulsar-face 'pulsar-magenta)
+  (setq pulsar-face 'pulsar-yellow)
   (setq pulsar-highlight-face 'pulsar-yellow)
   (pulsar-global-mode 1)
   (add-hook 'next-error-hook #'pulsar-pulse-line)
@@ -2350,11 +2499,11 @@ targets."
 (use-package dot-mode
   :hook (after-init . global-dot-mode)
   :bind (:repeat-map jccb/dot-mode-repeat-map
-                     ("." . dot-mode-execute))
+         ("." . dot-mode-execute))
   :bind (:map dot-mode-map
-              ("C-c ." . dot-mode-execute)
-              ("C-."   . nil)
-              ("C-M-." . nil)))
+         ("C-c ." . dot-mode-execute)
+         ("C-."   . nil)
+         ("C-M-." . nil)))
 
 (use-package transpose-frame)
 (use-package goto-chg
