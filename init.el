@@ -497,30 +497,30 @@
   :hook (minibuffer-setup . vertico-repeat-save)
 
   :bind (:map vertico-map
-              ("M-q"   . vertico-quick-insert)
-              ("C-q"   . vertico-quick-exit)
-              ("S-SPC" . jccb/vertico-restrict-to-matches)
-              ("RET"   . vertico-directory-enter)
-              ("DEL"   . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word)
-              ("C-M-n"   . vertico-next-group)
-              ("C-M-p"   . vertico-previous-group)
+         ("M-q"   . vertico-quick-insert)
+         ("C-q"   . vertico-quick-exit)
+         ("S-SPC" . jccb/vertico-restrict-to-matches)
+         ("RET"   . vertico-directory-enter)
+         ("DEL"   . vertico-directory-delete-char)
+         ("M-DEL" . vertico-directory-delete-word)
+         ("C-M-n"   . vertico-next-group)
+         ("C-M-p"   . vertico-previous-group)
 
-              ;; stuff from karthink
-              ;; ("C-j"     . (lambda () (interactive)
-              ;;                (if minibuffer--require-match
-              ;;                    (minibuffer-complete-and-exit)
-              ;;                  (exit-minibuffer))))
-              ("C->"     . embark-become)
-              ;; (">"         . embark-become)
-              ("C-<tab>"   . embark-act-with-completing-read)
-              ;; ("C-o"     . embark-minimal-act)
-              ("C-M-o"   . embark-act-noquit)
-              ("C-*"     . embark-act-all)
-              ;; ("M-s o"   . embark-export)
-              ;; ("C-c C-o" . embark-export)
-              ("C-o"     . embark-export)
-              )
+         ;; stuff from karthink
+         ;; ("C-j"     . (lambda () (interactive)
+         ;;                (if minibuffer--require-match
+         ;;                    (minibuffer-complete-and-exit)
+         ;;                  (exit-minibuffer))))
+         ("C->"     . embark-become)
+         ;; (">"         . embark-become)
+         ("C-<tab>"   . embark-act-with-completing-read)
+         ;; ("C-o"     . embark-minimal-act)
+         ("C-M-o"   . embark-act-noquit)
+         ("C-*"     . embark-act-all)
+         ;; ("M-s o"   . embark-export)
+         ;; ("C-c C-o" . embark-export)
+         ("C-o"     . embark-export)
+         )
   :bind ("C-c C-r" . vertico-repeat)
 
   :custom
@@ -570,15 +570,15 @@
   :hook (minibuffer-setup . corfu-enable-always-in-minibuffer)
   :bind ("M-/" . completion-at-point)
   :bind (:map corfu-map
-              ("SPC" . corfu-insert-separator)
-              ("C-l" . corfu-show-location)
-              ("C-a" . corfu-beginning-of-prompt)
-              ("C-e" . corfu-end-of-prompt)
-              ("M-m" . corfu-move-to-minibuffer)
-              ("TAB" . corfu-next)
-              ([tab] . corfu-next)
-              ("S-TAB" . corfu-previous)
-              ([backtab] . corfu-previous))
+         ("SPC" . corfu-insert-separator)
+         ("C-l" . corfu-show-location)
+         ("C-a" . corfu-beginning-of-prompt)
+         ("C-e" . corfu-end-of-prompt)
+         ("M-m" . corfu-move-to-minibuffer)
+         ("TAB" . corfu-next)
+         ([tab] . corfu-next)
+         ("S-TAB" . corfu-previous)
+         ([backtab] . corfu-previous))
 
   :custom
   (corfu-cycle t)
@@ -680,7 +680,7 @@
 (use-package marginalia
   :after vertico
   :bind (:map vertico-map
-              ("M-]" . marginalia-cycle))
+         ("M-]" . marginalia-cycle))
   :config
   (setq-default marginalia_ellipsis "…"    ; Nicer ellipsis
                 marginalia-align 'right     ; right alignment
@@ -1055,8 +1055,8 @@
   ;; (setq ibuffer-display-summary nil)
   (define-ibuffer-column size
     (:name "Size"
-           :inline t
-           :header-mouse-map ibuffer-size-header-map)
+     :inline t
+     :header-mouse-map ibuffer-size-header-map)
     (file-size-human-readable (buffer-size))))
 
 (use-package ibuffer-projectile
@@ -1259,9 +1259,9 @@
   :straight nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :bind (:map isearch-mode-map
-              ("M-z" . zap-to-isearch)
-              ("C-w" . isearch-yank-symbol)
-              ("C-RET" . isearch-exit-other-end)))
+         ("M-z" . zap-to-isearch)
+         ("C-w" . isearch-yank-symbol)
+         ("C-RET" . isearch-exit-other-end)))
 
 (define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
 (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
@@ -1276,10 +1276,10 @@
   ;; :init
   ;; (bind-key "<f2>" 'my-occur-dwim)
   :bind (:map occur-mode-map
-              ("n" . occur-next)
-              ("p" . occur-prev)
-              ("C-x C-q" . occur-edit-mode)
-              ("o" . occur-mode-display-occurrence))
+         ("n" . occur-next)
+         ("p" . occur-prev)
+         ("C-x C-q" . occur-edit-mode)
+         ("o" . occur-mode-display-occurrence))
   :config
   (advice-add 'isearch-occur :after
               '(lambda (origin &rest args)
@@ -1338,7 +1338,7 @@
   :after dired
   :hook (dired-mode . dired-omit-mode)
   :bind (:map dired-mode-map
-              ("h" . dired-omit-mode))
+         ("h" . dired-omit-mode))
   :config
   (setq dired-omit-verbose nil
         dired-omit-files
@@ -1354,8 +1354,8 @@
   :after dired
   :straight (dired-hist :type git :host github :repo "karthink/dired-hist")
   :bind (:map  dired-mode-map
-               ("l" . dired-hist-go-back)
-               ("r" . dired-hist-go-forward))
+         ("l" . dired-hist-go-back)
+         ("r" . dired-hist-go-forward))
   :config
   (dired-hist-mode 1))
 
@@ -1373,12 +1373,12 @@
 (use-package peep-dired
   :after dired
   :bind (:map dired-mode-map
-              ("P" . peep-dired)))
+         ("P" . peep-dired)))
 
 (use-package dired-hide-dotfiles
   :after dired
   :bind (:map dired-mode-map
-              ("." . dired-hide-dotfiles-mode)))
+         ("." . dired-hide-dotfiles-mode)))
 
 (use-package dired-subtree
   :after dired
@@ -1404,7 +1404,7 @@
 (use-package markdown-mode
   :hook (markdown-mode . jccb/markdown-setup)
   :bind (:map markdown-mode-command-map
-              ("g" . grip-mode))
+         ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\.erb\\'" . markdown-mode)
@@ -1588,9 +1588,9 @@
 
 (use-package avy
   :bind (:repeat-map jccb/avy-repeat-map
-                     ("r" . avy-resume)
-                     ("n" . avy-next)
-                     ("p" . avy-prev))
+         ("r" . avy-resume)
+         ("n" . avy-next)
+         ("p" . avy-prev))
   :bind (("M-g g"   . avy-goto-line)
          ("M-g C-j" . avy-resume)
          ("M-g C-n" . avy-next)
@@ -1739,7 +1739,7 @@ comment to the line."
   :hook (terraform-mode . terraform-format-on-save-mode)
   ;; :hook (terraform-mode . jccb/terraform-mode-hook)
   :bind (:map terraform-mode-map
-              ("C-c C-f" . jccb/tf-fabric-find-module-file))
+         ("C-c C-f" . jccb/tf-fabric-find-module-file))
   :init
   (with-eval-after-load 'compile
     (add-to-list 'compilation-error-regexp-alist '("on \\([a-z0-9A-Z/._-]+\\) line \\([0-9]+\\)" 1 2)))
@@ -1860,7 +1860,7 @@ comment to the line."
 (use-package eros
   :commands (eros-mode eros-eval-last-sexp eros-eval-region eros-eval-defun)
   :bind (:map emacs-lisp-mode-map
-              ("C-M-x" . im-eval-dwim))
+         ("C-M-x" . im-eval-dwim))
   :init
   :config
   (defun im-eval-dwim ()
@@ -2476,11 +2476,11 @@ targets."
 
 (use-package string-inflection
   :bind (:repeat-map jccb/string-inflection-repeat-map
-                     ("s" . jccb/string-inflection-cycle)
-                     ("u" . string-inflection-underscore)
-                     ("U" . string-inflection-upcase)
-                     ("k" . string-inflection-kebab-case)
-                     ("c" . string-inflection-camelcase))
+         ("s" . jccb/string-inflection-cycle)
+         ("u" . string-inflection-underscore)
+         ("U" . string-inflection-upcase)
+         ("k" . string-inflection-kebab-case)
+         ("c" . string-inflection-camelcase))
   :bind ("C-c s" . jccb/string-inflection-cycle)
   :config
 
