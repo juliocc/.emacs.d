@@ -41,6 +41,8 @@
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
 (if (fboundp 'fringe-mode) (fringe-mode 4))
 
+;; (setq tooltip-use-echo-area t)
+
 ;; Less noise at startup. The dashboard/empty scratch buffer is good enough.
 (setq inhibit-startup-message t
       inhibit-startup-echo-area-message user-login-name
@@ -226,7 +228,9 @@
 
 ;; (defvar jccb/font-name "Iosevka SS04")
 ;; (defvar jccb/font-name "Iosevka SS08")
-(defvar jccb/font-name "Iosvmata")
+;; (defvar jccb/font-name "Iosvmata")
+(defvar jccb/font-name "Iosevka Comfy Motion Fixed")
+;; (defvar jccb/font-name "Iosevka Comfy")
 ;; (defvar jccb/font-name "Pragmasevka")
 ;; (defvar jccb/font-name "JetBrains Mono NL")
 (defvar jccb/font-size (if *is-a-windowed-mac* 180 150))
@@ -383,8 +387,9 @@
 (setq bidi-inhibit-bpa t)  ; Emacs 27 only
 
 ;; confirm with y/n only
-(defalias 'yes-or-no-p 'y-or-n-p)
-(setq use-short-answers t)
+(if (version< emacs-version "28.1")
+    (defalias 'yes-or-no-p 'y-or-n-p)
+  (setq use-short-answers t))
 
 ;; don't confirm killing buffers with attached processes
 (setq kill-buffer-query-functions
@@ -524,7 +529,7 @@
   :bind ("C-c C-r" . vertico-repeat)
 
   :custom
-  (vertico-count 15)
+  (vertico-count 25)
   (vertico-cycle nil)
   (vertico-buffer-display-action '(display-buffer-reuse-window))
 
@@ -561,6 +566,13 @@
   :config
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
+;; (use-package vertico-posframe
+;;   :config
+;;   (vertico-posframe-mode 1)
+;;   (setq vertico-posframe-width 100
+;;         vertico-posframe-height vertico-count
+;;         vertico-posframe-poshandler 'posframe-poshandler-frame-top-center))
+
 ;; (use-package vertico-truncate
 ;;   :straight (:host github :repo "jdtsmith/vertico-truncate")
 ;;   :hook (after-init . vertico-truncate-mode))
@@ -571,9 +583,9 @@
   :bind ("M-/" . completion-at-point)
   :bind (:map corfu-map
          ("SPC" . corfu-insert-separator)
-         ("C-l" . corfu-show-location)
-         ("C-a" . corfu-beginning-of-prompt)
-         ("C-e" . corfu-end-of-prompt)
+         ;; ("C-l" . corfu-show-location)
+         ;; ("C-a" . corfu-beginning-of-prompt)
+         ;; ("C-e" . corfu-end-of-prompt)
          ("M-m" . corfu-move-to-minibuffer)
          ("TAB" . corfu-next)
          ([tab] . corfu-next)
@@ -682,9 +694,10 @@
   :bind (:map vertico-map
          ("M-]" . marginalia-cycle))
   :config
-  (setq-default marginalia_ellipsis "…"    ; Nicer ellipsis
-                marginalia-align 'right     ; right alignment
-                marginalia-align-offset -1)
+  (setq marginalia_ellipsis "…"
+        marginalia-align 'left
+        marginalia-field-width 80
+        marginalia-align-offset 0)
   :init
   (marginalia-mode))
 
@@ -1669,7 +1682,7 @@ comment to the line."
   :hook (emacs-startup . global-jinx-mode)
   :custom
   (jinx-languages "en es")
-  :bind (("C-," . jinx-correct)))
+  :bind (("C-;" . jinx-correct)))
 
 ;;==================================================
 ;; Project management
@@ -2175,7 +2188,7 @@ Lisp function does not specify a special indentation."
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
    :preview-key '("C-S-<return>"
-                  :debounce 0.5 "<up>" "<down>" "C-n" "C-p"))
+                  :debounce 0.5 "<up>" "<down>"))
 
   ;; narrow to files by default
   (dolist (src consult-buffer-sources)
@@ -2184,7 +2197,7 @@ Lisp function does not specify a special indentation."
 
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   (advice-add #'register-preview :override #'consult-register-window)
-  (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
+  ;; (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root)
 
