@@ -956,6 +956,7 @@
 
 (use-package windmove
   :hook (after-init . windmove-default-keybindings)
+  :hook (after-init . windmove-delete-default-keybindings)
   :hook (after-init . windmove-swap-states-default-keybindings))
 
 (use-package window
@@ -1085,13 +1086,14 @@
   (setq delete-by-moving-to-trash t)
   ;; left and right commands are meta
   (setq mac-command-modifier 'meta)
-  (setq mac-right-command-modifier 'left)
+  (setq mac-right-command-modifier 'super)
+  (setq mac-right-option-modifier 'hyper)
   ;; left opt key is super
   (setq mac-option-modifier 'super)
   ;; right opt is ignored by emacs (useful for mac-style accent input)
-  (setq mac-right-option-modifier 'none)
   ;; left and right controls are control
   (setq mac-control-modifier 'control)
+
   (setq mac-right-control-modifier 'left)
   ;; function key is hyper
   (setq mac-function-modifier 'hyper)
@@ -1243,9 +1245,8 @@
     (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
     (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
 
-
-;; (use-package git-timemachine
-;;   :commands git-timemachine)
+(use-package git-link)
+(use-package git-timemachine)
 
 ;;==================================================
 ;; Search settings
@@ -2509,14 +2510,14 @@ targets."
       (string-inflection-all-cycle)))))
 
 
-(use-package dot-mode
-  :hook (after-init . global-dot-mode)
-  :bind (:repeat-map jccb/dot-mode-repeat-map
-         ("." . dot-mode-execute))
-  :bind (:map dot-mode-map
-         ("C-c ." . dot-mode-execute)
-         ("C-."   . nil)
-         ("C-M-." . nil)))
+;; (use-package dot-mode
+;;   :hook (after-init . global-dot-mode)
+;;   :bind (:repeat-map jccb/dot-mode-repeat-map
+;;          ("." . dot-mode-execute))
+;;   :bind (:map dot-mode-map
+;;          ("C-c ." . dot-mode-execute)
+;;          ("C-."   . nil)
+;;          ("C-M-." . nil)))
 
 (use-package transpose-frame)
 (use-package goto-chg
@@ -2640,6 +2641,7 @@ targets."
 ;;         Man-notifiy-method 'aggressive))
 
 ;;compilation-ask-about-save
+;; native-compile-prune-cache
 
 ;; use-package seq: init -> config
 
