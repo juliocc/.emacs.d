@@ -1147,34 +1147,21 @@
 ;;   :config
 ;;   (setq magit-delta-delta-args (append magit-delta-delta-args '("--features" "magit-delta"))))
 
+(use-package transient)
+
 (use-package magit
   ;;:defer 1
   :bind (("C-c C-g" . magit-status)
          ;;("C-x C-z" . magit-status-quick)
          ("C-c g"   . magit-file-dispatch)
          ("C-c M-g" . magit-dispatch))
-  :hook (magit-mode . endless/add-PR-fetch)
   :hook (git-commit-mode . jccb/git-commit-mode-hook)
   :config
   (global-git-commit-mode +1)
   (setq git-commit-summary-max-length 70)
   (defun jccb/git-commit-mode-hook ()
-    (turn-on-flyspell)
+    ;;(turn-on-flyspell)
     (setq fill-column 70))
-  (defun endless/add-PR-fetch ()
-    "If refs/pull is not defined on a GH repo, define it."
-    (let ((fetch-address
-           "+refs/pull/*/head:refs/pull/origin/*")
-          (magit-remotes
-           (magit-get-all "remote" "origin" "fetch")))
-      (unless (or (not magit-remotes)
-                  (member fetch-address magit-remotes))
-        (when (string-match
-               "github" (magit-get "remote" "origin" "url"))
-          (message "configuring repo to pull GH refs/prs")
-          (magit-git-string
-           "config" "--add" "remote.origin.fetch"
-           fetch-address)))))
 
   ;;(add-hook 'magit-mode-hook #'endless/add-PR-fetch)
   ;; (magit-add-section-hook
@@ -1182,7 +1169,7 @@
 
   (setq ;magit-completing-read-function #'selectrum-completing-read
    magit-bury-buffer-function #'magit-restore-window-configuration
-   magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
+   ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
    magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
    magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
    magit-diff-refine-hunk 'all
@@ -1296,10 +1283,10 @@
          ("o" . occur-mode-display-occurrence))
   :config
   (advice-add 'isearch-occur :after
-              '(lambda (origin &rest args)
-                 (isearch-exit)
-                 (select-window (get-buffer-window "*Occur*"))
-                 (goto-char (point-min)))))
+              #'(lambda (origin &rest args)
+                  (isearch-exit)
+                  (select-window (get-buffer-window "*Occur*"))
+                  (goto-char (point-min)))))
 
 ;; alternative: (setq isearch-lazy-count t)
 (use-package anzu
@@ -1471,17 +1458,17 @@
         show-paren-when-point-inside-paren t
         show-paren-when-point-in-periphery t))
 
-(use-package multiple-cursors
-  ;; TODO: repeat-mode this?
-  :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
-         ("C->"           . mc/mark-next-like-this)
-         ("C-<"           . mc/mark-previous-like-this)
-         ("C-c C-<"       . mc/mark-all-like-this)
-         ("C-c c r"       . set-rectangular-region-anchor)
-         ("C-c c t"       . mc/mark-sgml-tag-pair)
-         ("C-c c c"       . mc/edit-lines)
-         ("C-c c e"       . mc/edit-ends-of-lines)
-         ("C-c c a"       . mc/edit-beginnings-of-lines)))
+(use-package multiple-cursors)
+;; ;; TODO: repeat-mode this?
+;; :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
+;;        ("C->"           . mc/mark-next-like-this)
+;;        ("C-<"           . mc/mark-previous-like-this)
+;;        ("C-c C-<"       . mc/mark-all-like-this)
+;;        ("C-c c r"       . set-rectangular-region-anchor)
+;;        ("C-c c t"       . mc/mark-sgml-tag-pair)
+;;        ("C-c c c"       . mc/edit-lines)
+;;        ("C-c c e"       . mc/edit-ends-of-lines)
+;;        ("C-c c a"       . mc/edit-beginnings-of-lines)))
 
 
 (use-package avy-zap
@@ -1491,6 +1478,8 @@
   :straight nil
   :bind ("M-z" . zap-up-to-char))
 
+
+;; TODO disable on emacs >= 29
 (use-package so-long
   :hook (after-init . global-so-long-mode))
 
@@ -1538,6 +1527,7 @@
   :bind (("M-p"   . goto-match-paren))
   :config (jccb/doctor))
 
+;; TODO replace white cycle-spacing in >= 29
 (use-package shrink-whitespace
   :bind ("M-\\" . shrink-whitespace))
 
@@ -1568,18 +1558,43 @@
          ("C-}"    . puni-barf-backward)
          ("M-C-{"  . puni-barf-forward)
          ("M-C-}"  . puni-slurp-forward)
-         ("C-="    . puni-expand-region)
+         ;; ("C-="    . puni-expand-region)
          :map puni-mode-map
          ("C-M-<right>"  . puni-forward-sexp)
          ("C-M-<left>"   . puni-backward-sexp))
   :config
   (setq puni-confirm-when-delete-unbalanced-active-region nil))
 
-;; (use-package expand-region
-;;   :bind ("C-=" . er/expand-region)
-;;   :config
-;;   (setq expand-region-preferred-python-mode 'python-mode)
-;;   (setq expand-region-smart-cursor t))
+(use-package expand-region
+  :bind ("C-=" . er/expand-region)
+  :config
+  (setq expand-region-fast-keys-enabled t)
+  (setq expand-region-subword-enabled t)
+  (setq expand-region-preferred-python-mode 'python-mode)
+  (setq expand-region-smart-cursor t))
+
+(use-package selected
+  ;;:after multiple-cursors
+  :hook (prog-mode . selected-minor-mode)
+  :bind (:map selected-keymap
+         ("q" . selected-off)
+
+         ("M-l" . mc/edit-lines)
+         ("M-." . mc/mark-next-like-this)
+         ("M-," . mc/mark-previous-like-this)
+         ;; ("M->" . mc/skip-to-next-like-this)
+         ;; ("M-<" . mc/unmark-next-like-this)
+         ("M-@" . mc/mark-all-like-this)
+         ("M-!" . mc/mark-all-in-region)
+         ("M-a" . mc/edit-beginnings-of-lines)
+         ("M-e" . mc/edit-ends-of-lines)
+
+         ("M-u" . upcase-region)
+         ("M-d" . downcase-region)
+         ("M-c" . count-words-region)
+         ("M-f" . flush-lines)
+         ("M-S" . sort-lines)
+         ("M-m" . apply-macro-to-region-lines)))
 
 (use-package change-inner
   :bind (("C-c i" . change-inner)
@@ -1846,6 +1861,8 @@ comment to the line."
 
 
 (setq-default python-indent-offset 2)
+
+
 
 ;; (use-package scss-mode
 ;;   :config
@@ -2148,7 +2165,7 @@ Lisp function does not specify a special indentation."
          ("M-g I" . consult-imenu-multi)
          ;; M-s bindings (search-map)
          ("M-s r" . consult-ripgrep)
-         ;; ("M-s f" . consult-fd)
+         ("M-s f" . consult-fd)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
          ("M-s l" . consult-line)
@@ -2505,7 +2522,7 @@ targets."
      ((eq major-mode 'emacs-lisp-mode)
       (string-inflection-all-cycle))
      ((eq major-mode 'python-mode)
-      kj      (string-inflection-python-style-cycle))
+      (string-inflection-python-style-cycle))
      (t
       (string-inflection-all-cycle)))))
 
@@ -2626,6 +2643,26 @@ targets."
 (use-package query-replace-many
   :straight (:type git :host github :repo "slotThe/query-replace-many")
   :commands query-replace-many)
+
+;; (use-package sh-scrip t
+;;   :hook (sh-mode . flymake-mode))
+
+
+(add-to-list 'display-buffer-alist
+             '("\\*Help"
+               (display-buffer-same-window)))
+(add-to-list 'display-buffer-alist
+             '("\\*helpful"
+               (display-buffer-same-window)))
+(add-to-list 'display-buffer-alist
+             '("\\*vterm*"
+               (display-buffer-at-bottom)
+               (window-height . 20)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; closing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (use-package devil
 ;;   :straight (:type git :host github :repo "susam/devil")
