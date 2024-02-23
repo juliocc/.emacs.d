@@ -107,9 +107,8 @@
 
 (use-package no-littering
   :config
-  (setq auto-save-file-name-transforms
-        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
-        custom-file (no-littering-expand-etc-file-name "custom.el"))
+  (no-littering-theme-backups)
+  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
   (when (file-exists-p custom-file)
     (load-file custom-file)))
 
@@ -200,7 +199,7 @@
          (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 0
-        doom-modeline-buffer-file-name-style 'buffer-name
+        doom-modeline-buffer-file-name-style 'truncate-upto-project ;; 'buffer-name
         ;; doom-modeline-project-detection t
         doom-modeline-minor-modes nil
         doom-modeline-indent-info t
@@ -1298,7 +1297,11 @@
          ([remap isearch-query-replace] . anzu-isearch-query-replace-regexp)))
 
 (use-package wgrep
-  :commands wgrep-change-to-wgrep-mode)
+  :commands wgrep-change-to-wgrep-mode
+  :bind (:map grep-mode-map
+         ("e" . wgrep-change-to-wgrep-mode)
+         ("C-x C-q" . wgrep-change-to-wgrep-mode)
+         ("C-c C-c" . wgrep-finish-edit)))
 
 ;; (use-package ag
 ;;   :after wgrep
@@ -1402,6 +1405,9 @@
   (setq  visual-fill-column-width 80
          visual-fill-column-center-text t))
 
+(setq long-line-threshold 5000)
+(setq large-hscroll-threshold 5000)
+
 (use-package markdown-mode
   :hook (markdown-mode . jccb/markdown-setup)
   :bind (:map markdown-mode-command-map
@@ -1412,8 +1418,8 @@
          ("\\.markdown\\'" . markdown-mode))
   :config
   (defun jccb/markdown-setup ()
-    (turn-on-flyspell)
-    (visual-line-mode +1)
+    ;; (turn-on-flyspell)
+    ;; (visual-line-mode +1)
     ;; (visual-fill-column-mode +1)
     (dolist (face '((markdown-header-face-1 . 1.3)
                     (markdown-header-face-2 . 1.2)
@@ -1574,8 +1580,7 @@
   (setq expand-region-smart-cursor t))
 
 (use-package selected
-  ;;:after multiple-cursors
-  :hook (prog-mode . selected-minor-mode)
+  :hook (after-init . selected-global-mode)
   :bind (:map selected-keymap
          ("q" . selected-off)
 
@@ -1715,7 +1720,7 @@ comment to the line."
   (setq projectile-indexing-method 'alien)
   (setq projectile-enable-caching t)
   (setq projectile-completion-system 'auto)
-  (setq projectile-sort-order 'recently-active)
+  (setq projectile-sort-order 'ryecently-active)
   (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
   ;; (when (executable-find jccb/fd-command)
   ;;   (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never ")))
@@ -1787,7 +1792,6 @@ comment to the line."
     (interactive "r")
     (shell-command-on-region b e "terraform fmt -" t t))
 
-
   (defun jccb/tf-format-current-block nil
     "Run terraform fmt on the current markdown fenced code block"
     (interactive)
@@ -1812,7 +1816,6 @@ comment to the line."
 (use-package jccb-fabric
   :straight nil
   :load-path "site-lisp")
-
 
 (use-package rust-mode
   :mode "\\.rs\\'")
@@ -2251,8 +2254,11 @@ Lisp function does not specify a special indentation."
   :after which-key
   :commands (embark-act-with-completing-read embark-act-noquit)
   :bind (("C-."   . embark-act)
-         ("M-."   . embark-dwim)
-         ("C-h B" . embark-bindings))
+         ;; ("M-."   . embark-dwim)
+         ("C-h B" . embark-bindings)
+         :map minibuffer-local-map
+         ("C-c C-c" . embark-collect)
+         ("C-c C-e" . embark-export))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
   :config
@@ -2411,7 +2417,7 @@ targets."
         which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 8
-        which-key-idle-delay 0.5
+        which-key-idle-delay 1
         which-key-idle-secondary-delay 0.05
         which-key-use-C-h-commands t
         which-key-side-window-max-height 0.3
@@ -2659,6 +2665,10 @@ targets."
                (display-buffer-at-bottom)
                (window-height . 20)))
 
+
+;; (use-package explain-pause-mode
+;;   :straight (explain-pause-mode :type git :host github :repo "lastquestion/explain-pause-mode")
+;;   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
