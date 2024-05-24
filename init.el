@@ -667,7 +667,7 @@
 
 (use-package cape
   ;; Bind dedicated completion commands
-  :bind (("<f8> s" . cape-symbol)
+  :bind (("<f8> s" . cape-elisp-symbol)
          ("<f8> <f8>" . cape-dabbrev)
          ("<f8> k" . cape-keyword)
          ("<f8> f" . cape-file)
@@ -678,7 +678,7 @@
          ("<f8> w" . cape-dict))
   :commands cape-capf-buster
   :init
-  (dolist (cape '(cape-file cape-keyword cape-symbol cape-dabbrev))
+  (dolist (cape '(cape-file cape-keyword cape-dabbrev cape-elisp-symbol))
     (add-hook 'completion-at-point-functions cape)))
 
 
@@ -1500,11 +1500,12 @@
 (use-package ialign
   :commands ialign)
 
+(use-package xref)
 (use-package dumb-jump
-  :commands dumb-jump-xref-activate
   :init
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+  (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
+  (dumb-jump-mode t)
   (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
@@ -1598,6 +1599,7 @@
          ("M-d" . downcase-region)
          ("M-c" . count-words-region)
          ("M-f" . flush-lines)
+         ("M-k" . keep-lines)
          ("M-S" . sort-lines)
          ("M-m" . apply-macro-to-region-lines)))
 
@@ -2050,11 +2052,11 @@ Lisp function does not specify a special indentation."
 ;; lsp config
 ;;==================================================
 
-(use-package flycheck
-  :hook (prog-mode . flycheck-mode)
-  :config
-  (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
-    [128 192 224 192 128] nil nil 'center))
+;; (use-package flycheck
+;;   :hook (prog-mode . flycheck-mode)
+;;   :config
+;;   (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
+;;     [128 192 224 192 128] nil nil 'center))
 
 (use-package lsp-mode
   :custom
@@ -2133,8 +2135,8 @@ Lisp function does not specify a special indentation."
 ;; Embark + Consult + Tempel
 ;;==================================================
 
-(use-package consult-flycheck
-  :commands consult-flycheck)
+;; (use-package consult-flycheck
+;;   :commands consult-flycheck)
 
 (use-package consult-lsp
   :commands (consult-lsp-symbols
@@ -2157,7 +2159,7 @@ Lisp function does not specify a special indentation."
 
          ("M-y" . consult-yank-pop)
          ("M-g e" . consult-compile-error)
-         ("M-g f"    . consult-flycheck)
+         ;; ("M-g f"    . consult-flycheck)
          ;; ("M-g g"    . consult-goto-line)             ;; orig. goto-line
          ("M-g M-g"  . consult-goto-line)           ;; orig. goto-line
          ("M-g o"    . consult-outline)
@@ -2642,9 +2644,9 @@ targets."
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
-(use-package flycheck-yamllint
-  :after (flycheck compile)
-  :hook (flycheck-mode . flycheck-yamllint-setup))
+;; (use-package flycheck-yamllint
+;;   :after (flycheck compile)
+;;   :hook (flycheck-mode . flycheck-yamllint-setup))
 
 (use-package query-replace-many
   :straight (:type git :host github :repo "slotThe/query-replace-many")
