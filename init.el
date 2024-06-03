@@ -206,11 +206,40 @@
         doom-modeline-enable-word-count t)
 
   (unless after-init-time
-    (setq-default mode-line-format nil)))
+    (setq-default mode-line-format nil))
+  :config
 
-;; switch windows with C-x w <number>
-;; (use-package winum
-;;   :hook (after-init . winum-mode))
+  ;; HACK(jccb): show winum number and ace-window letter together in the modeline
+  (doom-modeline-def-segment window-number
+    "The current window number."
+    (let ((num (cond
+                ((and (bound-and-true-p ace-window-display-mode) (bound-and-true-p winum-mode))
+                 (aw-update)
+                 (setq winum-auto-setup-mode-line nil)
+                 (format "%s/%s"
+                         (window-parameter (selected-window) 'ace-window-path)
+                         (winum-get-number-string)))
+                ((bound-and-true-p ace-window-display-mode)
+                 (aw-update)
+                 (window-parameter (selected-window) 'ace-window-path))
+                ((bound-and-true-p winum-mode)
+                 (setq winum-auto-setup-mode-line nil)
+                 (winum-get-number-string))
+                ((bound-and-true-p window-numbering-mode)
+                 (window-numbering-get-number-string))
+                (t ""))))
+      (when (and (length> num 0)
+                 (length> (cl-mapcan
+                           (lambda (frame)
+                             ;; Exclude minibuffer, tooltip and child frames
+                             (unless (or (and (fboundp 'frame-parent) (frame-parent frame))
+                                         (string= (frame-parameter frame 'name)
+                                                  (alist-get 'name (bound-and-true-p tooltip-frame-parameters))))
+                               (window-list frame 'never)))
+                           (visible-frame-list))
+                          1))
+        (propertize (format " %s " num)
+                    'face (doom-modeline-face 'doom-modeline-buffer-major-mode))))))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -774,6 +803,10 @@
 (setq read-extended-command-predicate
       #'command-completion-default-include-p)
 
+;; (global-display-fill-column-indicator-mode 1)
+;; (set-face-attribute 'fill-column-indicator nil
+;;                     :foreground "#717C7C")
+;;                     ;;:background "transparent")
 
 (use-package hippie-exp
   :straight nil
@@ -953,13 +986,25 @@
 (use-package winner
   :hook (after-init . winner-mode))
 
+(use-package transpose-frame)
+
 (use-package windmove
-  :hook (after-init . windmove-default-keybindings)
-  :hook (after-init . windmove-delete-default-keybindings)
-  :hook (after-init . windmove-swap-states-default-keybindings))
+  :hook (after-init . windmove-default-keybindings) ;; S-<arrow>
+  :hook (after-init . windmove-delete-default-keybindings) ;; C-x S-<arrow>
+  :hook (after-init . windmove-display-default-keybindings) ;; ;; S-M-<arrow> CMD
+  :hook (after-init . windmove-swap-states-default-keybindings)) ;; S-s-<arrow>
 
 (use-package window
   :straight nil
+  :bind (:repeat-map jccb/windows
+         ("o" . other-window)
+         ;;("a" . ace-window)
+         ("n" . next-buffer)
+         ("p" . previous-buffer)
+         ("0" . delete-window)
+         ("1" . delete-other-windows)
+         ("2" . split-window-below)
+         ("3" . split-window-right))
   :bind (("C-0"            . delete-window)
          ("C-1"            . delete-other-windows)
          ("C-2"            . split-window-below)
@@ -970,9 +1015,30 @@
          ("S-C-<down>"     . shrink-window)
          ("S-C-<up>"       . enlarge-window)
          ("C-x <C-return>" . window-swap-states))
-  :init
-  ;;(unbind-key "C-x o")
   )
+
+
+(use-package winum
+  :bind*
+  ("M-0" . winum-select-window-0-or-10)
+  ("M-1" . winum-select-window-1)
+  ("M-2" . winum-select-window-2)
+  ("M-3" . winum-select-window-3)
+  ("M-4" . winum-select-window-4)
+  ("M-5" . winum-select-window-5)
+  ("M-6" . winum-select-window-6)
+  ("M-7" . winum-select-window-7)
+  ("M-8" . winum-select-window-8)
+  ("M-9" . winum-select-window-9)
+  :hook (doom-modeline-mode . winum-mode))
+
+(use-package ace-window
+  :bind ("C-x o" . ace-window)
+  :hook (doom-modeline-mode . ace-window-display-mode)
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  ;;(setq aw-keys '(?a ?s ?d ?f       ?j ?k ?l))
+  (setq aw-dispatch-always t))
 
 (use-package jccb-windows
   :straight nil
@@ -980,7 +1046,8 @@
          ("C-x _" . split-window-vertically-instead)
          ;; ("C-2"   . split-window-vertically-with-other-buffer)
          ;; ("C-3"   . split-window-horizontally-with-other-buffer)
-         ("M-o" . quick-switch-buffer)))
+         ("M-o" . other-window)
+         ("C-M-o" . quick-switch-buffer)))
 
 ;; (use-package popper
 ;;   :after doom-modeline
@@ -1043,7 +1110,7 @@
 
 (setq resize-mini-windows 'grow-only
       ;; But don't let the minibuffer grow beyond this size
-      max-mini-window-height 0.15)
+      max-mini-window-height 0.4)
 
 ;;==================================================
 ;; Buffer management
@@ -1395,6 +1462,11 @@
   :hook
   (dired-mode . nerd-icons-dired-mode))
 
+(use-package casual-dired
+  :ensure t
+  :bind (:map dired-mode-map ("C-o" . 'casual-dired-tmenu)))
+
+
 ;;==================================================
 ;; Writing
 ;;==================================================
@@ -1417,6 +1489,7 @@
          ("\\.markdown\\.erb\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :config
+  (setq markdown-fontify-code-blocks-natively t)
   (defun jccb/markdown-setup ()
     ;; (turn-on-flyspell)
     ;; (visual-line-mode +1)
@@ -1502,11 +1575,9 @@
 
 (use-package xref)
 (use-package dumb-jump
+  :commands dumb-jump-xref-activate
   :init
   (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate)
-  :config
-  (dumb-jump-mode t)
-  (setq dumb-jump-selector 'completing-read)
   (setq dumb-jump-prefer-searcher 'rg))
 
 ;; (use-package xref
@@ -1639,11 +1710,6 @@
   (setq avy-timeout-seconds 0.6)
   (avy-setup-default))
 
-;; (use-package ace-window
-;;   :bind ("C-x o" . ace-window)
-;;   :config
-;;   (setq aw-keys '(?a ?s ?d ?f ? ?j ?k ?l))
-;;   (setq aw-dispatch-always nil))
 
 (defadvice comment-dwim (around comment-line-maybe activate)
   "If invoked from the beginning of a line or the beginning of
@@ -2666,6 +2732,17 @@ targets."
              '("\\*vterm*"
                (display-buffer-at-bottom)
                (window-height . 20)))
+
+(use-package casual
+:ensure t
+:bind (:map calc-mode-map ("C-o" . 'casual-main-menu)))
+
+;; (use-package treesit-auto
+;;   :custom
+;;   (treesit-auto-install 'prompt)
+;;   :config
+;;   (treesit-auto-add-to-auto-mode-alist 'all)
+;;   (global-treesit-auto-mode))
 
 
 ;; (use-package explain-pause-mode
