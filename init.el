@@ -1183,7 +1183,13 @@
   (setq default-input-method "MacOSX"))
 
 (when *is-a-windowed-mac*
-  (setq visible-bell nil) ;; The default
+  ;; breaks doom theme ??
+  ;; (setq visible-bell nil) ;; The default
+  (setq visible-bell nil
+        ring-bell-function 'flash-mode-line)
+  (defun flash-mode-line ()
+    (invert-face 'mode-line)
+    (run-with-timer 0.05 nil #'invert-face 'mode-line))
   (setq ns-use-native-fullscreen nil)
   (setq ns-use-fullscreen-animation nil)
   (setq ns-pop-up-frames nil)
@@ -1198,8 +1204,6 @@
   ;;   (setq exec-path (append expanded exec-path)))
   )
 
-;; breaks doom theme
-;; (setq ring-bell-function 'ignore)
 
 (use-package reveal-in-osx-finder
   :if *is-a-mac*
@@ -1214,7 +1218,6 @@
 ;;   :mode "gitolite\\.conf\\'")
 
 (use-package git-modes)
-
 (use-package ediff
   :straight nil
   :functions ediff-setup-windows-plain
@@ -1317,6 +1320,7 @@
 
 (use-package git-link)
 (use-package git-timemachine)
+;; (setq dired-vc-rename-file t)
 
 ;;==================================================
 ;; Search settings
@@ -2112,12 +2116,13 @@ Lisp function does not specify a special indentation."
   (setq-default format-all-formatters
                 '(("Python" yapf))))
 
-(use-package pyvenv
-  :hook (after-init . pyvenv-mode)
-  :config
-  (setq pyvenv-mode-line-indicator
-        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] "))))
+;; (use-package pyvenv
+;;   :hook (after-init . pyvenv-mode)
+;;   :config
+;;   (setq pyvenv-mode-line-indicator
+;;         '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] "))))
 
+(use-package pyenv)
 
 (use-package imenu
   :config
@@ -2323,7 +2328,62 @@ Lisp function does not specify a special indentation."
           (apply fun args)
         (when timer
           (cancel-timer timer)))))
-  (advice-add #'consult--read :around #'immediate-which-key-for-narrow))
+  (advice-add #'consult--read :around #'immediate-which-key-for-narrow)
+
+  ;; using full file names in buffer
+  ;; https://amitp.blogspot.com/2024/05/emacs-consult-buffer-filenames.html
+  (defun my/consult--source-buffer ()
+    "Make consult-buffer match the entire filename of a buffer"
+    ;; items is a list of (name . buffer)
+    (let ((items (consult--buffer-query :sort 'visibility
+                                        :as #'consult--buffer-pair)))
+      ;; TODO: sort these so the current project is first?
+      (--map
+       (let* ((label (car it))
+              (buffer (cdr it))
+              (filename (buffer-file-name buffer)))
+         (if filename
+             (progn
+               (setq filename (abbreviate-file-name filename))
+               (setq label
+                     (concat (file-name-directory filename)
+                             (propertize (file-name-nondirectory filename) 'face 'consult-file))))
+           (setq label (propertize label 'face 'consult-buffer)))
+         (cons label buffer))
+       items)))
+  (defvar my/consult--source-buffer
+    `(:name     "Open file"
+      :narrow   ?o
+      :category buffer
+      :history  buffer-name-history
+      :state    ,#'consult--buffer-state
+      :default  t
+      :items    ,#'my/consult--source-buffer)
+    "Buffer with filename matching for `consult-buffer'.")
+  (cl-nsubst 'my/consult--source-buffer 'consult--source-buffer consult-buffer-sources)
+  )
+
+;; (defvar consult--xref-history nil
+;;   "History for the `consult-recent-xref' results.")
+
+;; (defun consult-recent-xref (&optional markers)
+;;   "Jump to a marker in MARKERS list (defaults to `xref--history'.
+
+;; The command supports preview of the currently selected marker position.
+;; The symbol at point is added to the future history."
+;;   (interactive)
+;;   (consult--read
+;;    (consult--global-mark-candidates
+;;     (or markers (flatten-list xref--history)))
+;;    :prompt "Go to Xref: "
+;;    :annotate (consult--line-prefix)
+;;    :category 'consult-location
+;;    :sort nil
+;;    :require-match t
+;;    :lookup #'consult--lookup-location
+;;    :history '(:input consult--xref-history)
+;;    :add-history (thing-at-point 'symbol)
+;;    :state (consult--jump-state)))
 
 (use-package consult-dir
   :after consult
@@ -2751,9 +2811,14 @@ targets."
                (display-buffer-at-bottom)
                (window-height . 20)))
 
-(use-package casual
-:ensure t
-:bind (:map calc-mode-map ("C-o" . 'casual-main-menu)))
+;; (use-package casual-calc
+;;   :ensure t
+;;   :bind (:map calc-mode-map ("C-o" . #'casual-calc-tmenu)))
+
+;; (use-package casual-isearch
+;;   :ensure t
+;;   :bind (:map isearch-mode-map ("<f2>" . #'casual-isearch-tmenu)))
+
 
 ;; (use-package treesit-auto
 ;;   :custom
