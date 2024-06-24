@@ -473,7 +473,7 @@
 
   ;; let orderless suffixes work with consult disambiguation suffixes
   (defun jccb/consult-orderless-fix-suffix (args)
-    (if (member (substring (car args) -1) '("!" "?" "~" "$"))
+    (if (member (substring (car args) -1) '("!" "/" "\\" "&" "%" "=" "^" "@" "?"))
         ;; (string-suffix-p "$" (car args))
         (list (format "%s[%c-%c]*$"
                       (substring (car args) 0 -1)
@@ -482,25 +482,38 @@
       args))
   (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
 
-  (defun jccb/orderless-dispatcher (pattern _index _total)
-    (cond ((string-suffix-p "!" pattern)
-           `(orderless-without-literal . ,(substring pattern 0 -1)))
-          ((string-suffix-p "~" pattern)
-           `(orderless-regexp . ,(substring pattern 0 -1)))
-          ((string-suffix-p "\\" pattern)
-           `(orderless-initialism . ,(substring pattern 0 -1)))
-          ((string-suffix-p "%" pattern)
-           `(char-fold-to-regexp . ,(substring pattern 0 -1)))
-          ((string-suffix-p "/" pattern)
-           `(orderless-prefixes . ,(substring pattern 0 -1)))
-          ((string-suffix-p "$" pattern)
-           `(orderless-regexp . ,pattern))
-          ((string-prefix-p "^" pattern)
-           `(orderless-regexp . ,pattern))
-          ((string-suffix-p "=" pattern)
-           `(orderless-literal . ,(substring pattern 0 -1)))))
+  ;; (defun jccb/orderless-dispatcher (pattern _index _total)
+  ;;   (cond ((string-suffix-p "!" pattern)
+  ;;          `(orderless-without-literal . ,(substring pattern 0 -1)))
+  ;;         ;; `(orderless-not . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "~" pattern)
+  ;;          `(orderless-regexp . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "\\" pattern)
+  ;;          `(orderless-initialism . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "&" pattern)
+  ;;          `(orderless-annotation . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "%" pattern)
+  ;;          `(char-fold-to-regexp . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "/" pattern)
+  ;;          `(orderless-prefixes . ,(substring pattern 0 -1)))
+  ;;         ((string-suffix-p "$" pattern)
+  ;;          `(orderless-regexp . ,pattern))
+  ;;         ((string-prefix-p "^" pattern)
+  ;;          `(orderless-regexp . ,pattern))
+  ;;         ((string-suffix-p "=" pattern)
+  ;;          `(orderless-literal . ,(substring pattern 0 -1)))))
 
-
+  (setq orderless-affix-dispatch-alist
+        `(;;(?! . ,#'orderless-without-literal)
+          (?! . ,#'orderless-not)
+          (?/ . ,#'orderless-regexp)
+          (?, . ,#'orderless-initialism)
+          (?& . ,#'orderless-annotation)
+          (?% . ,#'char-fold-to-regexp)
+          (?= . ,#'orderless-literal)
+          (?^ . ,#'orderless-prefixes)
+          (?@ . ,#'orderless-literal-prefix)
+          (?? . ,#'jccb/orderless-flex-non-greedy2)))
   (defun basic-remote-try-completion (string table pred point)
     (and (vertico--remote-p string)
          (completion-basic-try-completion string table pred point)))
@@ -515,84 +528,88 @@
         orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
         completion-category-overrides '((file (styles basic-remote partial-completion))))
-  (setq
-   ;; orderless-matching-styles '(jccb/orderless-flex-non-greedy)
-   orderless-matching-styles '(jccb/orderless-flex-non-greedy2)
-   ;; orderless-matching-styles '(orderless-flex)
-   orderless-style-dispatchers '(jccb/orderless-dispatcher)))
+
+  ;;(setq
+  ;;orderless-matching-styles '(#'orderless-regexp))
+  ;; (setq
+  ;;  ;; orderless-matching-styles '(jccb/orderless-flex-non-greedy)
+  ;;  orderless-matching-styles '(jccb/orderless-flex-non-greedy2)
+  ;;  ;; orderless-matching-styles '(orderless-flex)
+  ;;  orderless-style-dispatchers '(jccb/orderless-dispatcher))
+  )
 
 
-(use-package vertico
-  :straight (vertico :files (:defaults "extensions/*.el")) ; Special recipe to load extensions conveniently
-  :after (savehist)
-  ;;:commands vertico-mode
-  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
-  :hook (minibuffer-setup . vertico-repeat-save)
+  (use-package vertico
+    :straight (vertico :files (:defaults "extensions/*.el")) ; Special recipe to load extensions conveniently
+    :after (savehist)
+    ;;:commands vertico-mode
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
+    :hook (minibuffer-setup . vertico-repeat-save)
 
-  :bind (:map vertico-map
-         ("M-q"   . vertico-quick-insert)
-         ("C-q"   . vertico-quick-exit)
-         ("S-SPC" . jccb/vertico-restrict-to-matches)
-         ("RET"   . vertico-directory-enter)
-         ("DEL"   . vertico-directory-delete-char)
-         ("M-DEL" . vertico-directory-delete-word)
-         ("C-M-n"   . vertico-next-group)
-         ("C-M-p"   . vertico-previous-group)
+    :bind (:map vertico-map
+           ("M-q"   . vertico-quick-insert)
+           ("C-q"   . vertico-quick-exit)
+           ("S-SPC" . jccb/vertico-restrict-to-matches)
+           ("RET"   . vertico-directory-enter)
+           ("DEL"   . vertico-directory-delete-char)
+           ("M-DEL" . vertico-directory-delete-word)
+           ("C-M-n"   . vertico-next-group)
+           ("C-M-p"   . vertico-previous-group)
 
-         ;; stuff from karthink
-         ;; ("C-j"     . (lambda () (interactive)
-         ;;                (if minibuffer--require-match
-         ;;                    (minibuffer-complete-and-exit)
-         ;;                  (exit-minibuffer))))
-         ("C->"     . embark-become)
-         ;; (">"         . embark-become)
-         ("C-<tab>"   . embark-act-with-completing-read)
-         ;; ("C-o"     . embark-minimal-act)
-         ("C-M-o"   . embark-act-noquit)
-         ("C-*"     . embark-act-all)
-         ;; ("M-s o"   . embark-export)
-         ;; ("C-c C-o" . embark-export)
-         ("C-o"     . embark-export)
-         )
-  :bind ("C-c C-r" . vertico-repeat)
+           ;; stuff from karthink
+           ;; ("C-j"     . (lambda () (interactive)
+           ;;                (if minibuffer--require-match
+           ;;                    (minibuffer-complete-and-exit)
+           ;;                  (exit-minibuffer))))
+           ("C->"     . embark-become)
+           ;; (">"         . embark-become)
+           ("C-<tab>"   . embark-act-with-completing-read)
+           ;; ("C-o"     . embark-minimal-act)
+           ("C-M-o"   . embark-act-noquit)
+           ("C-*"     . embark-act-all)
+           ;; ("M-s o"   . embark-export)
+           ;; ("C-c C-o" . embark-export)
+           ("C-o"     . embark-export)
+           )
+    :bind ("C-c C-r" . vertico-repeat)
 
-  :custom
-  (vertico-count 25)
-  (vertico-cycle nil)
-  (vertico-buffer-display-action '(display-buffer-reuse-window))
+    :custom
+    (vertico-count 25)
+    (vertico-cycle nil)
+    (vertico-buffer-display-action '(display-buffer-reuse-window))
 
-  :init
-  (vertico-mode)
+    :init
+    (vertico-mode)
 
-  (defun jccb/vertico-restrict-to-matches ()
-    (interactive)
-    (let ((inhibit-read-only t))
-      (goto-char (point-max))
-      (insert " ")
-      (add-text-properties (minibuffer-prompt-end) (point-max)
-                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+    (defun jccb/vertico-restrict-to-matches ()
+      (interactive)
+      (let ((inhibit-read-only t))
+        (goto-char (point-max))
+        (insert " ")
+        (add-text-properties (minibuffer-prompt-end) (point-max)
+                             '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
 
-  (advice-add #'vertico--format-candidate :around
-              (lambda (orig cand prefix suffix index _start)
-                (setq cand (funcall orig cand prefix suffix index _start))
-                (concat
-                 (if (= vertico--index index)
-                     (propertize "» " 'face 'vertico-current)
-                   "  ")
-                 cand)))
+    (advice-add #'vertico--format-candidate :around
+                (lambda (orig cand prefix suffix index _start)
+                  (setq cand (funcall orig cand prefix suffix index _start))
+                  (concat
+                   (if (= vertico--index index)
+                       (propertize "» " 'face 'vertico-current)
+                     "  ")
+                   cand)))
 
-  ;; (require 'vertico-multiform)
-  ;; (add-to-list 'vertico-multiform-categories
-  ;;              '(jinx grid (vertico-grid-annotate . 40)))
-  ;; (setq vertico-multiform-commands
-  ;;       '((consult-imenu buffer indexed)
-  ;;         (execute-extended-command unobtrusive)))
-  ;; (setq vertico-multiform-categories
-  ;;       '((file grid)
-  ;;         (consult-grep buffer)))
-  (vertico-multiform-mode 1)
-  :config
-  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
+    ;; (require 'vertico-multiform)
+    ;; (add-to-list 'vertico-multiform-categories
+    ;;              '(jinx grid (vertico-grid-annotate . 40)))
+    ;; (setq vertico-multiform-commands
+    ;;       '((consult-imenu buffer indexed)
+    ;;         (execute-extended-command unobtrusive)))
+    ;; (setq vertico-multiform-categories
+    ;;       '((file grid)
+    ;;         (consult-grep buffer)))
+    (vertico-multiform-mode 1)
+    :config
+    (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
 ;; (use-package vertico-posframe
 ;;   :config
@@ -1574,10 +1591,11 @@
   :commands ialign)
 
 (use-package xref)
+
 (use-package dumb-jump
   :commands dumb-jump-xref-activate
   :init
-  (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate)
+  (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate t)
   (setq dumb-jump-prefer-searcher 'rg))
 
 ;; (use-package xref
