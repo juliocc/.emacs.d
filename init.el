@@ -424,6 +424,8 @@
       (remq 'process-kill-buffer-query-function
             kill-buffer-query-functions))
 
+(use-package project)
+
 ;;==================================================
 ;; Completion
 ;;=================================================
@@ -1156,8 +1158,8 @@
      :header-mouse-map ibuffer-size-header-map)
     (file-size-human-readable (buffer-size))))
 
-(use-package ibuffer-projectile
-  :hook (ibuffer . ibuffer-projectile-set-filter-groups))
+;; (use-package ibuffer-projectile
+;;   :hook (ibuffer . ibuffer-projectile-set-filter-groups))
 
 (use-package nerd-icons-ibuffer
   :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
@@ -1799,30 +1801,30 @@ comment to the line."
 ;; Project management
 ;;==================================================
 
-(use-package projectile
-  :bind-keymap ("C-c p" . projectile-command-map)
-  :config
-  (setq projectile-mode-line
-        '(:eval
-          (format " Prj:%s"
-                  (projectile-project-name))))
+;; (use-package projectile
+;;   :bind-keymap ("C-c p" . projectile-command-map)
+;;   :config
+;;   (setq projectile-mode-line
+;;         '(:eval
+;;           (format " Prj:%s"
+;;                   (projectile-project-name))))
 
-  (setq projectile-indexing-method 'alien)
-  (setq projectile-enable-caching t)
-  (setq projectile-completion-system 'auto)
-  (setq projectile-sort-order 'ryecently-active)
-  (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
-  ;; (when (executable-find jccb/fd-command)
-  ;;   (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never ")))
-  ;;     (setq projectile-hg-command fd-command)
-  ;;     (setq projectile-git-command fd-command)
-  ;;     (setq projectile-fossil-command fd-command)
-  ;;     (setq projectile-bzr-command fd-command)
-  ;;     (setq projectile-darcs-command fd-command)
-  ;;     (setq projectile-svn-command fd-command)
-  ;;     (setq projectile-generic-command fd-command)))
-  (projectile-mode +1)
-  (setq projectile-require-project-file nil))
+;;   (setq projectile-indexing-method 'alien)
+;;   (setq projectile-enable-caching t)
+;;   (setq projectile-completion-system 'auto)
+;;   (setq projectile-sort-order 'ryecently-active)
+;;   (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
+;;   ;; (when (executable-find jccb/fd-command)
+;;   ;;   (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never ")))
+;;   ;;     (setq projectile-hg-command fd-command)
+;;   ;;     (setq projectile-git-command fd-command)
+;;   ;;     (setq projectile-fossil-command fd-command)
+;;   ;;     (setq projectile-bzr-command fd-command)
+;;   ;;     (setq projectile-darcs-command fd-command)
+;;   ;;     (setq projectile-svn-command fd-command)
+;;   ;;     (setq projectile-generic-command fd-command)))
+;;   (projectile-mode +1)
+;;   (setq projectile-require-project-file nil))
 
 ;;==================================================
 ;; coding modes
@@ -2138,99 +2140,23 @@ Lisp function does not specify a special indentation."
   :commands imenu-list-minor-mode)
 
 ;;==================================================
-;; lsp config
-;;==================================================
-
-;; (use-package flycheck
-;;   :hook (prog-mode . flycheck-mode)
-;;   :config
-;;   (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
-;;     [128 192 224 192 128] nil nil 'center))
-
-(use-package lsp-mode
-  :custom
-  (lsp-completion-provider :none)
-  :commands lsp
-  :hook
-  (lsp-completion-mode . jccb/lsp-mode-setup-completion)
-  (lsp-mode . lsp-enable-which-key-integration)
-  (python-mode . lsp-deferred)
-  :init
-  (setq read-process-output-max (* 1024 1024))
-  (setq lsp-keymap-prefix "C-c l")
-
-  (defun jccb/orderless-dispatch-flex-first (_pattern index _total)
-    (and (eq index 0) 'orderless-flex))
-
-  (defun jccb/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless)))
-
-  (add-hook 'orderless-style-dispatchers #'jccb/orderless-dispatch-flex-first nil 'local)
-  (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
-
-  :config
-  ;; (setq lsp-auto-guess-root t)
-  ;; (setq lsp-log-io nil)
-  ;; (setq lsp-restart 'auto-restart)
-  (add-to-list 'lsp-enabled-clients 'pylsp)
-
-  (setq lsp-pylsp-plugins-flake8-enabled t)
-
-  (setq lsp-enable-symbol-highlighting nil)
-  (setq lsp-enable-on-type-formatting nil)
-  (setq lsp-signature-auto-activate nil)
-  (setq lsp-signature-render-documentation nil)
-  ;; (setq lsp-eldoc-hook nil)
-  (setq lsp-modeline-code-actions-enable t)
-  ;; (setq lsp-modeline-diagnostics-enable t)
-  (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-semantic-tokens-enable t)
-  (setq lsp-enable-folding nil)
-  ;; (setq lsp-enable-imenu t)
-  (setq lsp-enable-snippet nil)
-  (setq lsp-idle-delay 0.5)
-  (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-signature-render-documentation nil)
-  (setq lsp-eldoc-enable-hover nil)
-  (setq lsp-eldoc-render-all nil)
-  (setq lsp-lens-enable nil))
-
-;; (use-package lsp-ui
-;;   :hook (lsp-mode . lsp-ui-mode)
-;;   :config
-;;   (setq lsp-ui-sideline-enable nil
-;;         lsp-ui-sideline-show-code-actions nil
-;;         lsp-ui-sideline-delay 1
-;;         lsp-ui-doc-delay 2
-;;         ;; lsp-ui-sideline-enable nil
-;;         lsp-ui-sideline-ignore-duplicates t
-;;         lsp-ui-doc-position 'bottom
-;;         lsp-ui-doc-alignment 'frame
-;;         lsp-ui-doc-header nil
-;;         lsp-ui-doc-include-signature t
-;;         lsp-ui-doc-use-childframe t))
-
-;; (use-package lsp-jedi)
-
-;;   (with-eval-after-load "lsp-mode"
-;;     (add-to-list 'lsp-disabled-clients 'pyls)
-;;     (add-to-list 'lsp-enabled-clients 'jedi)))
-
-;; (use-package goto-line-preview
-;;   :bind ([remap goto-line] . goto-line-preview))
-
-;;==================================================
 ;; Embark + Consult + Tempel
 ;;==================================================
 
 ;; (use-package consult-flycheck
 ;;   :commands consult-flycheck)
 
-(use-package consult-lsp
-  :commands (consult-lsp-symbols
-             consult-lsp-diagnostics
-             consult-lsp-file-symbols))
+(use-package eglot
+  ;; :bind (:map eglot-mode-map
+  ;;             ("C-c C-d" . eldoc)
+  ;;             ("C-c C-e" . eglot-rename)
+  ;;             ("C-c C-o" . python-sort-imports)
+  ;;             ("C-c C-f" . eglot-format-buffer))
+  :hook ((bash-mode . eglot-ensure)
+         (sh-mode . eglot-ensure)
+         (python-mode . eglot-ensure)
+         (markdown-mode . eglot-ensure)
+         (go-mode . eglot-ensure)))
 
 (use-package consult
   :bind (("C-c h" . consult-history)
@@ -2278,7 +2204,7 @@ Lisp function does not specify a special indentation."
          )
   :commands consult-ref
   :init
-  (fset 'projectile-ripgrep #'consult-ripgrep)
+  ;; (fset 'projectile-ripgrep #'consult-ripgrep)
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   (advice-add #'register-preview :override #'consult-register-window)
@@ -2310,8 +2236,8 @@ Lisp function does not specify a special indentation."
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   (advice-add #'register-preview :override #'consult-register-window)
   ;; (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
+  ;; (autoload 'projectile-project-root "projectile")
+  ;; (setq consult-project-root-function #'projectile-project-root)
 
   (defun immediate-which-key-for-narrow (fun &rest args)
     (let* ((refresh t)
@@ -2384,6 +2310,8 @@ Lisp function does not specify a special indentation."
 ;;    :history '(:input consult--xref-history)
 ;;    :add-history (thing-at-point 'symbol)
 ;;    :state (consult--jump-state)))
+(use-package consult-eglot)
+
 
 (use-package consult-dir
   :after consult
@@ -2392,9 +2320,8 @@ Lisp function does not specify a special indentation."
          ("C-x C-f" . consult-dir-jump-file)
          ("C-x C-d" . consult-dir))
   :config
-  (setq consult-dir-project-list-function #'consult-dir-projectile-dirs)
+  ;; (setq consult-dir-project-list-function #'consult-dir-projectilef-dirs)
   (setq consult-dir-shadow-filenames nil))
-
 
 (use-package embark
   :after which-key
