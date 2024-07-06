@@ -72,9 +72,7 @@
 (unless (fboundp 'url-insert-buffer-contents)
   (require 'url-handlers))
 
-(setq straight-use-package-by-default t
-      straight-profiles `((nil . ,(emacs-path "straight.lockfile.el")))
-      package-enable-at-startup nil
+(setq package-enable-at-startup nil
       tls-checktrust t
       gnutls-min-prime-bits 3072
       network-security-level 'high
@@ -87,25 +85,54 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
+(defvar elpaca-installer-version 0.7)
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil :depth 1
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (< emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                 ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                 ,@(when-let ((depth (plist-get order :depth)))
+                                                     (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                 ,(plist-get order :repo) ,repo))))
+                 ((zerop (call-process "git" nil buffer t "checkout"
+                                       (or (plist-get order :ref) "--"))))
+                 (emacs (concat invocation-directory invocation-name))
+                 ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                       "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                 ((require 'elpaca))
+                 ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (load "./elpaca-autoloads")))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
 
 (setq use-package-enable-imenu-support t)
+(setq use-package-always-ensure t)
 
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-
-(straight-use-package 'use-package)
+(elpaca elpaca-use-package
+        ;; Enable Elpaca support for use-package's :ensure keyword.
+        (elpaca-use-package-mode))
 
 (use-package no-littering
+  :ensure (:wait t)
   :config
   (no-littering-theme-backups)
   (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
@@ -113,7 +140,7 @@
     (load-file custom-file)))
 
 (use-package gcmh
-  :hook (emacs-startup . gcmh-mode)
+  :hook (elpaca-after-init . gcmh-mode)
   :config
   (setq gcmh-idle-delay 'auto
         ;; gcmh-auto-idle-delay-factor 10
@@ -123,7 +150,6 @@
 ;;==================================================
 ;; Appearance settings
 ;;==================================================
-
 
 ;; (use-package hide-mode-line
 ;;   :hook (Man-mode . hide-mode-line-mode))
@@ -135,34 +161,6 @@
   ;; (nerd-icons-default-adjust 0.2)
   )
 
-
-;; (use-package doom-themes
-;;   :custom-face
-;;   (region                         ((t (:extend nil))))
-;;   ;; (font-lock-comment-face         ((t (:italic t :background unspecified))))
-;;   ;; (highlight-symbol-face          ((t (:background "#355266" :distant-foreground "#bbbbbb"))))
-;;   ;; (highlight                      ((t (:foreground "#4db2ff" :background nil :underline t)))) ; link hover
-;;   ;; (link                           ((t (:foreground "#3794ff"))))
-
-;;   (vertical-border                ((t (:foreground "black" :background "black"))))
-;;   (fringe                         ((t (:background unspecified))))
-;;   :config
-;;   (setq doom-themes-enable-bold t
-;;         doom-themes-enable-italic t)
-;;   (load-theme 'doom-one t)
-;;   ;; (load-theme 'doom-one-light t)
-;;   ;; (load-theme 'doom-material-dark t)
-;;   ;; doom-nord, doom-material-dark
-;;   (doom-themes-visual-bell-config))
-
-
-;; (use-package ef-themes
-;;   :config
-;;   ;; dark
-;;   ;; duo-dark
-;;   ;; elea-dark
-;;   (setq ef-themes-region '(intense))
-;;   (ef-themes-select 'ef-elea-dark))
 (use-package modus-themes
   :config
   (setq modus-themes-italic-constructs nil
@@ -194,8 +192,8 @@
   (load-theme 'modus-vivendi-tinted))
 
 (use-package doom-modeline
-  :hook ((after-init . doom-modeline-mode)
-         (doom-modeline-mode . size-indication-mode) ; filesize in modeline
+  :ensure t
+  :hook ((doom-modeline-mode . size-indication-mode) ; filesize in modeline
          (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
   (setq doom-modeline-bar-width 0
@@ -207,6 +205,7 @@
 
   (unless after-init-time
     (setq-default mode-line-format nil))
+  (doom-modeline-mode 1)
   :config
 
   ;; HACK(jccb): show winum number and ace-window letter together in the modeline
@@ -253,11 +252,10 @@
         icon-title-format frame-title-format)
   (blink-cursor-mode -1))
 
-
-;; (defvar jccb/font-name "Iosevka SS04")
+(defvar jccb/font-name "Iosevka SS04")
 ;; (defvar jccb/font-name "Iosevka SS08")
 ;; (defvar jccb/font-name "Iosvmata")
-(defvar jccb/font-name "Iosevka Comfy Motion Fixed")
+;; (defvar jccb/font-name "Iosevka Comfy Motion Fixed")
 ;; (defvar jccb/font-name "Iosevka Comfy")
 ;; (defvar jccb/font-name "Pragmasevka")
 ;; (defvar jccb/font-name "JetBrains Mono NL")
@@ -276,8 +274,7 @@
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
-  ;; :straight nil
-  ;; :ensure nil
+  :ensure nil
   :hook ((prog-mode text-mode conf-mode) . display-line-numbers-mode)
   :config
   ;; Explicitly define a width to reduce computation
@@ -424,13 +421,15 @@
       (remq 'process-kill-buffer-query-function
             kill-buffer-query-functions))
 
-(use-package project)
+(use-package project
+  :ensure nil)
 
 ;;==================================================
 ;; Completion
 ;;=================================================
 
 (use-package savehist
+  :ensure nil
   :config
   (dolist (var '(kill-ring
                  search-ring
@@ -449,7 +448,7 @@
   (savehist-mode t))
 
 ;; (use-package typo
-;;   :straight (:type git :host sourcehut :repo "pkal/typo"))
+;;   :ensure (:host sourcehut :repo "pkal/typo"))
 
 (use-package orderless
   :custom-face
@@ -484,27 +483,6 @@
       args))
   (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
 
-  ;; (defun jccb/orderless-dispatcher (pattern _index _total)
-  ;;   (cond ((string-suffix-p "!" pattern)
-  ;;          `(orderless-without-literal . ,(substring pattern 0 -1)))
-  ;;         ;; `(orderless-not . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "~" pattern)
-  ;;          `(orderless-regexp . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "\\" pattern)
-  ;;          `(orderless-initialism . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "&" pattern)
-  ;;          `(orderless-annotation . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "%" pattern)
-  ;;          `(char-fold-to-regexp . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "/" pattern)
-  ;;          `(orderless-prefixes . ,(substring pattern 0 -1)))
-  ;;         ((string-suffix-p "$" pattern)
-  ;;          `(orderless-regexp . ,pattern))
-  ;;         ((string-prefix-p "^" pattern)
-  ;;          `(orderless-regexp . ,pattern))
-  ;;         ((string-suffix-p "=" pattern)
-  ;;          `(orderless-literal . ,(substring pattern 0 -1)))))
-
   (setq orderless-affix-dispatch-alist
         `(;;(?! . ,#'orderless-without-literal)
           (?! . ,#'orderless-not)
@@ -529,100 +507,70 @@
   (setq completion-styles '(orderless basic)
         orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
-        completion-category-overrides '((file (styles basic-remote partial-completion))))
-
-  ;;(setq
-  ;;orderless-matching-styles '(#'orderless-regexp))
-  ;; (setq
-  ;;  ;; orderless-matching-styles '(jccb/orderless-flex-non-greedy)
-  ;;  orderless-matching-styles '(jccb/orderless-flex-non-greedy2)
-  ;;  ;; orderless-matching-styles '(orderless-flex)
-  ;;  orderless-style-dispatchers '(jccb/orderless-dispatcher))
-  )
+        completion-category-overrides '((file (styles basic-remote partial-completion)))))
 
 
-  (use-package vertico
-    :straight (vertico :files (:defaults "extensions/*.el")) ; Special recipe to load extensions conveniently
-    :after (savehist)
-    ;;:commands vertico-mode
-    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
-    :hook (minibuffer-setup . vertico-repeat-save)
+(use-package vertico
+  :after (savehist)
+  ;;:commands vertico-mode
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
+  :hook (minibuffer-setup . vertico-repeat-save)
 
-    :bind (:map vertico-map
-           ("M-q"   . vertico-quick-insert)
-           ("C-q"   . vertico-quick-exit)
-           ("S-SPC" . jccb/vertico-restrict-to-matches)
-           ("RET"   . vertico-directory-enter)
-           ("DEL"   . vertico-directory-delete-char)
-           ("M-DEL" . vertico-directory-delete-word)
-           ("C-M-n"   . vertico-next-group)
-           ("C-M-p"   . vertico-previous-group)
+  :bind (:map vertico-map
+         ("M-q"   . vertico-quick-insert)
+         ("C-q"   . vertico-quick-exit)
+         ("S-SPC" . jccb/vertico-restrict-to-matches)
+         ("RET"   . vertico-directory-enter)
+         ("DEL"   . vertico-directory-delete-char)
+         ("M-DEL" . vertico-directory-delete-word)
+         ("C-M-n"   . vertico-next-group)
+         ("C-M-p"   . vertico-previous-group)
 
-           ;; stuff from karthink
-           ;; ("C-j"     . (lambda () (interactive)
-           ;;                (if minibuffer--require-match
-           ;;                    (minibuffer-complete-and-exit)
-           ;;                  (exit-minibuffer))))
-           ("C->"     . embark-become)
-           ;; (">"         . embark-become)
-           ("C-<tab>"   . embark-act-with-completing-read)
-           ;; ("C-o"     . embark-minimal-act)
-           ("C-M-o"   . embark-act-noquit)
-           ("C-*"     . embark-act-all)
-           ;; ("M-s o"   . embark-export)
-           ;; ("C-c C-o" . embark-export)
-           ("C-o"     . embark-export)
-           )
-    :bind ("C-c C-r" . vertico-repeat)
+         ;; stuff from karthink
+         ;; ("C-j"     . (lambda () (interactive)
+         ;;                (if minibuffer--require-match
+         ;;                    (minibuffer-complete-and-exit)
+         ;;                  (exit-minibuffer))))
+         ("C->"     . embark-become)
+         ;; (">"         . embark-become)
+         ("C-<tab>"   . embark-act-with-completing-read)
+         ;; ("C-o"     . embark-minimal-act)
+         ("C-M-o"   . embark-act-noquit)
+         ("C-*"     . embark-act-all)
+         ;; ("M-s o"   . embark-export)
+         ;; ("C-c C-o" . embark-export)
+         ("C-o"     . embark-export)
+         )
+  :bind ("C-c C-r" . vertico-repeat)
 
-    :custom
-    (vertico-count 25)
-    (vertico-cycle nil)
-    (vertico-buffer-display-action '(display-buffer-reuse-window))
+  :custom
+  (vertico-count 25)
+  (vertico-cycle nil)
+  (vertico-buffer-display-action '(display-buffer-reuse-window))
 
-    :init
-    (vertico-mode)
+  :init
+  (vertico-mode)
 
-    (defun jccb/vertico-restrict-to-matches ()
-      (interactive)
-      (let ((inhibit-read-only t))
-        (goto-char (point-max))
-        (insert " ")
-        (add-text-properties (minibuffer-prompt-end) (point-max)
-                             '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+  (defun jccb/vertico-restrict-to-matches ()
+    (interactive)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert " ")
+      (add-text-properties (minibuffer-prompt-end) (point-max)
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
 
-    (advice-add #'vertico--format-candidate :around
-                (lambda (orig cand prefix suffix index _start)
-                  (setq cand (funcall orig cand prefix suffix index _start))
-                  (concat
-                   (if (= vertico--index index)
-                       (propertize "» " 'face 'vertico-current)
-                     "  ")
-                   cand)))
+  (advice-add #'vertico--format-candidate :around
+              (lambda (orig cand prefix suffix index _start)
+                (setq cand (funcall orig cand prefix suffix index _start))
+                (concat
+                 (if (= vertico--index index)
+                     (propertize "» " 'face 'vertico-current)
+                   "  ")
+                 cand)))
 
-    ;; (require 'vertico-multiform)
-    ;; (add-to-list 'vertico-multiform-categories
-    ;;              '(jinx grid (vertico-grid-annotate . 40)))
-    ;; (setq vertico-multiform-commands
-    ;;       '((consult-imenu buffer indexed)
-    ;;         (execute-extended-command unobtrusive)))
-    ;; (setq vertico-multiform-categories
-    ;;       '((file grid)
-    ;;         (consult-grep buffer)))
-    (vertico-multiform-mode 1)
-    :config
-    (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
-
-;; (use-package vertico-posframe
-;;   :config
-;;   (vertico-posframe-mode 1)
-;;   (setq vertico-posframe-width 100
-;;         vertico-posframe-height vertico-count
-;;         vertico-posframe-poshandler 'posframe-poshandler-frame-top-center))
-
-;; (use-package vertico-truncate
-;;   :straight (:host github :repo "jdtsmith/vertico-truncate")
-;;   :hook (after-init . vertico-truncate-mode))
+  (vertico-multiform-mode 1)
+  :config
+  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
 (use-package corfu
   :commands global-corfu-mode
@@ -682,36 +630,10 @@
   (set-face-attribute 'corfu-current nil
                       :foreground 'unspecified
                       :background 'unspecified
-                      :inherit 'vertico-current))
-
-(use-package corfu-history
-  :straight (:local-repo "corfu/extensions")
-  :after (corfu savehist)
-  :init
+                      :inherit 'vertico-current)
+  (corfu-echo-mode 1)
   (corfu-history-mode 1)
   (add-to-list 'savehist-additional-variables 'corfu-history))
-
-(use-package corfu-echo
-  :straight (:local-repo "corfu/extensions")
-  :after (corfu)
-  :init
-  (corfu-echo-mode 1))
-
-;; (use-package prescient
-;;   :config
-;;   (prescient-persist-mode +1)
-;;   (setq prescient-history-length 1000)
-;;   (setq prescient-sort-full-matches-first t))
-
-;; (use-package vertico-prescient
-;;   :after vertico
-;;   :config
-;;   (vertico-prescient-mode +1))
-
-;; (use-package corfu-prescient
-;;   :after corfu
-;;   :config
-;;   (corfu-prescient-mode +1))
 
 (use-package cape
   ;; Bind dedicated completion commands
@@ -729,8 +651,8 @@
   (dolist (cape '(cape-file cape-keyword cape-dabbrev cape-elisp-symbol))
     (add-hook 'completion-at-point-functions cape)))
 
-
 (use-package dabbrev
+  :ensure nil
   ;;:bind ("C-M-/" . dabbrev-completion)
   :init
   (setq dabbrev-check-all-buffers t
@@ -801,10 +723,6 @@
   :init
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-;; (defun crm-indicator (args)
-;;   (cons (concat "[Multi] " (car args)) (cdr args)))
-;; (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
 (defun crm-indicator (args)
   (cons (format "[CRM%s] %s"
                 (replace-regexp-in-string
@@ -828,7 +746,7 @@
 ;;                     ;;:background "transparent")
 
 (use-package hippie-exp
-  :straight nil
+  :ensure nil
   :bind ("C-M-/"   . hippie-expand)
   :init
   (setq hippie-expand-try-functions-list
@@ -874,8 +792,10 @@
   (setq undo-outer-limit 1006632960) ;; 960mb.
   (setq undo-fu-allow-undo-in-region t))
 
-(use-package undo-fu-session
-  :hook (after-init . global-undo-fu-session-mode)
+(use-package undo-fu-session ;; TODO: not working
+  :after undo-fu
+  :init
+  (undo-fu-session-global-mode)
   :config
   (when (executable-find "zstd")
     (setq undo-fu-session-compression 'zst)))
@@ -891,7 +811,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package highlight-parentheses
-  :hook (after-init . global-highlight-parentheses-mode))
+  :init (global-highlight-parentheses-mode t))
 
 (use-package iedit
   :commands iedit-mode
@@ -899,6 +819,7 @@
   (iedit-toggle-key-default (kbd "C-c ;")))
 
 (use-package hl-line
+  :ensure nil
   ;; Highlights the current line
   ;; :if (display-graphic-p)
   :hook ((prog-mode text-mode conf-mode special-mode) . hl-line-mode)
@@ -925,9 +846,9 @@
 
 
 (use-package lin
-  :straight (:type git :host gitlab :repo "protesilaos/lin")
+  :ensure (:host gitlab :repo "protesilaos/lin")
   :after vertico
-  :hook (after-init . lin-global-mode)
+  :init (lin-global-mode t)
   :config
   (customize-set-variable 'lin-face 'vertico-current))
 
@@ -937,7 +858,7 @@
 
 ;; Backup settings
 (use-package files
-  :straight nil
+  :ensure nil
   :init
   (setq insert-directory-program (if *is-a-mac* "gls" "ls")
         backup-by-copying t
@@ -949,13 +870,16 @@
 
 ;; Useful modes
 (use-package image-file
+  :ensure nil
   ;;:defer 5
   :config
   (auto-image-file-mode 1))
 
 ;; Save a list of recent files visited.
 (use-package recentf
-  :hook (after-init . recentf-mode)
+  :ensure nil
+  :init
+  (recentf-mode t)
   :config
   (setq recentf-max-saved-items 500
         recentf-auto-cleanup 1200
@@ -972,7 +896,7 @@
               (recentf-add-file default-directory))))
 
 (use-package uniquify
-  :straight nil
+  :ensure nil
   :init
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-separator "/")
@@ -980,22 +904,21 @@
   (setq uniquify-ignore-buffers-re "^\\*")) ; don't muck with special buffers
 
 (use-package saveplace
-  :straight nil
-  :hook (after-init . save-place-mode))
+  :ensure nil
+  :init (save-place-mode t))
 
-(use-package super-save
-  :hook (after-init . super-save-mode)
-  :config
-  (setq super-save-triggers '(windmove-up windmove-down windmove-left windmove-right next-buffer previous-buffer))
-  (setq super-save-auto-save-when-idle nil)
-  (setq super-save-remote-files nil))
+;; (use-package super-save
+;;   :init (super-save-mode t)
+;;   :config
+;;   (setq super-save-triggers '(windmove-up windmove-down windmove-left windmove-right next-buffer previous-buffer))
+;;   (setq super-save-auto-save-when-idle nil)
+;;   (setq super-save-remote-files nil))
 
 (defun make-parent-directory ()
   "Make sure the directory of `buffer-file-name' exists."
   (make-directory (file-name-directory buffer-file-name) t))
 
 (add-hook 'find-file-not-found-functions #'make-parent-directory)
-
 (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
 
 ;;==================================================
@@ -1003,18 +926,21 @@
 ;;==================================================
 
 (use-package winner
-  :hook (after-init . winner-mode))
+  :ensure nil
+  :init (winner-mode t))
 
 (use-package transpose-frame)
 
 (use-package windmove
-  :hook (after-init . windmove-default-keybindings) ;; S-<arrow>
-  :hook (after-init . windmove-delete-default-keybindings) ;; C-x S-<arrow>
-  :hook (after-init . windmove-display-default-keybindings) ;; ;; S-M-<arrow> CMD
-  :hook (after-init . windmove-swap-states-default-keybindings)) ;; S-s-<arrow>
+  :ensure nil
+  :init
+  (windmove-default-keybindings) ;; S-<arrow>
+  (windmove-delete-default-keybindings) ;; C-x S-<arrow>
+  (windmove-display-default-keybindings) ;; ;; S-M-<arrow> CMD
+  (windmove-swap-states-default-keybindings)) ;; S-s-<arrow>
 
 (use-package window
-  :straight nil
+  :ensure nil
   :bind (:repeat-map jccb/windows
          ("o" . other-window)
          ;;("a" . ace-window)
@@ -1035,7 +961,6 @@
          ("S-C-<up>"       . enlarge-window)
          ("C-x <C-return>" . window-swap-states))
   )
-
 
 (use-package winum
   :bind*
@@ -1060,7 +985,7 @@
   (setq aw-dispatch-always t))
 
 (use-package jccb-windows
-  :straight nil
+  :ensure nil
   :bind (("C-x |" . split-window-horizontally-instead)
          ("C-x _" . split-window-vertically-instead)
          ;; ("C-2"   . split-window-vertically-with-other-buffer)
@@ -1129,6 +1054,7 @@
 ;;==================================================
 
 (use-package ibuffer
+  :ensure nil
   :bind ("C-x C-b" . ibuffer)
   :config
   (setq ibuffer-show-empty-filter-groups nil
@@ -1214,7 +1140,7 @@
 
 (use-package git-modes)
 (use-package ediff
-  :straight nil
+  :ensure nil
   :functions ediff-setup-windows-plain
   :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
@@ -1294,13 +1220,12 @@
 ;;   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
 
 (use-package diff-hl
-  :straight t
   :after magit
   :hook (dired-mode . diff-hl-dired-mode)
-  :hook (after-init . global-diff-hl-mode)
   :init
   (setq diff-hl-draw-borders t)
   (setq-default diff-hl-inline-popup--height 4)
+  (global-diff-hl-mode t)
   :config
   (diff-hl-flydiff-mode 1)
 
@@ -1334,12 +1259,12 @@
 (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (use-package isearch
-  :straight nil
+  :ensure nil
   :config
   (setq isearch-allow-scroll 'unlimited))
 
 (use-package jccb-search
-  :straight nil
+  :ensure nil
   :commands (zap-to-isearch isearch-exit-other-end isearch-yank-symbol)
   :bind (:map isearch-mode-map
          ("M-z" . zap-to-isearch)
@@ -1354,7 +1279,7 @@
 
 
 (use-package occur
-  :straight nil
+  :ensure nil
   :commands occur
   ;; :init
   ;; (bind-key "<f2>" 'my-occur-dwim)
@@ -1372,7 +1297,7 @@
 
 ;; alternative: (setq isearch-lazy-count t)
 (use-package anzu
-  :hook (after-init . global-anzu-mode)
+  :init (global-anzu-mode t)
   :bind (([remap query-replace-regexp] . anzu-query-replace)
          ([remap query-replace] . anzu-query-replace-regexp)
          :map isearch-mode-map
@@ -1398,7 +1323,7 @@
 ;;=================================================
 
 (use-package dired
-  :straight nil
+  :ensure nil
   :bind (("C-x C-j" . dired-jump))
   ;; :hook (dired-mode . dired-collapse-mode)
   :init
@@ -1421,7 +1346,7 @@
 ;;   :hook (after-init . diredfl-global-mode))
 
 (use-package dired-x
-  :straight nil
+  :ensure nil
   :after dired
   :hook (dired-mode . dired-omit-mode)
   :bind (:map dired-mode-map
@@ -1439,7 +1364,7 @@
 
 (use-package dired-hist
   :after dired
-  :straight (dired-hist :type git :host github :repo "karthink/dired-hist")
+  :ensure (:host github :repo "karthink/dired-hist")
   :bind (:map  dired-mode-map
          ("l" . dired-hist-go-back)
          ("r" . dired-hist-go-forward))
@@ -1545,7 +1470,8 @@
 ;;   (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
 
 (use-package paren
-  :hook (after-init . show-paren-mode)
+  :ensure nil
+  :init (show-paren-mode t)
   :config
   (setq show-paren-delay 0.1
         show-paren-style 'parenthesis
@@ -1570,16 +1496,15 @@
   :bind (("M-Z" . avy-zap-up-to-char-dwim)))
 
 (use-package misc
-  :straight nil
+  :ensure nil
   :bind ("M-z" . zap-up-to-char))
-
 
 ;; TODO disable on emacs >= 29
 (use-package so-long
-  :hook (after-init . global-so-long-mode))
+  :init (global-so-long-mode t))
 
 (use-package dtrt-indent
-  :hook (after-init . dtrt-indent-global-mode))
+  :init (dtrt-indent-global-mode t))
 
 ;; (use-package browse-kill-ring
 ;;   :hook (after-init . browse-kill-ring-default-keybindings)
@@ -1589,7 +1514,8 @@
 (use-package ialign
   :commands ialign)
 
-(use-package xref)
+(use-package xref
+  :ensure nil)
 
 (use-package dumb-jump
   :commands dumb-jump-xref-activate
@@ -1616,7 +1542,7 @@
 (bind-key "C-S-P" #'pop-to-mark-command)
 
 (use-package jccb-misc
-  :straight nil
+  :ensure nil
   ;;:defer 1
   :commands (chmod+x-this jccb/doctor)
   :bind (("M-p"   . goto-match-paren))
@@ -1669,7 +1595,7 @@
   (setq expand-region-smart-cursor t))
 
 (use-package selected
-  :hook (after-init . selected-global-mode)
+  :init (selected-global-mode t)
   :bind (:map selected-keymap
          ("q" . selected-off)
 
@@ -1747,7 +1673,7 @@ comment to the line."
 ;;==================================================
 
 ;; (use-package ispell
-;;   :straight nil
+;;   :ensure nil
 ;;   ;; :bind ("C-." . jccb/cycle-ispell-languages)
 ;;   :hook (after-init . jccb/config-spell)
 ;;   :config
@@ -1770,7 +1696,7 @@ comment to the line."
 
 ;; ;; TODO: this takes a couple of seconds to load. why?
 ;; (use-package flyspell
-;;   :straight nil
+;;   :ensure nil
 ;;   :hook ((text-mode . flyspell-mode)
 ;;          ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
 ;;   :config
@@ -1827,7 +1753,7 @@ comment to the line."
   :mode "Dockerfile[a-zA-Z.-]*\\'")
 
 (use-package compile
-  :straight nil
+  :ensure nil
   :bind ("<f12>" . compile)
   :config
 
@@ -1899,7 +1825,7 @@ comment to the line."
 
 
 (use-package jccb-fabric
-  :straight nil
+  :ensure nil
   :load-path "site-lisp")
 
 (use-package rust-mode
@@ -1967,13 +1893,14 @@ comment to the line."
 ;;   :hook (emacs-lisp-mode . highlight-defined-mode))
 
 (use-package ipretty
-  :hook (after-init . ipretty-mode))
+  :init (ipretty-mode t))
 
 (use-package highlight-sexp
+  :ensure nil
   :commands highlight-sexp-mode)
 
 (use-package hs-minor-mode
-  :straight nil
+  :ensure nil
   :hook (emacs-lisp . hs-minor-mode))
 
 (use-package eros
@@ -2117,9 +2044,10 @@ Lisp function does not specify a special indentation."
 ;;   (setq pyvenv-mode-line-indicator
 ;;         '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] "))))
 
-(use-package pyenv)
+(use-package pyenv-mode)
 
 (use-package imenu
+  :ensure nil
   :config
   (setq imenu-use-markers t
         imenu-auto-rescan t
@@ -2140,6 +2068,7 @@ Lisp function does not specify a special indentation."
 ;;   :commands consult-flycheck)
 
 (use-package eglot
+  :ensure nil
   ;; :bind (:map eglot-mode-map
   ;;             ("C-c C-d" . eldoc)
   ;;             ("C-c C-e" . eglot-rename)
@@ -2412,7 +2341,7 @@ targets."
 ;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
 
 (use-package kmacro-x
-  :hook (after-init . kmacro-x-atomic-undo-mode))
+  :init (kmacro-x-atomic-undo-mode t))
 
 (use-package crux
   :commands crux-find-shell-init-file
@@ -2426,8 +2355,8 @@ targets."
   (crux-with-region-or-buffer untabify)
   (crux-reopen-as-root-mode +1))
 
-(use-package elisp-demos
-  :commands elisp-demos-advice-helpful-update)
+;; (use-package elisp-demos
+;;   :commands elisp-demos-advice-helpful-update)
 
 (use-package helpful
   :commands (helpful--read-symbol
@@ -2458,7 +2387,7 @@ targets."
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
 
 (use-package whitespace-cleanup-mode
-  :hook (after-init . global-whitespace-cleanup-mode))
+  :init (global-whitespace-cleanup-mode t))
 
 (defun sanityinc/no-trailing-whitespace ()
   "Turn off display of trailing whitespace in this buffer."
@@ -2476,7 +2405,7 @@ targets."
   (add-hook hook #'sanityinc/no-trailing-whitespace))
 
 (use-package which-key
-  :hook (after-init . which-key-mode)
+  :init (which-key-mode t)
   :init
   (setq which-key-sort-order #'which-key-prefix-then-key-order
         which-key-sort-uppercase-first t
@@ -2501,7 +2430,7 @@ targets."
 
 
 (use-package files
-  :straight nil
+  :ensure nil
   :init
   (defun jccb/disable-confirm-kill-emacs (&rest _)
     (message "disable confirm kill emacs")
@@ -2539,10 +2468,12 @@ targets."
   :commands command-log-mode)
 
 (use-package server
+  :ensure nil
   :if (display-graphic-p)
-  :hook (after-init . server-start))
+  :hook (elpaca-after-init . server-start))
 
 (use-package hideshow
+  :ensure nil
   :hook (prog-mode . hs-minor-mode)
   :bind ("C-<tab>" . toggle-fold)
   :init
@@ -2555,7 +2486,7 @@ targets."
 
 (use-package pulsar
   :after consult
-  :hook (after-init . pulsar-global-mode)
+  :init (pulsar-global-mode t)
   ;; :hook (minibuffer-setup . pulsar-pulse-line-blue)
   ;; :commands (pulsar-recenter-top pulsar-reveal-entry)
   :init
@@ -2608,7 +2539,6 @@ targets."
 ;;          ("C-."   . nil)
 ;;          ("C-M-." . nil)))
 
-(use-package transpose-frame)
 (use-package goto-chg
   :commands goto-last-change)
 
@@ -2616,13 +2546,14 @@ targets."
   :disabled)
 
 (use-package piper
-  :straight (:type git :host gitlab :repo "howardabrams/emacs-piper")
+  :encsure (:host gitlab :repo "howardabrams/emacs-piper")
   :disabled)
 ;; pretty print lisp stuff
 (use-package pp  :disabled)
 
 (use-package repeat
-  :hook (after-init . repeat-mode))
+  :ensure nil
+  :init (repeat-mode t))
 
 
 ;; TODO: move somewhere
@@ -2656,31 +2587,31 @@ targets."
 
 
 (use-package recursion-indicator
-  :hook (after-init . recursion-indicator-mode))
+  :init (recursion-indicator-mode t))
 
 (use-package beginend
-  :hook (after-init . beginend-global-mode))
+  :init (beginend-global-mode t))
 
 (use-package free-keys
   :commands free-keys)
 
 (use-package fancy-compilation
-  :hook (after-init . fancy-compilation-mode))
+  :init (fancy-compilation-mode t))
 
 (use-package eshell
-  :straight nil
+  :ensure nil
   :hook (eshell-mode . jccb/set-black-bg))
 
 (use-package shell
-  :straight nil
+  :ensure nil
   :hook (shell-mode . jccb/set-black-bg))
 
 (use-package term
-  :straight nil
+  :ensure nil
   :hook (term-mode . jccb/set-black-bg))
 
 (use-package comint
-  :straight nil
+  :ensure nil
   :hook (comint-mode . jccb/set-black-bg))
 
 (use-package go-mode
@@ -2704,7 +2635,6 @@ targets."
 
 ;; load additional local settings (if they exist)
 (use-package jccb-local
-  :straight nil
   :load-path "site-lisp"
   :if (file-exists-p (emacs-path "site-lisp/jccb-local.el")))
 
@@ -2713,7 +2643,7 @@ targets."
 ;;   :hook (flycheck-mode . flycheck-yamllint-setup))
 
 (use-package query-replace-many
-  :straight (:type git :host github :repo "slotThe/query-replace-many")
+  :ensure (:host github :repo "slotThe/query-replace-many")
   :commands query-replace-many)
 
 ;; (use-package sh-scrip t
@@ -2739,31 +2669,13 @@ targets."
 ;;   :ensure t
 ;;   :bind (:map isearch-mode-map ("<f2>" . #'casual-isearch-tmenu)))
 
-
-;; (use-package treesit-auto
-;;   :custom
-;;   (treesit-auto-install 'prompt)
-;;   :config
-;;   (treesit-auto-add-to-auto-mode-alist 'all)
-;;   (global-treesit-auto-mode))
-
-
-;; (use-package explain-pause-mode
-;;   :straight (explain-pause-mode :type git :host github :repo "lastquestion/explain-pause-mode")
-;;   )
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (use-package devil
-;;   :straight (:type git :host github :repo "susam/devil")
-;;   :hook (after-init . global-devil-mode)
-;;   :bind ("C-," . global-devil-mode))
-
 
 ;; (use-package man
-;;   :straight nil
+;;   :ensure nil
 ;;   :config
 ;;   ;; use gman on macos. Download man-db and run mandb regularly
 ;;   (setq manual-program (if *is-a-mac* "gman" "man")
@@ -2773,7 +2685,6 @@ targets."
 ;; native-compile-prune-cache
 
 ;; use-package seq: init -> config
-
 ;; Local Variables:
 ;; jinx-local-words: "flyspell"
 ;; End:
