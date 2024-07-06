@@ -1106,13 +1106,6 @@
 ;;     '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
 ;;     '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
 
-;; (use-package dimmer
-;;   :hook (after-init . dimmer-mode)
-;;   :config
-;;   (setq dimmer-fraction 0.35)
-;;   (dimmer-configure-which-key)
-;;   (dimmer-configure-magit))
-
 (setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
       frame-resize-pixelwise t)
 
