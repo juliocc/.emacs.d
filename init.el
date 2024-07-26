@@ -128,8 +128,10 @@
 (setq use-package-always-ensure t)
 
 (elpaca elpaca-use-package
-        ;; Enable Elpaca support for use-package's :ensure keyword.
-        (elpaca-use-package-mode))
+  ;; Enable Elpaca support for use-package's :ensure keyword.
+  (elpaca-use-package-mode))
+
+(elpaca-wait)
 
 (use-package no-littering
   :ensure (:wait t)
@@ -773,8 +775,8 @@
 (transient-mark-mode +1)
 ;; (minibuffer-depth-indicate-mode +1) ;; replaced with recursion-indicator-mode
 (electric-indent-mode -1)
-;; (size-indication-mode +1)
 ;; (global-subword-mode 1)
+(if (fboundp 'kill-ring-deindent-mode) (kill-ring-deindent-mode +1))
 
 ;; (bind-key "RET" #'newline-and-indent)
 
@@ -792,7 +794,7 @@
   (setq undo-outer-limit 1006632960) ;; 960mb.
   (setq undo-fu-allow-undo-in-region t))
 
-(use-package undo-fu-session ;; TODO: not working
+(use-package undo-fu-session
   :after undo-fu
   :init
   (undo-fu-session-global-mode)
@@ -1423,6 +1425,8 @@
 
 (use-package markdown-mode
   :hook (markdown-mode . jccb/markdown-setup)
+  :hook (markdown-mode . visual-line-mode)
+  :hook (markdown-mode . visual-wrap-prefix-mode)
   :bind (:map markdown-mode-command-map
          ("g" . grip-mode))
   :mode (("README\\.md\\'" . gfm-mode)
@@ -1464,10 +1468,12 @@
 ;; Edit utilities
 ;;==================================================
 
-;; (use-package elec-pair
-;;   :hook (after-init . electric-pair-mode)
-;;   :config
-;;   (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
+(use-package elec-pair
+  :ensure nil
+  :init
+  (electric-pair-mode +1)
+  :config
+  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
 
 (use-package paren
   :ensure nil
@@ -1782,6 +1788,7 @@ comment to the line."
 
 (use-package terraform-mode
   :hook (terraform-mode . terraform-format-on-save-mode)
+  :mode ("\\.terraformrc\\'" . hcl-mode)
   ;; :hook (terraform-mode . jccb/terraform-mode-hook)
   :bind (:map terraform-mode-map
          ("C-c C-f" . jccb/tf-fabric-find-module-file))
@@ -2383,8 +2390,7 @@ targets."
       (button-type-put
        var-bt 'action
        (lambda (button)
-         (helpful-variable (button-get button 'apropos-symbol))))))
-  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
+         (helpful-variable (button-get button 'apropos-symbol)))))))
 
 (use-package whitespace-cleanup-mode
   :init (global-whitespace-cleanup-mode t))
@@ -2445,21 +2451,14 @@ targets."
   :hook (vterm-mode . jccb/set-black-bg)
   :commands vterm
   :init
-  ;; (add-to-list 'display-buffer-alist
-  ;;              '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-  ;;                (display-buffer-reuse-window display-buffer-in-side-window)
-  ;;                (side . bottom)
-  ;;                ;;(dedicated . t) ;dedicated is supported in emacs27
-  ;;                (reusable-frames . visible)
-  ;;                (window-height . 0.3)))
-  :config
+  (setq vterm-always-compile-module t)
   (setq vterm-max-scrollback 5000))
 
-(use-package vterm-toggle
-  :bind (("<f2>" . vterm-toggle)
-         ("C-<f2>" . vterm-toggle-cd))
-  :config
-  (setq vterm-toggle-fullscreen-p nil))
+;; (use-package vterm-toggle
+;;   :bind (("<f2>" . vterm-toggle)
+;;          ("C-<f2>" . vterm-toggle-cd))
+;;   :config
+;;   (setq vterm-toggle-fullscreen-p nil))
 
 (use-package keypression
   :commands keypression-mode)
@@ -2646,6 +2645,8 @@ targets."
   :ensure (:host github :repo "slotThe/query-replace-many")
   :commands query-replace-many)
 
+(use-package graphviz-dot-mode)
+
 ;; (use-package sh-scrip t
 ;;   :hook (sh-mode . flymake-mode))
 
@@ -2660,6 +2661,7 @@ targets."
              '("\\*vterm*"
                (display-buffer-at-bottom)
                (window-height . 20)))
+
 
 ;; (use-package casual-calc
 ;;   :ensure t
