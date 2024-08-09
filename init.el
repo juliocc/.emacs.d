@@ -474,16 +474,16 @@
                        append `((minimal-match (zero-or-more (not ,char))) (group ,char)))))))
 
 
-  ;; let orderless suffixes work with consult disambiguation suffixes
-  (defun jccb/consult-orderless-fix-suffix (args)
-    (if (member (substring (car args) -1) '("!" "/" "\\" "&" "%" "=" "^" "@" "?"))
-        ;; (string-suffix-p "$" (car args))
-        (list (format "%s[%c-%c]*$"
-                      (substring (car args) 0 -1)
-                      consult--tofu-char
-                      (+ consult--tofu-char consult--tofu-range -1)))
-      args))
-  (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
+  ;; ;; let orderless suffixes work with consult disambiguation suffixes
+  ;; (defun jccb/consult-orderless-fix-suffix (args)
+  ;;   (if (member (substring (car args) -1) '("!" "/" "\\" "&" "%" "=" "^" "@" "?"))
+  ;;       ;; (string-suffix-p "$" (car args))
+  ;;       (list (format "%s[%c-%c]*$"
+  ;;                     (substring (car args) 0 -1)
+  ;;                     consult--tofu-char
+  ;;                     (+ consult--tofu-char consult--tofu-range -1)))
+  ;;     args))
+  ;; (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
 
   (setq orderless-affix-dispatch-alist
         `(;;(?! . ,#'orderless-without-literal)
@@ -495,7 +495,7 @@
           (?= . ,#'orderless-literal)
           (?^ . ,#'orderless-prefixes)
           (?@ . ,#'orderless-literal-prefix)
-          (?? . ,#'jccb/orderless-flex-non-greedy2)))
+          (?? . ,#'orderless-flex)))
   (defun basic-remote-try-completion (string table pred point)
     (and (vertico--remote-p string)
          (completion-basic-try-completion string table pred point)))
@@ -507,6 +507,7 @@
    '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
 
   (setq completion-styles '(orderless basic)
+        orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex)
         orderless-component-separator 'orderless-escapable-split-on-space
         completion-category-defaults nil
         completion-category-overrides '((file (styles basic-remote partial-completion)))))
@@ -527,31 +528,20 @@
          ("M-DEL" . vertico-directory-delete-word)
          ("C-M-n"   . vertico-next-group)
          ("C-M-p"   . vertico-previous-group)
-
-         ;; stuff from karthink
-         ;; ("C-j"     . (lambda () (interactive)
-         ;;                (if minibuffer--require-match
-         ;;                    (minibuffer-complete-and-exit)
-         ;;                  (exit-minibuffer))))
-         ("C->"     . embark-become)
-         ;; (">"         . embark-become)
-         ("C-<tab>"   . embark-act-with-completing-read)
-         ;; ("C-o"     . embark-minimal-act)
-         ("C-M-o"   . embark-act-noquit)
+         ;;("C->"     . embark-become)
          ("C-*"     . embark-act-all)
-         ;; ("M-s o"   . embark-export)
-         ;; ("C-c C-o" . embark-export)
-         ("C-o"     . embark-export)
-         )
+         ("C-o"     . embark-export))
   :bind ("C-c C-r" . vertico-repeat)
 
   :custom
   (vertico-count 25)
-  (vertico-cycle nil)
+  (vertico-cycle t)
   (vertico-buffer-display-action '(display-buffer-reuse-window))
-
   :init
   (vertico-mode)
+  (setq read-file-name-completion-ignore-case t
+        read-buffer-completion-ignore-case t
+        completion-ignore-case t)
 
   (defun jccb/vertico-restrict-to-matches ()
     (interactive)
@@ -560,15 +550,6 @@
       (insert " ")
       (add-text-properties (minibuffer-prompt-end) (point-max)
                            '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
-
-  (advice-add #'vertico--format-candidate :around
-              (lambda (orig cand prefix suffix index _start)
-                (setq cand (funcall orig cand prefix suffix index _start))
-                (concat
-                 (if (= vertico--index index)
-                     (propertize "» " 'face 'vertico-current)
-                   "  ")
-                 cand)))
 
   (vertico-multiform-mode 1)
   :config
@@ -846,13 +827,30 @@
               (when doom--hl-line-mode
                 (hl-line-mode +1)))))
 
-
 (use-package lin
-  :ensure (:host gitlab :repo "protesilaos/lin")
-  :after vertico
-  :init (lin-global-mode t)
+  :custom
+  (lin-mode-hooks '(bongo-mode-hook
+                    dired-mode-hook
+                    elfeed-search-mode-hook
+                    git-rebase-mode-hook
+                    grep-mode-hook
+                    ibuffer-mode-hook
+                    ilist-mode-hook
+                    ledger-report-mode-hook
+                    log-view-mode-hook
+                    magit-log-mode-hook
+                    mu4e-headers-mode-hook
+                    notmuch-search-mode-hook
+                    notmuch-tree-mode-hook
+                    occur-mode-hook
+                    org-agenda-mode-hook
+                    pdf-outline-buffer-mode-hook
+                    proced-mode-hook
+                    tabulated-list-mode-hook))
+  ;;(lin-face 'lin-red)
   :config
-  (customize-set-variable 'lin-face 'vertico-current))
+  (lin-global-mode 1))
+
 
 ;;==================================================
 ;; File management
@@ -995,43 +993,6 @@
          ("M-o" . other-window)
          ("C-M-o" . quick-switch-buffer)))
 
-;; (use-package popper
-;;   :after doom-modeline
-;;   :bind (("<f12>"   . popper-toggle-latest)
-;;          ("C-<f12>"   . popper-cycle)
-;;          ;; ("C-<f12>" . popper-toggle-type)
-;;          )
-;;   :init
-;;   (popper-mode +1)
-;;   (popper-echo-mode +1)
-
-;;   (setq popper-reference-buffers
-;;         '("\\*Messages\\*"
-;;           "\\*Warnings\\*"
-;;           "\\*Python\\*"
-;;           "\\*format-all-errors\\*"
-;;           "Output\\*$"
-;;           "\\*Async Shell Command\\*"
-;;           "^\\*eshell.*\\*$" eshell-mode ;eshell as a popup
-;;           "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
-;;           "^\\*term.*\\*$"   term-mode   ;term as a popup
-;;           "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
-;;           help-mode
-;;           compilation-mode))
-;;   (setq popper-mode-line "")
-;;   (doom-modeline-def-segment popper
-;;     "The popper window type."
-;;     (when (popper-popup-p (current-buffer))
-;;       (concat
-;;        ;; (doom-modeline-spc)
-;;        (propertize (concat "POP" (doom-modeline-spc))
-;;                    'face (if (doom-modeline--active)
-;;                              'doom-modeline-panel
-;;                            'mode-line-inactive)))))
-
-;;   (doom-modeline-def-modeline 'main
-;;     '(bar workspace-name popper window-number modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
-;;     '(objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker)))
 
 (setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
       frame-resize-pixelwise t)
@@ -1176,7 +1137,7 @@
   ;; (magit-add-section-hook
   ;;  'magit-status-sections-hook 'magit-insert-tracked-files nil 'append)
 
-  (setq ;magit-completing-read-function #'selectrum-completing-read
+  (setq
    magit-bury-buffer-function #'magit-restore-window-configuration
    ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
    magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
@@ -1485,7 +1446,32 @@
         show-paren-when-point-inside-paren t
         show-paren-when-point-in-periphery t))
 
-(use-package multiple-cursors)
+(use-package phi-search)
+(use-package multiple-cursors
+  :commands ar/mc-mark-all-symbol-overlays
+  :config
+  (setq mc/always-run-for-all t)
+  (defun ar/mc-mark-all-symbol-overlays ()
+    "Mark all symbol overlays using multiple cursors."
+    (interactive)
+    (mc/remove-fake-cursors)
+    (when-let* ((overlays (symbol-overlay-get-list 0))
+                (point (point))
+                (point-overlay (seq-find
+                                (lambda (overlay)
+                                  (and (<= (overlay-start overlay) point)
+                                       (<= point (overlay-end overlay))))
+                                overlays))
+                (offset (- point (overlay-start point-overlay))))
+      (setq deactivate-mark t)
+      (mapc (lambda (overlay)
+              (unless (eq overlay point-overlay)
+                (mc/save-excursion
+                 (goto-char (+ (overlay-start overlay) offset))
+                 (mc/create-fake-cursor-at-point))))
+            overlays)
+      (mc/maybe-multiple-cursors-mode))))
+
 ;; ;; TODO: repeat-mode this?
 ;; :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
 ;;        ("C->"           . mc/mark-next-like-this)
@@ -1614,6 +1600,7 @@
          ("M-!" . mc/mark-all-in-region)
          ("M-a" . mc/edit-beginnings-of-lines)
          ("M-e" . mc/edit-ends-of-lines)
+         ;;("M-s" . ar/mc-mark-all-symbol-overlays)
 
          ("M-u" . upcase-region)
          ("M-d" . downcase-region)
@@ -1630,17 +1617,7 @@
 (use-package rainbow-mode
   :hook (css-mode html-mode))
 
-;; (use-package highlight-symbol
-;;   ;; :hook (prog-mode . highlight-symbol-mode)
-;;   :commands (highlight-symbol
-;;              highlight-symbol-query-replace
-;;              highlight-symbol-occur)
-;;   :config
-
-;;   (setq highlight-symbol-idle-delay 0.5))
-(use-package symbol-overlay
-  :commands (symbol-overlay-mode
-             symbol-overlay-put))
+(use-package symbol-overlay)
 
 (use-package avy
   :bind (:repeat-map jccb/avy-repeat-map
@@ -1677,44 +1654,6 @@ comment to the line."
 ;;==================================================
 ;; Spell
 ;;==================================================
-
-;; (use-package ispell
-;;   :ensure nil
-;;   ;; :bind ("C-." . jccb/cycle-ispell-languages)
-;;   :hook (after-init . jccb/config-spell)
-;;   :config
-;;   (defun jccb/config-spell nil
-;;     (setq ispell-program-name "aspell"
-;;           ispell-extra-args '("--sug-mode=ultra"
-;;                               "--run-together"))
-
-;;     (defvar jccb/ispell-langs (make-ring 2))
-;;     (ring-insert jccb/ispell-langs "american")
-;;     (ring-insert jccb/ispell-langs "castellano8")
-
-;;     (defun jccb/cycle-ispell-languages ()
-;;       (interactive)
-;;       (let ((lang (ring-ref jccb/ispell-langs -1)))
-;;         (ring-insert jccb/ispell-langs lang)
-;;         (ispell-change-dictionary lang)
-;;         (flyspell-buffer)
-;;         (message "Spell language changed to %s" lang)))))
-
-;; ;; TODO: this takes a couple of seconds to load. why?
-;; (use-package flyspell
-;;   :ensure nil
-;;   :hook ((text-mode . flyspell-mode)
-;;          ((prog-mode conf-mode yaml-mode) . flyspell-prog-mode))
-;;   :config
-;;   (unbind-key "C-;" flyspell-mode-map)
-;;   (unbind-key "C-." flyspell-mode-map)
-;;   (setq flyspell-issue-welcome-flag nil
-;;         flyspell-issue-message-flag nil))
-
-;; (use-package flyspell-correct
-;;   :after flyspell
-;;   :bind (:map flyspell-mode-map
-;;               ("C-:" . flyspell-correct-wrapper)))
 
 (use-package jinx
   :hook (emacs-startup . global-jinx-mode)
@@ -1862,11 +1801,6 @@ comment to the line."
 
 (use-package pip-requirements
   :mode "requirements\\.txt\\'")
-
-;; (use-package paradox
-;;   :commands paradox-list-packages
-;;   :config
-;;   (setq paradox-column-width-package 40))
 
 (use-package ssh-config-mode
   :mode (("/\\.ssh/config\\'"   . ssh-config-mode)
@@ -2168,23 +2102,6 @@ Lisp function does not specify a special indentation."
   ;; (autoload 'projectile-project-root "projectile")
   ;; (setq consult-project-root-function #'projectile-project-root)
 
-  (defun immediate-which-key-for-narrow (fun &rest args)
-    (let* ((refresh t)
-           (timer (and consult-narrow-key
-                       (memq :narrow args)
-                       (run-at-time 0.05 0.05
-                                    (lambda ()
-                                      (if (eq last-input-event (elt consult-narrow-key 0))
-                                          (when refresh
-                                            (setq refresh nil)
-                                            (which-key--update))
-                                        (setq refresh t)))))))
-      (unwind-protect
-          (apply fun args)
-        (when timer
-          (cancel-timer timer)))))
-  (advice-add #'consult--read :around #'immediate-which-key-for-narrow)
-
   ;; using full file names in buffer
   ;; https://amitp.blogspot.com/2024/05/emacs-consult-buffer-filenames.html
   (defun my/consult--source-buffer ()
@@ -2215,32 +2132,9 @@ Lisp function does not specify a special indentation."
       :default  t
       :items    ,#'my/consult--source-buffer)
     "Buffer with filename matching for `consult-buffer'.")
-  (cl-nsubst 'my/consult--source-buffer 'consult--source-buffer consult-buffer-sources)
-  )
+  (cl-nsubst 'my/consult--source-buffer 'consult--source-buffer consult-buffer-sources))
 
-;; (defvar consult--xref-history nil
-;;   "History for the `consult-recent-xref' results.")
-
-;; (defun consult-recent-xref (&optional markers)
-;;   "Jump to a marker in MARKERS list (defaults to `xref--history'.
-
-;; The command supports preview of the currently selected marker position.
-;; The symbol at point is added to the future history."
-;;   (interactive)
-;;   (consult--read
-;;    (consult--global-mark-candidates
-;;     (or markers (flatten-list xref--history)))
-;;    :prompt "Go to Xref: "
-;;    :annotate (consult--line-prefix)
-;;    :category 'consult-location
-;;    :sort nil
-;;    :require-match t
-;;    :lookup #'consult--lookup-location
-;;    :history '(:input consult--xref-history)
-;;    :add-history (thing-at-point 'symbol)
-;;    :state (consult--jump-state)))
 (use-package consult-eglot)
-
 
 (use-package consult-dir
   :after consult
@@ -2253,10 +2147,10 @@ Lisp function does not specify a special indentation."
   (setq consult-dir-shadow-filenames nil))
 
 (use-package embark
-  :after which-key
-  :commands (embark-act-with-completing-read embark-act-noquit)
+  ;;:after which-key
+  :commands (embark-prefix-help-command embark-act-noquit)
   :bind (("C-."   . embark-act)
-         ;; ("M-."   . embark-dwim)
+         ("M-."   . embark-dwim)
          ("C-h B" . embark-bindings)
          :map minibuffer-local-map
          ("C-c C-c" . embark-collect)
@@ -2265,53 +2159,18 @@ Lisp function does not specify a special indentation."
   (setq prefix-help-command #'embark-prefix-help-command)
   :config
 
-  (defun embark-act-with-completing-read (&optional arg)
-    (interactive "P")
-    (let* ((embark-prompter 'embark-completing-read-prompter)
-           (embark-indicators '(embark-minimal-indicator)))
-      (embark-act arg)))
-
   (defun embark-act-noquit ()
     "Run action but don't quit the minibuffer afterwards."
     (interactive)
     (let ((embark-quit-after-action nil))
       (embark-act)))
 
-  (defun embark-which-key-indicator ()
-    "An embark indicator that displays keymaps using which-key.
-The which-key help message will show the type and value of the
-current target followed by an ellipsis if there are further
-targets."
-    (lambda (&optional keymap targets prefix)
-      (if (null keymap)
-          (which-key--hide-popup-ignore-command)
-        (which-key--show-keymap
-         (if (eq (plist-get (car targets) :type) 'embark-become)
-             "Become"
-           (format "Act on %s '%s'%s"
-                   (plist-get (car targets) :type)
-                   (embark--truncate-target (plist-get (car targets) :target))
-                   (if (cdr targets) "…" "")))
-         (if prefix
-             (pcase (lookup-key keymap prefix 'accept-default)
-               ((and (pred keymapp) km) km)
-               (_ (key-binding prefix 'accept-default)))
-           keymap)
-         nil nil t (lambda (binding)
-                     (not (string-suffix-p "-argument" (cdr binding))))))))
-
-  (remove-hook 'embark-indicators #'embark-mixed-indicator)
-  (add-hook 'embark-indicators #'embark-which-key-indicator)
-
-  (defun embark-hide-which-key-indicator (fn &rest args)
-    "Hide the which-key indicator immediately when using the completing-read prompter."
-    (which-key--hide-popup-ignore-command)
-    (let ((embark-indicators
-           (remq #'embark-which-key-indicator embark-indicators)))
-      (apply fn args)))
-
-  (advice-add #'embark-completing-read-prompter
-              :around #'embark-hide-which-key-indicator)
+  (setq embark-prompter 'embark-completing-read-prompter)
+  (setq embark-keymap-prompter-key "`")
+  (setq embark-indicators
+        '(embark-minimal-indicator  ; default is embark-mixed-indicator
+          embark-highlight-indicator
+          embark-isearch-highlight-indicator))
 
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
@@ -2319,26 +2178,7 @@ targets."
                  (window-parameters (mode-line-format . none)))))
 
 (use-package embark-consult
-  ;; :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
-
-;; (use-package tempel
-;;   :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
-;;          ("M-*" . tempel-insert))
-
-;;   :hook ((prog-mode text-mode) . tempel-setup-capf)
-;;   :config
-;;   ;; Setup completion at point
-;;   (defun tempel-setup-capf ()
-;;     ;; Add the Tempel Capf to `completion-at-point-functions'. `tempel-expand'
-;;     ;; only triggers on exact matches. Alternatively use `tempel-complete' if
-;;     ;; you want to see all matches, but then Tempel will probably trigger too
-;;     ;; often when you don't expect it.
-;;     ;; NOTE: We add `tempel-expand' *before* the main programming mode Capf,
-;;     ;; such that it will be tried first.
-;;     (setq-local completion-at-point-functions
-;;                 (cons #'tempel-expand
-;;                       completion-at-point-functions))))
 
 
 ;;==================================================
@@ -2411,21 +2251,31 @@ targets."
   (add-hook hook #'sanityinc/no-trailing-whitespace))
 
 (use-package which-key
-  :init (which-key-mode t)
+  :custom
+  ;; (which-key-sort-order #'which-key-key-order)
+  (which-key-sort-uppercase-first nil)
+  (which-key-add-column-padding 1)
+  (which-key-max-display-columns nil)
+  (which-key-min-display-lines 5)
+  (which-key-idle-delay 1)
+  (which-key-idle-secondary-delay 0.05)
+  (which-key-use-C-h-commands nil)
+  (which-key-side-window-max-height 0.3)
+  (which-key-side-window-slot -10)
+  (which-key-show-prefix 'top)
+  (which-key-show-remaining-keys t)
+  (which-key-max-description-length 45)
+  (which-key-dont-use-unicode nil)
+  ;;(which-key-compute-remaps t)
+  (which-key-allow-multiple-replacements t)
+  ;; (which-key-special-keys nil)
+  ;; (which-key-popup-type 'minibuffer)
+  (which-key-preserve-window-configuration t)
+  ;; (which-key-show-transient-maps t)
   :init
-  (setq which-key-sort-order #'which-key-prefix-then-key-order
-        which-key-sort-uppercase-first t
-        which-key-add-column-padding 1
-        which-key-max-display-columns nil
-        which-key-min-display-lines 8
-        which-key-idle-delay 1
-        which-key-idle-secondary-delay 0.05
-        which-key-use-C-h-commands t
-        which-key-side-window-max-height 0.3
-        which-key-side-window-slot -10)
+  (which-key-mode t)
   :config
-  (which-key-setup-side-window-bottom)
-  (setq which-key-max-description-length 45))
+  (which-key-setup-side-window-bottom))
 
 (use-package copy-as-format
   :commands copy-as-format)
@@ -2553,7 +2403,6 @@ targets."
 (use-package repeat
   :ensure nil
   :init (repeat-mode t))
-
 
 ;; TODO: move somewhere
 (bind-key "C-x k" #'kill-current-buffer)
