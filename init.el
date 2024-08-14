@@ -165,10 +165,18 @@
 
 (use-package modus-themes
   :config
-  (setq modus-themes-italic-constructs nil
-        modus-themes-bold-constructs nil
-        modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi-tinted)
-        modus-operandi-tinted-palette-overrides
+  (setq modus-themes-disable-other-themes t
+        modus-themes-italic-constructs nil
+        modus-themes-bold-constructs t
+        modus-themes-prompts '(extrabold)
+        modus-themes-mixed-fonts t
+        ;; modus-themes-variable-pitch-ui nil
+        modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted)
+        modus-themes-headings '((1 . (medium 1.5))
+                                (2 . (medium 1.3))
+                                (3 . (medium 1.2))
+                                (t . (medium 1.1)))
+        modus-operandi-palette-overrides
         '((string green-intense))
         modus-vivendi-tinted-palette-overrides
         '((string green-faint))
@@ -181,12 +189,13 @@
           (underline-err red-faint)
           (underline-warning yellow-faint)
           (underline-note cyan-faint)
-          ;; (bg-mode-line-active bg-lavender)
-          ;; (border-mode-line-active bg-lavender)
-          ;; (bg-mode-line-inactive bg-dim)
-          ;; (border-mode-line-inactive bg-inactive)
-          (fg-line-number-inactive fg-dim)
-          (bg-line-number-inactive bg-dim)
+
+          ;; highlight active modeline
+          (bg-mode-line-active bg-lavender)
+          (fg-mode-line-active fg-main)
+          (border-mode-line-active bg-magenta-intense)
+
+          ;; highlight current line
           (fg-line-number-active info)
           (bg-line-number-active unspecified)))
   ;; (setq modus-themes-common-palette-overrides
@@ -240,14 +249,15 @@
                            (visible-frame-list))
                           1))
         (propertize (format " %s " num)
-                    'face (doom-modeline-face 'doom-modeline-buffer-major-mode))))))
+                    'face (doom-modeline-face 'doom-modeline-buffer-major-mode)))))
+  )
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
 ;; fonts that are larger than the system default (which would resize the frame).
 (setq frame-inhibit-implied-resize t)
 (setq-default cursor-type '(bar . 2))
-(setq-default frame-background-mode 'dark)
+;; (setq-default frame-background-mode 'dark)
 
 (when (display-graphic-p)
   (setq frame-title-format '(buffer-file-name "%f" ("%b"))
@@ -255,6 +265,7 @@
   (blink-cursor-mode -1))
 
 (defvar jccb/font-name "Iosevka SS04")
+(defvar jccb/vp-font-name "Roboto")
 ;; (defvar jccb/font-name "Iosevka SS08")
 ;; (defvar jccb/font-name "Iosvmata")
 ;; (defvar jccb/font-name "Iosevka Comfy Motion Fixed")
@@ -265,11 +276,12 @@
 (defun jccb/set-font nil
   (if (member jccb/font-name (font-family-list))
       (progn (set-face-attribute 'default nil
-                                 :font jccb/font-name
+                                 :family jccb/font-name
                                  :height jccb/font-size)
              (set-face-attribute 'fixed-pitch nil
-                                 :font jccb/font-name
-                                 :height jccb/font-size))
+                                 :family jccb/font-name)
+             (set-face-attribute 'variable-pitch nil
+                                 :family jccb/vp-font-name))
     (message "Can't find font %s" jccb/font-name)))
 
 (jccb/set-font)
@@ -453,11 +465,11 @@
 ;;   :ensure (:host sourcehut :repo "pkal/typo"))
 
 (use-package orderless
-  :custom-face
-  (orderless-match-face-0 ((default :weight medium :background unspecified)))
-  (orderless-match-face-1 ((default :weight medium :background unspecified)))
-  (orderless-match-face-2 ((default :weight medium :background unspecified)))
-  (orderless-match-face-3 ((default :weight medium :background unspecified)))
+  ;; :custom-face
+  ;; (orderless-match-face-0 ((default :weight medium :background unspecified)))
+  ;; (orderless-match-face-1 ((default :weight medium :background unspecified)))
+  ;; (orderless-match-face-2 ((default :weight medium :background unspecified)))
+  ;; (orderless-match-face-3 ((default :weight medium :background unspecified)))
   :config
 
   ;; orderless-flex is probably more "flex" but this makes
@@ -990,8 +1002,7 @@
          ("C-x _" . split-window-vertically-instead)
          ;; ("C-2"   . split-window-vertically-with-other-buffer)
          ;; ("C-3"   . split-window-horizontally-with-other-buffer)
-         ("M-o" . other-window)
-         ("C-M-o" . quick-switch-buffer)))
+         ("M-o" . other-window)))
 
 
 (setq window-resize-pixelwise nil ; jccb: t breaks org-fast-tag-insert with doom-modeline
@@ -1224,6 +1235,9 @@
 (use-package isearch
   :ensure nil
   :config
+  (setq search-ring-max 100)
+  (setq regexp-search-ring-max 100)
+  (setq isearch-yank-on-move 'shift)
   (setq isearch-allow-scroll 'unlimited))
 
 (use-package jccb-search
@@ -1385,27 +1399,18 @@
 (setq large-hscroll-threshold 5000)
 
 (use-package markdown-mode
-  :hook (markdown-mode . jccb/markdown-setup)
   :hook (markdown-mode . visual-line-mode)
   :hook (markdown-mode . visual-wrap-prefix-mode)
+  :hook (markdown-mode . variable-pitch-mode)
   :bind (:map markdown-mode-command-map
          ("g" . grip-mode))
+  :bind (:map markdown-mode-map
+         ("<f5>" . jccb/tf-format-current-block)
+         ("S-<f5>" . jccb/fabric-create-open-example-inventory))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\.erb\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :config
-  (setq markdown-fontify-code-blocks-natively t)
-  (defun jccb/markdown-setup ()
-    ;; (turn-on-flyspell)
-    ;; (visual-line-mode +1)
-    ;; (visual-fill-column-mode +1)
-    (dolist (face '((markdown-header-face-1 . 1.3)
-                    (markdown-header-face-2 . 1.2)
-                    (markdown-header-face-3 . 1.1)
-                    (markdown-header-face-4 . 1.0)
-                    (markdown-header-face-5 . 1.0)))
-      (set-face-attribute (car face) nil :weight 'normal :height (cdr face))))
   :init
   (setq markdown-fontify-code-blocks-natively t
         markdown-asymmetric-header t
@@ -1431,10 +1436,13 @@
 
 (use-package elec-pair
   :ensure nil
-  :init
-  (electric-pair-mode +1)
   :config
-  (setq electric-pair-inhibit-predicate 'electric-pair-default-inhibit))
+  (setq electric-pair-preserve-balance nil)
+  (setq electric-pair-inhibit-predicate #'electric-pair-default-inhibit)
+  (setq electric-pair-delete-adjacent-pairs t)
+  (setq electric-pair-skip-whitespace nil)
+  (setq electric-pair-open-newline-between-pairs t)
+  (electric-pair-mode +1))
 
 (use-package paren
   :ensure nil
@@ -1540,9 +1548,14 @@
   :bind (("M-p"   . goto-match-paren))
   :config (jccb/doctor))
 
-;; TODO replace white cycle-spacing in >= 29
 (use-package shrink-whitespace
+  :unless (fboundp 'cycle-spacing)
   :bind ("M-\\" . shrink-whitespace))
+
+(use-package emacs
+  :ensure nil
+  :if (fboundp 'cycle-spacing)
+  :bind ("M-\\" . cycle-spacing))
 
 (use-package drag-stuff
   :hook ((text-mode prog-mode conf-mode) . turn-on-drag-stuff-mode)
@@ -1735,43 +1748,16 @@ comment to the line."
   (with-eval-after-load 'compile
     (add-to-list 'compilation-error-regexp-alist '("on \\([a-z0-9A-Z/._-]+\\) line \\([0-9]+\\)" 1 2)))
   :config
-
-  ;; (defun jccb/terraform-mode-hook nil
-  ;;   (set (make-local-variable 'compile-command)
-  ;;        "terraform apply -refresh=false"))
-
-  ;; (defun jccb/terraform-compile nil
-  ;;   (interactive)
-  ;;   (compile "terraform apply -refresh=false" t))
-
-  (defun jccb/tf-format-region (&optional b e)
-    "Run terraform fmt on the region"
-    (interactive "r")
-    (shell-command-on-region b e "terraform fmt -" t t))
-
-  (defun jccb/tf-format-current-block nil
-    "Run terraform fmt on the current markdown fenced code block"
-    (interactive)
-    (save-excursion
-      (let ((b (search-backward "```hcl"))
-            (e (search-forward "```" nil t 2)))
-        (jccb/tf-format-region (+ b 7) (- e 3)))))
-
-  (defun jccb/tf-fabric-find-module-file nil
-    (interactive)
-    (let* ((path "~/code/cloud-foundation-fabric/modules")
-           (modules (f-directories path))
-           (module (completing-read "Module name: " (mapcar #'f-filename modules))))
-      (find-file (read-file-name
-                  (format "Open file in module %s: " module)
-                  (f-slash (f-join path module))))))
-
   (defun jccb/tf-capf-setup ()
     (setq-local completion-at-point-functions '(cape-dabbrev cape-keyword))))
 
 
 (use-package jccb-fabric
   :ensure nil
+  :commands (jccb/fabric-create-open-example-inventory
+             jccb/tf-format-region
+             jccb/tf-format-current-block
+             jccb/tf-fabric-find-module-file)
   :load-path "site-lisp")
 
 (use-package rust-mode
@@ -1791,10 +1777,10 @@ comment to the line."
 (use-package json-mode
   :mode "\\.json?\\'")
 
-(use-package scss-mode
-  :mode "\\.scss?\\'"
-  :config
-  (setq scss-compile-at-save nil))
+;; (use-package scss-mode
+;;   :mode "\\.scss?\\'"
+;;   :config
+;;   (setq scss-compile-at-save nil))
 
 (use-package js2-mode
   :mode "\\.js\\'")
@@ -1863,85 +1849,6 @@ comment to the line."
 
 (use-package aggressive-indent
   :hook (emacs-lisp-mode . aggressive-indent-mode))
-
-
-;;https://github.com/Fuco1/.emacs.d/blob/master/site-lisp/my-redef.el#LL18C1-L100C62
-(eval-after-load "lisp-mode"
-  '(defun lisp-indent-function (indent-point state)
-     "This function is the normal value of the variable `lisp-indent-function'.
-The function `calculate-lisp-indent' calls this to determine
-if the arguments of a Lisp function call should be indented specially.
-
-INDENT-POINT is the position at which the line being indented begins.
-Point is located at the point to indent under (for default indentation);
-STATE is the `parse-partial-sexp' state for that position.
-
-If the current line is in a call to a Lisp function that has a non-nil
-property `lisp-indent-function' (or the deprecated `lisp-indent-hook'),
-it specifies how to indent.  The property value can be:
-
-* `defun', meaning indent `defun'-style
-  \(this is also the case if there is no property and the function
-  has a name that begins with \"def\", and three or more arguments);
-
-* an integer N, meaning indent the first N arguments specially
-  (like ordinary function arguments), and then indent any further
-  arguments like a body;
-
-* a function to call that returns the indentation (or nil).
-  `lisp-indent-function' calls this function with the same two arguments
-  that it itself received.
-
-This function returns either the indentation to use, or nil if the
-Lisp function does not specify a special indentation."
-     (let ((normal-indent (current-column))
-           (orig-point (point)))
-       (goto-char (1+ (elt state 1)))
-       (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
-       (cond
-        ;; car of form doesn't seem to be a symbol, or is a keyword
-        ((and (elt state 2)
-              (or (not (looking-at "\\sw\\|\\s_"))
-                  (looking-at ":")))
-         (if (not (> (save-excursion (forward-line 1) (point))
-                     calculate-lisp-indent-last-sexp))
-             (progn (goto-char calculate-lisp-indent-last-sexp)
-                    (beginning-of-line)
-                    (parse-partial-sexp (point)
-                                        calculate-lisp-indent-last-sexp 0 t)))
-         ;; Indent under the list or under the first sexp on the same
-         ;; line as calculate-lisp-indent-last-sexp.  Note that first
-         ;; thing on that line has to be complete sexp since we are
-         ;; inside the innermost containing sexp.
-         (backward-prefix-chars)
-         (current-column))
-        ((and (save-excursion
-                (goto-char indent-point)
-                (skip-syntax-forward " ")
-                (not (looking-at ":")))
-              (save-excursion
-                (goto-char orig-point)
-                (looking-at ":")))
-         (save-excursion
-           (goto-char (+ 2 (elt state 1)))
-           (current-column)))
-        (t
-         (let ((function (buffer-substring (point)
-                                           (progn (forward-sexp 1) (point))))
-               method)
-           (setq method (or (function-get (intern-soft function)
-                                          'lisp-indent-function)
-                            (get (intern-soft function) 'lisp-indent-hook)))
-           (cond ((or (eq method 'defun)
-                      (and (null method)
-                           (> (length function) 3)
-                           (string-match "\\`def" function)))
-                  (lisp-indent-defform state indent-point))
-                 ((integerp method)
-                  (lisp-indent-specform method state
-                                        indent-point normal-indent))
-                 (method
-                  (funcall method indent-point state)))))))))
 
 (use-package hl-todo
   :hook (prog-mode . hl-todo-mode)
@@ -2019,6 +1926,8 @@ Lisp function does not specify a special indentation."
          (sh-mode . eglot-ensure)
          (python-mode . eglot-ensure)
          (markdown-mode . eglot-ensure)
+         (yaml-mode . eglot-ensure)
+         (json-mode . eglot-ensure)
          (go-mode . eglot-ensure)))
 
 (use-package consult
@@ -2084,12 +1993,14 @@ Lisp function does not specify a special indentation."
    consult-theme consult-imenu consult-goto-line
    :preview-key '(:debounce 0.2 any)
 
-   consult-buffer consult-ripgrep consult-git-grep consult-grep
+   consult-buffer
+   consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
+   consult-line
    :preview-key '("C-S-<return>"
-                  :debounce 0.5 "<up>" "<down>"))
+                  :debounce 0.1 "<up>" "<down>"))
 
   ;; narrow to files by default
   (dolist (src consult-buffer-sources)
@@ -2404,11 +2315,6 @@ Lisp function does not specify a special indentation."
   :ensure nil
   :init (repeat-mode t))
 
-;; TODO: move somewhere
-(bind-key "C-x k" #'kill-current-buffer)
-(setq recenter-positions '(5 bottom))
-
-
 ;; Make sure clipboard works properly in tty mode on OSX.stolen from
 ;; rougier.
 ;; (defun my/paste-from-osx ()
@@ -2511,6 +2417,13 @@ Lisp function does not specify a special indentation."
                (display-buffer-at-bottom)
                (window-height . 20)))
 
+
+;; TODO: move somewhere
+(bind-key "C-x k" #'kill-current-buffer)
+(setq recenter-positions '(5 bottom))
+(bind-key "<f2>" #'previous-buffer)
+(bind-key "S-<f2>" #'next-buffer)
+(bind-key "C-M-o" #'mode-line-other-buffer)
 
 ;; (use-package casual-calc
 ;;   :ensure t

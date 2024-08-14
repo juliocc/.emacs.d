@@ -1,4 +1,4 @@
-(defvar jccb/fabric-boilerplate "# Copyright 2023 Google LLC
+(defvar jccb/fabric-boilerplate "# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the \"License\");
 # you may not use this file except in compliance with the License.
@@ -41,4 +41,28 @@
                (format "python %s --example ~/tmp/code.tf"
                        (f-join fabric-path "tools/plan_summary.py")))))))
 
-(provide 'jccb-fabric)
+(defun jccb/tf-format-region (&optional b e)
+  "Run terraform fmt on the region"
+  (interactive "r")
+  (shell-command-on-region b e "terraform fmt -" t t))
+
+(defun jccb/tf-format-current-block nil
+  "Run terraform fmt on the current markdown fenced code block"
+  (interactive)
+  (save-excursion
+    (let ((b (or (search-backward "```terraform" nil t) (search-backward "```hcl" nil)))
+          (k (if (looking-at "```hcl") 7 13))
+          (e (search-forward "```" nil t 2)))
+      (jccb/tf-format-region (+ b k) (- e 3)))))
+
+(defun jccb/tf-fabric-find-module-file nil
+  (interactive)
+  (let* ((path "~/code/cloud-foundation-fabric/modules")
+         (modules (f-directories path))
+         (module (completing-read "Module name: " (mapcar #'f-filename modules))))
+    (find-file (read-file-name
+                (format "Open file in module %s: " module)
+                (f-slash (f-join path module))))))
+
+
+(provide 'jccb-terraform)

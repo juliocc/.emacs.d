@@ -42,10 +42,10 @@ Call a second time to restore the original window configuration."
   (funcall (split-window-func-with-other-buffer 'split-window-vertically)))
 
 
-;(fset 'quick-switch-buffer [?\C-x ?b return])
-(defun quick-switch-buffer ()
-  "Switch to most recent buffer. Repeated calls toggle back and forth between the most recent two buffers."
-  (interactive)
-  (switch-to-buffer (other-buffer (current-buffer) 1)))
+;;(fset 'quick-switch-buffer [?\C-x ?b return])
+;; (defun quick-switch-buffer ()
+;;   "Switch to most recent buffer. Repeated calls toggle back and forth between the most recent two buffers."
+;;   (interactive)
+;;   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 (provide 'jccb-windows)
