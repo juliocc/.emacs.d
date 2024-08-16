@@ -31,18 +31,9 @@
       (display-warning 'jc/doctor
                        (format "Can't find %s" exe)))))
 
-;; (defun jccb/open-next-line (arg)
-;;   (interactive "p")
-;;   (end-of-line)
-;;   (open-line arg)
-;;   (forward-line 1)
-;;   (indent-according-to-mode))
-
-
-;; (defun jccb/open-previous-line (arg)
-;;   (interactive "p")
-;;   (beginning-of-line)
-;;   (open-line arg)
-;;   (indent-according-to-mode))
+(defun jccb/project-save-some-buffers ()
+  (interactive)
+  (let ((save-some-buffers-default-predicate 'save-some-buffers-root))
+    (save-some-buffers)))
 
 (provide 'jccb-misc)
