@@ -164,44 +164,66 @@
   ;; (nerd-icons-default-adjust 0.2)
   )
 
-(use-package modus-themes
+;; (use-package modus-themes
+;;   :config
+;;   (setq modus-themes-disable-other-themes t
+;;         modus-themes-italic-constructs nil
+;;         modus-themes-bold-constructs t
+;;         modus-themes-prompts '(extrabold)
+;;         modus-themes-mixed-fonts t
+;;         ;; modus-themes-variable-pitch-ui nil
+;;         modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted)
+;;         modus-themes-headings '((1 . (medium 1.5))
+;;                                 (2 . (medium 1.3))
+;;                                 (3 . (medium 1.2))
+;;                                 (t . (medium 1.1)))
+;;         modus-operandi-palette-overrides
+;;         '((string green-intense))
+;;         modus-vivendi-tinted-palette-overrides
+;;         '((string green-faint))
+;;         modus-themes-common-palette-overrides
+;;         '((comment fg-dim)
+;;           ;;(fringe bg-dim)
+;;           (bg-region bg-active)
+;;           (fg-region unspecified)
+;;           (bg-hl-line bg-dim)
+;;           (underline-err red-faint)
+;;           (underline-warning yellow-faint)
+;;           (underline-note cyan-faint)
+
+;;           ;; highlight active modeline
+;;           (bg-mode-line-active bg-lavender)
+;;           (fg-mode-line-active fg-main)
+;;           (border-mode-line-active bg-magenta-intense)
+
+;;           ;; highlight current line
+;;           (fg-line-number-active info)
+;;           (bg-line-number-active unspecified)))
+;;   ;; (setq modus-themes-common-palette-overrides
+;;   ;;       modus-themes-preset-overrides-warmer)
+;;   (load-theme 'modus-vivendi-tinted))
+
+(use-package ef-themes
   :config
-  (setq modus-themes-disable-other-themes t
-        modus-themes-italic-constructs nil
-        modus-themes-bold-constructs t
-        modus-themes-prompts '(extrabold)
-        modus-themes-mixed-fonts t
-        ;; modus-themes-variable-pitch-ui nil
-        modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted)
-        modus-themes-headings '((1 . (medium 1.5))
-                                (2 . (medium 1.3))
-                                (3 . (medium 1.2))
-                                (t . (medium 1.1)))
-        modus-operandi-palette-overrides
-        '((string green-intense))
-        modus-vivendi-tinted-palette-overrides
-        '((string green-faint))
-        modus-themes-common-palette-overrides
+  (setq modus-themes-prompts '(extrabold)
+        ef-themes-mixed-fonts t
+        ef-themes-to-toggle '(ef-maris-dark ef-maris-light)
+        ef-themes-headings '((0 variable-pitch light 1.9)
+                             (1 variable-pitch light 1.8)
+                             (2 variable-pitch regular 1.7)
+                             (3 variable-pitch regular 1.6)
+                             (4 variable-pitch regular 1.5)
+                             (5 variable-pitch 1.4) ; absence of weight means `bold'
+                             (6 variable-pitch 1.3)
+                             (7 variable-pitch 1.2)
+                             (t variable-pitch 1.1))
+        ef-themes-common-palette-overrides
         '((comment fg-dim)
-          ;;(fringe bg-dim)
-          (bg-region bg-active)
-          (fg-region unspecified)
-          (bg-hl-line bg-dim)
-          (underline-err red-faint)
-          (underline-warning yellow-faint)
-          (underline-note cyan-faint)
-
-          ;; highlight active modeline
-          (bg-mode-line-active bg-lavender)
-          (fg-mode-line-active fg-main)
-          (border-mode-line-active bg-magenta-intense)
-
-          ;; highlight current line
-          (fg-line-number-active info)
-          (bg-line-number-active unspecified)))
-  ;; (setq modus-themes-common-palette-overrides
-  ;;       modus-themes-preset-overrides-warmer)
-  (load-theme 'modus-vivendi-tinted))
+          ;; (line-number-current-line red)
+          ;; (bg-line-number-active unspecified)
+          ))
+  (load-theme 'ef-maris-dark)
+  (set-face-attribute 'italic nil :slant 'normal))
 
 (use-package doom-modeline
   :ensure t
@@ -272,8 +294,15 @@
 ;; (defvar jccb/font-name "Iosevka Comfy Motion Fixed")
 ;; (defvar jccb/font-name "Iosevka Comfy")
 ;; (defvar jccb/font-name "Pragmasevka")
-;; (defvar jccb/font-name "JetBrains Mono NL")
-(defvar jccb/font-size (if *is-a-windowed-mac* 180 150))
+;;
+;; ABCDEFGHIJKLMNOPQRSTUVWXYZ
+;; abcdefghijklmnopqrstuvwxyz
+;; 0123456789   !@#$¢%^&*~|
+;; `'\"‘’“”.,;:  ()[]{}—-_+=<>
+;; ()[]{}<>«»‹› 6bB8&0ODdoa 1tiIlL|\/
+;; !ij c¢ 5$Ss 7Z2z 9gqp nmMNNMW uvvwWuuw
+;; x×X .,·°;:¡!¿?`'‘’   ÄAÃÀ TODO"
+(defvar jccb/font-size (if *is-a-windowed-mac* 170 150))
 (defun jccb/set-font nil
   (if (member jccb/font-name (font-family-list))
       (progn (set-face-attribute 'default nil
@@ -1379,9 +1408,9 @@
   :hook
   (dired-mode . nerd-icons-dired-mode))
 
-(use-package casual-dired
-  :ensure t
-  :bind (:map dired-mode-map ("C-o" . 'casual-dired-tmenu)))
+;; (use-package casual-dired
+;;   :ensure t
+;;   :bind (:map dired-mode-map ("C-o" . 'casual-dired-tmenu)))
 
 
 ;;==================================================
