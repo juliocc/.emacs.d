@@ -227,53 +227,19 @@
 
 (use-package doom-modeline
   :ensure t
-  :hook ((doom-modeline-mode . size-indication-mode) ; filesize in modeline
-         (doom-modeline-mode . column-number-mode))   ; cursor column in modeline
   :init
+  (size-indication-mode +1)
+  (column-number-mode +1)
   (setq doom-modeline-bar-width 0
         doom-modeline-buffer-file-name-style 'truncate-upto-project ;; 'buffer-name
         ;; doom-modeline-project-detection t
         doom-modeline-minor-modes nil
         doom-modeline-indent-info t
         doom-modeline-enable-word-count t)
-
+  (setq doom-modeline-continuous-word-count-modes '(org-mode))
   (unless after-init-time
     (setq-default mode-line-format nil))
-  (doom-modeline-mode 1)
-  :config
-
-  ;; HACK(jccb): show winum number and ace-window letter together in the modeline
-  (doom-modeline-def-segment window-number
-    "The current window number."
-    (let ((num (cond
-                ((and (bound-and-true-p ace-window-display-mode) (bound-and-true-p winum-mode))
-                 (aw-update)
-                 (setq winum-auto-setup-mode-line nil)
-                 (format "%s/%s"
-                         (window-parameter (selected-window) 'ace-window-path)
-                         (winum-get-number-string)))
-                ((bound-and-true-p ace-window-display-mode)
-                 (aw-update)
-                 (window-parameter (selected-window) 'ace-window-path))
-                ((bound-and-true-p winum-mode)
-                 (setq winum-auto-setup-mode-line nil)
-                 (winum-get-number-string))
-                ((bound-and-true-p window-numbering-mode)
-                 (window-numbering-get-number-string))
-                (t ""))))
-      (when (and (length> num 0)
-                 (length> (cl-mapcan
-                           (lambda (frame)
-                             ;; Exclude minibuffer, tooltip and child frames
-                             (unless (or (and (fboundp 'frame-parent) (frame-parent frame))
-                                         (string= (frame-parameter frame 'name)
-                                                  (alist-get 'name (bound-and-true-p tooltip-frame-parameters))))
-                               (window-list frame 'never)))
-                           (visible-frame-list))
-                          1))
-        (propertize (format " %s " num)
-                    'face (doom-modeline-face 'doom-modeline-buffer-major-mode)))))
-  )
+  (doom-modeline-mode 1))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use
@@ -1014,15 +980,16 @@
   ("M-7" . winum-select-window-7)
   ("M-8" . winum-select-window-8)
   ("M-9" . winum-select-window-9)
-  :hook (doom-modeline-mode . winum-mode))
+  :init
+  (winum-mode +1))
 
 (use-package ace-window
   :bind ("C-x o" . ace-window)
-  :hook (doom-modeline-mode . ace-window-display-mode)
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   ;;(setq aw-keys '(?a ?s ?d ?f       ?j ?k ?l))
-  (setq aw-dispatch-always t))
+  (setq aw-dispatch-always t)
+  (ace-window-display-mode +1))
 
 (use-package jccb-windows
   :ensure nil
@@ -2530,6 +2497,15 @@ Lisp function does not specify a special indentation."
 (bind-key "<f2>" #'previous-buffer)
 (bind-key "S-<f2>" #'next-buffer)
 (bind-key "C-M-o" #'mode-line-other-buffer)
+
+(use-package surround
+  :ensure t
+  :bind-keymap ("M-'" . surround-keymap))
+
+(use-package desktop
+  :ensure nil
+  :init
+  (desktop-save-mode 1))
 
 ;; (use-package casual-calc
 ;;   :ensure t
