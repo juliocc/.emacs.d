@@ -85,7 +85,7 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
-(defvar elpaca-installer-version 0.7)
+(defvar elpaca-installer-version 0.8)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -102,18 +102,18 @@
     (make-directory repo t)
     (when (< emacs-major-version 28) (require 'subr-x))
     (condition-case-unless-debug err
-        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                 ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                 ,@(when-let ((depth (plist-get order :depth)))
-                                                     (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                 ,(plist-get order :repo) ,repo))))
-                 ((zerop (call-process "git" nil buffer t "checkout"
-                                       (or (plist-get order :ref) "--"))))
-                 (emacs (concat invocation-directory invocation-name))
-                 ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                       "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                 ((require 'elpaca))
-                 ((elpaca-generate-autoloads "elpaca" repo)))
+        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                  ,@(when-let* ((depth (plist-get order :depth)))
+                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                  ,(plist-get order :repo) ,repo))))
+                  ((zerop (call-process "git" nil buffer t "checkout"
+                                        (or (plist-get order :ref) "--"))))
+                  (emacs (concat invocation-directory invocation-name))
+                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                  ((require 'elpaca))
+                  ((elpaca-generate-autoloads "elpaca" repo)))
             (progn (message "%s" (buffer-string)) (kill-buffer buffer))
           (error "%s" (with-current-buffer buffer (buffer-string))))
       ((error) (warn "%s" err) (delete-directory repo 'recursive))))
@@ -780,7 +780,7 @@
   :init
   (setq undo-limit 6710886400) ;; 64mb.
   (setq undo-strong-limit 100663296) ;; 96mb.
-  (setq undo-outer-limit 1006632960) ;; 960mb.
+  (setq undo-outer-limit 1e006632960) ;; 960mb.
   (setq undo-fu-allow-undo-in-region t))
 
 (use-package undo-fu-session
@@ -1125,29 +1125,28 @@
 
 (use-package transient)
 
-(use-package magit
-  ;;:defer 1
-  :bind (("C-c C-g" . magit-status)
-         ;;("C-x C-z" . magit-status-quick)
-         ("C-c g"   . magit-file-dispatch)
-         ("C-c M-g" . magit-dispatch))
+;; TODO: git-commit is now part of magit, why do I need it here?
+(use-package git-commit
   :hook (git-commit-mode . jccb/git-commit-mode-hook)
   :config
   (global-git-commit-mode +1)
   (setq git-commit-summary-max-length 70)
   (defun jccb/git-commit-mode-hook ()
     ;;(turn-on-flyspell)
-    (setq fill-column 70))
+    (setq fill-column 70)))
 
-  ;;(add-hook 'magit-mode-hook #'endless/add-PR-fetch)
-  ;; (magit-add-section-hook
-  ;;  'magit-status-sections-hook 'magit-insert-tracked-files nil 'append)
-
+(use-package magit
+  ;;:defer 1
+  :bind (("C-c C-g" . magit-status)
+         ;;("C-x C-z" . magit-status-quick)
+         ("C-c g"   . magit-file-dispatch)
+         ("C-c M-g" . magit-dispatch))
+  :config
   (setq
    magit-bury-buffer-function #'magit-restore-window-configuration
    ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
    magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
-   magit-display-buffer-function #'magit-display-buffer-fullframe-status-topleft-v1
+   magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1
    magit-diff-refine-hunk 'all
    ;; magit-branch-adjust-remote-upstream-alist '(("origin/master" "master"))
    magit-branch-prefer-remote-upstream '("master" "main")
@@ -1788,8 +1787,8 @@ comment to the line."
          ("/known_hosts\\'"     . ssh-known-hosts-mode)
          ("/authorized_keys\\'" . ssh-authorized-keys-mode)))
 
-(use-package csv-mode
-  :mode "\\.csv\\'")
+;; (use-package csv-mode
+;;   :mode "\\.csv\\'")
 
 (use-package typescript-mode
   :mode (("\\.ts\\'" . typescript-mode))
@@ -2478,7 +2477,6 @@ Lisp function does not specify a special indentation."
 ;; (use-package sh-scrip t
 ;;   :hook (sh-mode . flymake-mode))
 
-
 (add-to-list 'display-buffer-alist
              '("\\*Help"
                (display-buffer-same-window)))
@@ -2499,21 +2497,22 @@ Lisp function does not specify a special indentation."
 (bind-key "C-M-o" #'mode-line-other-buffer)
 
 (use-package surround
-  :ensure t
   :bind-keymap ("M-'" . surround-keymap))
 
-(use-package desktop
-  :ensure nil
-  :init
-  (desktop-save-mode 1))
+(use-package gptel
+  :config
+  :if (fboundp 'jccb/get-gemini-key)
+  ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
+  (setq gptel-model "gemini-1.5-pro"
+        gptel-backend (gptel-make-gemini "Gemini"
+                        :key #'jccb/get-gemini-key
+                        :models '("gemini-1.5-pro"
+                                  "gemini-1.5-pro-002"
+                                  "gemini-1.5-flash"
+                                  "gemini-1.5-flash-002"
+                                  )
+                        :stream t)))
 
-;; (use-package casual-calc
-;;   :ensure t
-;;   :bind (:map calc-mode-map ("C-o" . #'casual-calc-tmenu)))
-
-;; (use-package casual-isearch
-;;   :ensure t
-;;   :bind (:map isearch-mode-map ("<f2>" . #'casual-isearch-tmenu)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
