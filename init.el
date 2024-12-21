@@ -232,13 +232,12 @@
   (column-number-mode +1)
   (setq doom-modeline-bar-width 0
         doom-modeline-buffer-file-name-style 'truncate-upto-project ;; 'buffer-name
-        ;; doom-modeline-project-detection t
-        doom-modeline-minor-modes nil
         doom-modeline-indent-info t
+        doom-modeline-total-line-number t
         doom-modeline-enable-word-count t)
   (setq doom-modeline-continuous-word-count-modes '(org-mode))
-  (unless after-init-time
-    (setq-default mode-line-format nil))
+  ;; (unless after-init-time
+  ;;   (setq-default mode-line-format nil))
   (doom-modeline-mode 1))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
@@ -253,14 +252,6 @@
         icon-title-format frame-title-format)
   (blink-cursor-mode -1))
 
-(defvar jccb/font-name "Iosevka SS04")
-(defvar jccb/vp-font-name "Roboto")
-;; (defvar jccb/font-name "Iosevka SS08")
-;; (defvar jccb/font-name "Iosvmata")
-;; (defvar jccb/font-name "Iosevka Comfy Motion Fixed")
-;; (defvar jccb/font-name "Iosevka Comfy")
-;; (defvar jccb/font-name "Pragmasevka")
-;;
 ;; ABCDEFGHIJKLMNOPQRSTUVWXYZ
 ;; abcdefghijklmnopqrstuvwxyz
 ;; 0123456789   !@#$¢%^&*~|
@@ -268,8 +259,10 @@
 ;; ()[]{}<>«»‹› 6bB8&0ODdoa 1tiIlL|\/
 ;; !ij c¢ 5$Ss 7Z2z 9gqp nmMNNMW uvvwWuuw
 ;; x×X .,·°;:¡!¿?`'‘’   ÄAÃÀ TODO"
-(defvar jccb/font-size (if *is-a-windowed-mac* 170 150))
-(defun jccb/set-font nil
+
+(let ((jccb/font-name "Iosevka SS04")
+      (jccb/vp-font-name "Roboto")
+      (jccb/font-size (if *is-a-windowed-mac* 170 150)))
   (if (member jccb/font-name (font-family-list))
       (progn (set-face-attribute 'default nil
                                  :family jccb/font-name
@@ -280,7 +273,6 @@
                                  :family jccb/vp-font-name))
     (message "Can't find font %s" jccb/font-name)))
 
-(jccb/set-font)
 (global-font-lock-mode +1)
 
 (use-package display-line-numbers
