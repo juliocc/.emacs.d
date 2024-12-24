@@ -159,45 +159,6 @@
 
 (use-package nerd-icons)
 
-;; (use-package modus-themes
-;;   :config
-;;   (setq modus-themes-disable-other-themes t
-;;         modus-themes-italic-constructs nil
-;;         modus-themes-bold-constructs t
-;;         modus-themes-prompts '(extrabold)
-;;         modus-themes-mixed-fonts t
-;;         ;; modus-themes-variable-pitch-ui nil
-;;         modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted)
-;;         modus-themes-headings '((1 . (medium 1.5))
-;;                                 (2 . (medium 1.3))
-;;                                 (3 . (medium 1.2))
-;;                                 (t . (medium 1.1)))
-;;         modus-operandi-palette-overrides
-;;         '((string green-intense))
-;;         modus-vivendi-tinted-palette-overrides
-;;         '((string green-faint))
-;;         modus-themes-common-palette-overrides
-;;         '((comment fg-dim)
-;;           ;;(fringe bg-dim)
-;;           (bg-region bg-active)
-;;           (fg-region unspecified)
-;;           (bg-hl-line bg-dim)
-;;           (underline-err red-faint)
-;;           (underline-warning yellow-faint)
-;;           (underline-note cyan-faint)
-
-;;           ;; highlight active modeline
-;;           (bg-mode-line-active bg-lavender)
-;;           (fg-mode-line-active fg-main)
-;;           (border-mode-line-active bg-magenta-intense)
-
-;;           ;; highlight current line
-;;           (fg-line-number-active info)
-;;           (bg-line-number-active unspecified)))
-;;   ;; (setq modus-themes-common-palette-overrides
-;;   ;;       modus-themes-preset-overrides-warmer)
-;;   (load-theme 'modus-vivendi-tinted))
-
 (use-package ef-themes
   :config
   (setq modus-themes-prompts '(extrabold)
@@ -448,38 +409,7 @@
 ;;   :ensure (:host sourcehut :repo "pkal/typo"))
 
 (use-package orderless
-  ;; :custom-face
-  ;; (orderless-match-face-0 ((default :weight medium :background unspecified)))
-  ;; (orderless-match-face-1 ((default :weight medium :background unspecified)))
-  ;; (orderless-match-face-2 ((default :weight medium :background unspecified)))
-  ;; (orderless-match-face-3 ((default :weight medium :background unspecified)))
   :config
-
-  ;; orderless-flex is probably more "flex" but this makes
-  ;; highlighting easier to understand (at least for me)
-  ;; (defun jccb/orderless-flex-non-greedy (component)
-  ;;   (orderless--separated-by
-  ;;       '(minimal-match (zero-or-more nonl))
-  ;;     (cl-loop for char across component collect char)))
-
-  (defun jccb/orderless-flex-non-greedy2 (component)
-    (rx-to-string
-     `(seq
-       ,@(cdr (cl-loop for char across component
-                       append `((minimal-match (zero-or-more (not ,char))) (group ,char)))))))
-
-
-  ;; ;; let orderless suffixes work with consult disambiguation suffixes
-  ;; (defun jccb/consult-orderless-fix-suffix (args)
-  ;;   (if (member (substring (car args) -1) '("!" "/" "\\" "&" "%" "=" "^" "@" "?"))
-  ;;       ;; (string-suffix-p "$" (car args))
-  ;;       (list (format "%s[%c-%c]*$"
-  ;;                     (substring (car args) 0 -1)
-  ;;                     consult--tofu-char
-  ;;                     (+ consult--tofu-char consult--tofu-range -1)))
-  ;;     args))
-  ;; (advice-add #'orderless-regexp :filter-args #'jccb/consult-orderless-fix-suffix)
-
   (setq orderless-affix-dispatch-alist
         `(;;(?! . ,#'orderless-without-literal)
           (?! . ,#'orderless-not)
