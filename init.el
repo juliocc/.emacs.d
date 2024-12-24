@@ -2344,17 +2344,9 @@ Lisp function does not specify a special indentation."
   :if (fboundp 'jccb/get-gemini-key)
   :config
   ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
-  (setq gptel-model "gemini-1.5-pro-002"
-        gptel-backend (gptel-make-gemini "Gemini"
+  (setq gptel-model 'gemini-2.0-flash-exp
+        gptel-backend (gptel-make-gemini "Gemini jccb"
                         :key #'jccb/get-gemini-key
-                        :models '(;; "gemini-1.5-pro"
-                                  "gemini-1.5-pro-002"
-                                  ;; "gemini-1.5-flash"
-                                  "gemini-1.5-flash-002"
-                                  "gemini-2.0-flash-exp"
-                                  "gemini-2.0-flash-thinking-exp-1219"
-                                  "gemini-exp-1206"
-                                  )
                         :stream t)))
 
 
