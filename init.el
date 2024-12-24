@@ -2190,30 +2190,6 @@ Lisp function does not specify a special indentation."
       (hs-toggle-hiding))))
 
 
-(use-package pulsar
-  :after consult
-  :init (pulsar-global-mode t)
-  ;; :hook (minibuffer-setup . pulsar-pulse-line-blue)
-  ;; :commands (pulsar-recenter-top pulsar-reveal-entry)
-  :init
-  (setq pulsar-pulse t)
-  (setq pulsar-delay 0.055)
-  (setq pulsar-iterations 10)
-  (setq pulsar-face 'pulsar-yellow)
-  (setq pulsar-highlight-face 'pulsar-yellow)
-  (pulsar-global-mode 1)
-  (add-hook 'next-error-hook #'pulsar-pulse-line)
-
-  ;; integration with the `consult' package:
-  (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
-  (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
-
-  ;; integration with the built-in `imenu':
-  (add-hook 'imenu-after-jump-hook #'pulsar-recenter-top)
-  (add-hook 'imenu-after-jump-hook #'pulsar-reveal-entry)
-
-  (pulsar-global-mode 1))
-
 (use-package string-inflection
   :bind (:repeat-map jccb/string-inflection-repeat-map
          ("s" . jccb/string-inflection-cycle)
