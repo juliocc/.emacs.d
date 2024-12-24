@@ -1025,22 +1025,38 @@
 
 
 (use-package llm
+  :custom
+  (llm-warn-on-nonfree nil)
   :init
   (require 'llm-gemini))
 
 (use-package magit-gptcommit
-  :after magit
+  :after (magit jccb-local llm)
+  :demand t
   :bind (:map git-commit-mode-map
          ("C-c C-g" . magit-gptcommit-commit-accept))
-  :custom
-  (magit-gptcommit-llm-provider (make-llm-gemini :key (jccb/get-gemini-key)
-                                                 :chat-model "gemini-1.5-flash-latest"))
+  :init
+  (setq magit-gptcommit-llm-provider (make-llm-gemini :key (jccb/get-gemini-key)
+                                                      :chat-model "gemini-1.5-flash-latest")
+        magit-gptcommit-prompt "You are an expert programmer writing a commit message.
+You went over every file diff that was changed in it.
+Summarize the commit into a single specific and cohesive theme.
+Remember to write in only one line, no more than 50 characters.
+Write your response using the imperative tense following the kernel git commit style guide.
+Write a high level title. Do not include a label in front of the commit title.
+
+THE FILE DIFFS:
+```
+%s
+```
+Now write the commit message:
+")
 
   :config
   ;; Enable magit-gptcommit-mode to watch staged changes and generate commit message automatically in magit status buffer
   ;; This mode is optional, you can also use `magit-gptcommit-generate' to generate commit message manually
   ;; `magit-gptcommit-generate' should only execute on magit status buffer currently
-  (magit-gptcommit-mode 1)
+  ;; (magit-gptcommit-mode 1)
 
   ;; Add gptcommit transient commands to `magit-commit'
   ;; Eval (transient-remove-suffix 'magit-commit '(1 -1)) to remove gptcommit transient commands
