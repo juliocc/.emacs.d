@@ -1024,6 +1024,27 @@
    magit-save-repository-buffers 'dontask))
 
 
+(use-package llm
+  :init
+  (require 'llm-gemini))
+
+(use-package magit-gptcommit
+  :after magit
+  :bind (:map git-commit-mode-map
+         ("C-c C-g" . magit-gptcommit-commit-accept))
+  :custom
+  (magit-gptcommit-llm-provider (make-llm-gemini :key (jccb/get-gemini-key)
+                                                 :chat-model "gemini-1.5-flash-latest"))
+
+  :config
+  ;; Enable magit-gptcommit-mode to watch staged changes and generate commit message automatically in magit status buffer
+  ;; This mode is optional, you can also use `magit-gptcommit-generate' to generate commit message manually
+  ;; `magit-gptcommit-generate' should only execute on magit status buffer currently
+  (magit-gptcommit-mode 1)
+
+  ;; Add gptcommit transient commands to `magit-commit'
+  ;; Eval (transient-remove-suffix 'magit-commit '(1 -1)) to remove gptcommit transient commands
+  (magit-gptcommit-status-buffer-setup))
 
 ;; (use-package magit-todos
 ;;   :after magit)
@@ -2307,13 +2328,16 @@ Lisp function does not specify a special indentation."
   :if (fboundp 'jccb/get-gemini-key)
   :config
   ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
-  (setq gptel-model "gemini-1.5-pro"
+  (setq gptel-model "gemini-1.5-pro-002"
         gptel-backend (gptel-make-gemini "Gemini"
                         :key #'jccb/get-gemini-key
-                        :models '("gemini-1.5-pro"
+                        :models '(;; "gemini-1.5-pro"
                                   "gemini-1.5-pro-002"
-                                  "gemini-1.5-flash"
+                                  ;; "gemini-1.5-flash"
                                   "gemini-1.5-flash-002"
+                                  "gemini-2.0-flash-exp"
+                                  "gemini-2.0-flash-thinking-exp-1219"
+                                  "gemini-exp-1206"
                                   )
                         :stream t)))
 
