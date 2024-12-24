@@ -2104,7 +2104,8 @@ Lisp function does not specify a special indentation."
                 compilation-mode-hook
                 isearch-mode-hook
                 minibuffer-setup-hook
-                vterm-mode-hook))
+                vterm-mode-hook
+                eat-mode-hook))
   (add-hook hook #'sanityinc/no-trailing-whitespace))
 
 (use-package which-key
@@ -2153,19 +2154,7 @@ Lisp function does not specify a special indentation."
 (defun jccb/set-black-bg nil
   (face-remap-add-relative 'default '(:background "black")))
 
-(use-package vterm
-  ;;:hook (vterm-mode . hide-mode-line-mode)
-  :hook (vterm-mode . jccb/set-black-bg)
-  :commands vterm
-  :init
-  (setq vterm-always-compile-module t)
-  (setq vterm-max-scrollback 5000))
-
-;; (use-package vterm-toggle
-;;   :bind (("<f2>" . vterm-toggle)
-;;          ("C-<f2>" . vterm-toggle-cd))
-;;   :config
-;;   (setq vterm-toggle-fullscreen-p nil))
+(use-package eat)
 
 (use-package keypression
   :commands keypression-mode)
