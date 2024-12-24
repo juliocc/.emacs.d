@@ -393,7 +393,6 @@
                  search-ring
                  regexp-search-ring))
     (add-to-list 'savehist-additional-variables var))
-
   (setq savehist-save-minibuffer-history t
         history-delete-duplicates t)
   (add-hook 'kill-emacs-hook
@@ -402,7 +401,6 @@
                                        if (stringp item)
                                        collect (substring-no-properties item)
                                        else if item collect it))))
-
   (savehist-mode t))
 
 ;; (use-package typo
@@ -427,10 +425,9 @@
   (defun basic-remote-all-completions (string table pred point)
     (and (vertico--remote-p string)
          (completion-basic-all-completions string table pred point)))
-  (add-to-list
-   'completion-styles-alist
-   '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
-
+  (add-to-list 'completion-styles-alist
+               '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+  (add-to-list 'orderless-style-dispatchers #'orderless-kwd-dispatch)
   (setq completion-styles '(orderless basic)
         orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex)
         orderless-component-separator 'orderless-escapable-split-on-space
@@ -452,10 +449,7 @@
          ("DEL"   . vertico-directory-delete-char)
          ("M-DEL" . vertico-directory-delete-word)
          ("C-M-n" . vertico-next-group)
-         ("C-M-p" . vertico-previous-group)
-         ;;("C->" . embark-become)
-         ("C-*"   . embark-act-all)
-         ("C-o"   . embark-export))
+         ("C-M-p" . vertico-previous-group))
   :bind (("C-c C-r" . vertico-repeat)
          ("M-S"     . vertico-suspend))
   :custom
@@ -727,7 +721,6 @@
                     pdf-outline-buffer-mode-hook
                     proced-mode-hook
                     tabulated-list-mode-hook))
-  ;;(lin-face 'lin-red)
   :config
   (lin-global-mode 1))
 
@@ -864,6 +857,10 @@
   ;;(setq aw-keys '(?a ?s ?d ?f       ?j ?k ?l))
   (setq aw-dispatch-always t)
   (ace-window-display-mode +1))
+(bind-key "<f2>" #'previous-buffer)
+(bind-key "S-<f2>" #'next-buffer)
+(bind-key "C-M-o" #'mode-line-other-buffer)
+(bind-key "C-x k" #'kill-current-buffer)
 
 (use-package jccb-windows
   :ensure nil
@@ -919,9 +916,6 @@
      :inline t
      :header-mouse-map ibuffer-size-header-map)
     (file-size-human-readable (buffer-size))))
-
-;; (use-package ibuffer-projectile
-;;   :hook (ibuffer . ibuffer-projectile-set-filter-groups))
 
 (use-package nerd-icons-ibuffer
   :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
@@ -1029,14 +1023,7 @@
    magit-revision-insert-related-refs 'all
    magit-save-repository-buffers 'dontask))
 
-;; (use-package forge
-;;   :config
-;;   ;; add to keychain:
-;;   ;; security add-internet-password -a '{user}^forge' -r 'htps' -s "api.github.com"
-;;   ;; https://github.com/magit/ghub/issues/101
-;;   (add-to-list 'auth-sources 'macos-keychain-internet)
-;;   (setq  forge-topic-list-limit '(100 . -10))
-;;   :after magit)
+
 
 ;; (use-package magit-todos
 ;;   :after magit)
@@ -1179,9 +1166,9 @@
         dired-confirm-shell-command nil
         dired-hide-details-hide-symlink-targets nil
         dired-recursive-deletes 'always
-        dired-recursive-copies 'always)
-  (setq-default diredp-hide-details-initially-flag nil
-                dired-dwim-target t))
+        delete-by-moving-to-trash t
+        dired-recursive-copies 'always
+        dired-dwim-target t))
 
 ;; (use-package dired-git-info
 ;;   :bind (:map dired-mode-map
@@ -1542,34 +1529,7 @@ comment to the line."
   (jinx-languages "en es")
   :bind (("C-;" . jinx-correct)))
 
-;;==================================================
-;; Project management
-;;==================================================
-
-;; (use-package projectile
-;;   :bind-keymap ("C-c p" . projectile-command-map)
-;;   :config
-;;   (setq projectile-mode-line
-;;         '(:eval
-;;           (format " Prj:%s"
-;;                   (projectile-project-name))))
-
-;;   (setq projectile-indexing-method 'alien)
-;;   (setq projectile-enable-caching t)
-;;   (setq projectile-completion-system 'auto)
-;;   (setq projectile-sort-order 'ryecently-active)
-;;   (setq projectile-globally-ignored-files '(".DS_Store" "TAGS"))
-;;   ;; (when (executable-find jccb/fd-command)
-;;   ;;   (let ((fd-command (concat jccb/fd-command " . --type f --print0 --color=never ")))
-;;   ;;     (setq projectile-hg-command fd-command)
-;;   ;;     (setq projectile-git-command fd-command)
-;;   ;;     (setq projectile-fossil-command fd-command)
-;;   ;;     (setq projectile-bzr-command fd-command)
-;;   ;;     (setq projectile-darcs-command fd-command)
-;;   ;;     (setq projectile-svn-command fd-command)
-;;   ;;     (setq projectile-generic-command fd-command)))
-;;   (projectile-mode +1)
-;;   (setq projectile-require-project-file nil))
+(setopt dictionary-server "dict.org")
 
 ;;==================================================
 ;; coding modes
@@ -1874,23 +1834,34 @@ Lisp function does not specify a special indentation."
          (markdown-mode . eglot-ensure)
          (yaml-mode . eglot-ensure)
          (json-mode . eglot-ensure)
-         (go-mode . eglot-ensure)))
+         (go-mode . eglot-ensure))
+  ;; :custom
+  ;; (eglot-report-progress nil)
+  ;; :config
+  ;; (fset #'jsonrpc--log-event #'ignore)
+  ;; (setq jsonrpc-event-hook nil)
+  )
 
 (use-package consult
-  :bind (("C-c h" . consult-history)
-         ("C-c m" . consult-mode-command)
-         ;; ("C-c b" . consult-bookmark)
+  :bind (;; C-c bindings in `mode-specific-map'
+         ("C-c M-x" . consult-mode-command)
+         ("C-c h" . consult-history)
+         ("C-c m" . consult-man) ;;TODO: not working
          ("C-c k" . consult-kmacro)
          ;; C-x bindings (ctl-x-map)
          ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complet-command
          ("C-x b"   . consult-buffer)              ;; orig. switch-to-buffer
          ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
          ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-         ("C-x r x"  . consult-register)
-         ("C-x r b"  . consult-bookmark)
+         ("C-x r b"  . consult-bookmark)           ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
 
+         ;; ("C-x r j" . consult-register-load)
+         ("C-x r s" . consult-register-store)
+         ("C-x r x" . consult-register)
+         ;; Other custom bindings
          ("M-y" . consult-yank-pop)
+         ;; M-g bindings in `goto-map'
          ("M-g e" . consult-compile-error)
          ;; ("M-g f"    . consult-flycheck)
          ;; ("M-g g"    . consult-goto-line)             ;; orig. goto-line
@@ -1900,16 +1871,17 @@ Lisp function does not specify a special indentation."
          ("M-g k"    . consult-global-mark)
          ("M-g e"    . consult-compile-error)
          ("M-i"      . consult-imenu)
-         ("M-g I" . consult-imenu-multi)
+         ("M-g I"    . consult-imenu-multi)
          ;; M-s bindings (search-map)
-         ("M-s r" . consult-ripgrep)
          ("M-s f" . consult-fd)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
          ("M-s l" . consult-line)
          ("M-s L" . consult-line-multi)
          ("M-s k" . consult-keep-lines)
          ("M-s u" . consult-focus-lines)
+         ;; Isearch integration
          ("M-s e" . consult-isearch-history)
          :map isearch-mode-map
          ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
@@ -1922,7 +1894,6 @@ Lisp function does not specify a special indentation."
          )
   :commands consult-ref
   :init
-  ;; (fset 'projectile-ripgrep #'consult-ripgrep)
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   (advice-add #'register-preview :override #'consult-register-window)
@@ -1956,8 +1927,6 @@ Lisp function does not specify a special indentation."
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   (advice-add #'register-preview :override #'consult-register-window)
   ;; (set-face-attribute 'consult-file nil :inherit 'doom-modeline-buffer-file)
-  ;; (autoload 'projectile-project-root "projectile")
-  ;; (setq consult-project-root-function #'projectile-project-root)
 
   ;; using full file names in buffer
   ;; https://amitp.blogspot.com/2024/05/emacs-consult-buffer-filenames.html
@@ -2000,18 +1969,21 @@ Lisp function does not specify a special indentation."
          ("C-x C-f" . consult-dir-jump-file)
          ("C-x C-d" . consult-dir))
   :config
-  ;; (setq consult-dir-project-list-function #'consult-dir-projectilef-dirs)
   (setq consult-dir-shadow-filenames nil))
 
 (use-package embark
-  ;;:after which-key
+  :after vertico
   :commands (embark-prefix-help-command embark-act-noquit)
   :bind (("C-."   . embark-act)
          ("M-."   . embark-dwim)
          ("C-h B" . embark-bindings)
          :map minibuffer-local-map
          ("C-c C-c" . embark-collect)
-         ("C-c C-e" . embark-export))
+         ("C-c C-e" . embark-export)
+         :map vertico-map
+         ;;("C->" . embark-become)
+         ("C-*"   . embark-act-all)
+         ("C-o"   . embark-export))
   :init
   (setq prefix-help-command #'embark-prefix-help-command)
   :config
@@ -2037,12 +2009,22 @@ Lisp function does not specify a special indentation."
 (use-package embark-consult
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
+(use-package sudo-edit
+  :after embark
+  :bind
+  (:map embark-file-map
+   ("s" . sudo-edit-find-file))
+  (:map embark-become-file+buffer-map
+   ("s" . sudo-edit-find-file)))
 
 ;;==================================================
 ;; Misc
 ;;==================================================
 
-;; (setq tramp-ssh-controlmaster-options  "-o ControlPath=~/.ssh/tmp/master-%%C -o ControlMaster=auto -o ControlPersist=yes")
+;; Use ssh connection sharing, but let me manage it from my ~/.ssh/config
+(customize-set-variable 'tramp-use-connection-share t)
+;; (customize-set-variable 'tramp-ssh-controlmaster-options nil)
+(customize-set-variable 'tramp-ssh-controlmaster-options "-o ControlMaster=auto -o ControlPath=/Users/jccb/.ssh/tmp/master-%%C -o ControlPersist=8h")
 
 (use-package kmacro-x
   :init (kmacro-x-atomic-undo-mode t))
@@ -2188,7 +2170,6 @@ Lisp function does not specify a special indentation."
          ("c" . string-inflection-camelcase))
   :bind ("C-c s" . jccb/string-inflection-cycle)
   :config
-
   (defun jccb/string-inflection-cycle ()
     "switching by major-mode"
     (interactive)
@@ -2200,21 +2181,8 @@ Lisp function does not specify a special indentation."
      (t
       (string-inflection-all-cycle)))))
 
-
-;; (use-package dot-mode
-;;   :hook (after-init . global-dot-mode)
-;;   :bind (:repeat-map jccb/dot-mode-repeat-map
-;;          ("." . dot-mode-execute))
-;;   :bind (:map dot-mode-map
-;;          ("C-c ." . dot-mode-execute)
-;;          ("C-."   . nil)
-;;          ("C-M-." . nil)))
-
 (use-package goto-chg
   :commands goto-last-change)
-
-(use-package hydra
-  :disabled)
 
 (use-package piper
   :encsure (:host gitlab :repo "howardabrams/emacs-piper")
@@ -2224,7 +2192,9 @@ Lisp function does not specify a special indentation."
 
 (use-package repeat
   :ensure nil
-  :init (repeat-mode t))
+  :init
+  (setq repeat-exit-key (kbd "<TAB>"))
+  (repeat-mode t))
 
 ;; Make sure clipboard works properly in tty mode on OSX.stolen from
 ;; rougier.
@@ -2328,19 +2298,14 @@ Lisp function does not specify a special indentation."
                (window-height . 20)))
 
 
-;; TODO: move somewhere
-(bind-key "C-x k" #'kill-current-buffer)
 (setq recenter-positions '(5 bottom))
-(bind-key "<f2>" #'previous-buffer)
-(bind-key "S-<f2>" #'next-buffer)
-(bind-key "C-M-o" #'mode-line-other-buffer)
 
 (use-package surround
   :bind-keymap ("M-'" . surround-keymap))
 
 (use-package gptel
-  :config
   :if (fboundp 'jccb/get-gemini-key)
+  :config
   ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
   (setq gptel-model "gemini-1.5-pro"
         gptel-backend (gptel-make-gemini "Gemini"
@@ -2351,6 +2316,42 @@ Lisp function does not specify a special indentation."
                                   "gemini-1.5-flash-002"
                                   )
                         :stream t)))
+
+
+(use-package beancount
+  :mode ("\\.beancount\\'" . beancount-mode))
+
+
+(add-to-list 'save-some-buffers-action-alist
+             (list "d"
+                   (lambda (buffer) (diff-buffer-with-file (buffer-file-name buffer)))
+                   "show diff between the buffer and its file"))
+
+(defun prot/keyboard-quit-dwim ()
+  "Do-What-I-Mean behaviour for a general `keyboard-quit'.
+
+The generic `keyboard-quit' does not do the expected thing when
+the minibuffer is open.  Whereas we want it to close the
+minibuffer, even without explicitly focusing it.
+
+The DWIM behaviour of this command is as follows:
+
+- When the region is active, disable it.
+- When a minibuffer is open, but not focused, close the minibuffer.
+- When the Completions buffer is selected, close it.
+- In every other case use the regular `keyboard-quit'."
+  (interactive)
+  (cond
+   ((region-active-p)
+    (keyboard-quit))
+   ((derived-mode-p 'completion-list-mode)
+    (delete-completion-window))
+   ((> (minibuffer-depth) 0)
+    (abort-recursive-edit))
+   (t
+    (keyboard-quit))))
+
+(bind-key "C-g" #'prot/keyboard-quit-dwim)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
