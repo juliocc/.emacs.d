@@ -64,6 +64,8 @@
 
 ;; Silence compiler warnings as they can be pretty disruptive
 (setq native-comp-async-report-warnings-errors 'silent)
+;; try to remove old compilation caches after 10 seconds idle
+(run-with-idle-timer 10 nil #'native-compile-prune-cache)
 
 ;;==================================================
 ;; Setup package management tools
@@ -1391,17 +1393,11 @@ Now write the commit message:
   :ensure nil
   :bind ("M-z" . zap-up-to-char))
 
-;; TODO disable on emacs >= 29
 (use-package so-long
   :init (global-so-long-mode t))
 
 (use-package dtrt-indent
   :init (dtrt-indent-global-mode t))
-
-;; (use-package browse-kill-ring
-;;   :hook (after-init . browse-kill-ring-default-keybindings)
-;;   :init
-;;   (setq kill-ring-max 2500))
 
 (use-package ialign
   :commands ialign)
@@ -2082,18 +2078,14 @@ Lisp function does not specify a special indentation."
 ;;   :commands elisp-demos-advice-helpful-update)
 
 (use-package helpful
-  :commands (helpful--read-symbol
-             helpful-callable)
-  ;; TODO: move this hooks somewhere else
-  :hook ((help-mode . visual-line-mode)
-         (Custom-mode . visual-line-mode)
-         (helpful-mode . visual-line-mode))
+  :commands helpful--read-symbol
   :bind (([remap describe-command]  . helpful-command)
          ([remap describe-key]      . helpful-key)
          ([remap describe-symbol]   . helpful-symbol)
          ([remap describe-function] . helpful-callable)
          ([remap describe-variable] . helpful-variable)
-         ("C-h ." . helpful-at-point))
+         ("C-h F"                   . helpful-function)
+         ("C-h ."                   . helpful-at-point))
   :init
   (with-eval-after-load 'apropos
     ;; patch apropos buttons to call helpful instead of help
@@ -2233,22 +2225,6 @@ Lisp function does not specify a special indentation."
   (setq repeat-exit-key (kbd "<TAB>"))
   (repeat-mode t))
 
-;; Make sure clipboard works properly in tty mode on OSX.stolen from
-;; rougier.
-;; (defun my/paste-from-osx ()
-;;   (shell-command-to-string "pbpaste"))
-
-;; (defun my/copy-to-osx (text &optional push)
-;;   (let ((process-connection-type nil))
-;;     (let ((proc (start-process "pbcopy" "*Messages*" "pbcopy")))
-;;       (process-send-string proc text)
-;;       (process-send-eof proc))))
-
-;; (when (and (not (display-graphic-p))
-;;            (eq system-type 'darwin))
-;;   (setq interprogram-cut-function   #'my/copy-to-osx
-;;         interprogram-paste-function #'my/paste-from-osx))
-
 (defun jccb/replace-copyright nil
   (interactive)
   (save-excursion
@@ -2386,10 +2362,10 @@ The DWIM behaviour of this command is as follows:
 (bind-key "C-g" #'prot/keyboard-quit-dwim)
 
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;; (use-package man
 ;;   :ensure nil
@@ -2397,9 +2373,6 @@ The DWIM behaviour of this command is as follows:
 ;;   ;; use gman on macos. Download man-db and run mandb regularly
 ;;   (setq manual-program (if *is-a-mac* "gman" "man")
 ;;         Man-notifiy-method 'aggressive))
-
-;;compilation-ask-about-save
-;; native-compile-prune-cache
 
 ;; use-package seq: init -> config
 ;; Local Variables:
