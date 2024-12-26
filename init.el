@@ -1332,7 +1332,7 @@ Now write the commit message:
   :ensure nil
   :config
   (setq electric-pair-preserve-balance nil)
-  (setq electric-pair-inhibit-predicate #'electric-pair-default-inhibit)
+  (setq electric-pair-inhibit-predicate #'electric-pair-conservative-inhibit)
   (setq electric-pair-delete-adjacent-pairs t)
   (setq electric-pair-skip-whitespace nil)
   (setq electric-pair-open-newline-between-pairs t)
