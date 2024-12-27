@@ -314,13 +314,14 @@
       fill-column 80
       compilation-scroll-output t
       grep-highlight-matches t
+      grep-use-headings t
       set-mark-command-repeat-pop t
       isearch-allow-scroll t
       blink-matching-paren-distance 51200
       confirm-nonexistent-file-or-buffer nil
       indicate-buffer-boundaries nil
       x-underline-at-descent-line t
-      idle-update-delay 2.0
+      ;; idle-update-delay 2.0
       window-combination-resize t
       next-line-add-newlines nil            ; don't add new lines when scrolling down
       kill-read-only-ok t
@@ -473,6 +474,7 @@
                            '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
 
   (vertico-multiform-mode 1)
+  (vertico-indexed-mode 1)
   :config
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
@@ -1351,6 +1353,7 @@ Now write the commit message:
 (use-package phi-search)
 (use-package multiple-cursors
   :commands ar/mc-mark-all-symbol-overlays
+  :bind (("C-c c r" . mc/mark-pop))
   :config
   (setq mc/always-run-for-all t)
   (defun ar/mc-mark-all-symbol-overlays ()
@@ -1373,18 +1376,6 @@ Now write the commit message:
                  (mc/create-fake-cursor-at-point))))
             overlays)
       (mc/maybe-multiple-cursors-mode))))
-
-;; ;; TODO: repeat-mode this?
-;; :bind (("C-S-<mouse-1>" . mc/add-cursor-on-click)
-;;        ("C->"           . mc/mark-next-like-this)
-;;        ("C-<"           . mc/mark-previous-like-this)
-;;        ("C-c C-<"       . mc/mark-all-like-this)
-;;        ("C-c c r"       . set-rectangular-region-anchor)
-;;        ("C-c c t"       . mc/mark-sgml-tag-pair)
-;;        ("C-c c c"       . mc/edit-lines)
-;;        ("C-c c e"       . mc/edit-ends-of-lines)
-;;        ("C-c c a"       . mc/edit-beginnings-of-lines)))
-
 
 (use-package avy-zap
   :bind (("M-Z" . avy-zap-up-to-char-dwim)))
@@ -1416,18 +1407,28 @@ Now write the commit message:
 ;;   :hook (xref-after-return . xref-pulse-momentarily))
 
 
-;; When popping the mark, continue popping until the cursor actually moves
-;; Also, if the last command was a copy - skip past all the expand-region cruft.
-(defadvice pop-to-mark-command (around ensure-new-position activate)
-  (let ((p (point)))
-    (when (eq last-command 'save-region-or-current-line)
-      ad-do-it
-      ad-do-it
-      ad-do-it)
-    (dotimes (i 10)
-      (when (= p (point)) ad-do-it))))
+(use-package simple
+  :ensure nil
+  ;; :bind (:repeat-map jccb/mark-repeat-map
+  ;;        ("p" . pop-to-mark-command)
+  ;;        ("g" . pop-global-mark))
+  :bind (("C-S-P" . pop-to-mark-command)
+         ("C-S-O" . pop-global-mark))
+  :init
+  (setq mark-ring-max 64
+        global-mark-ring-max 64)
+  ;; When popping the mark, continue popping until the cursor actually moves
+  ;; Also, if the last command was a copy - skip past all the expand-region cruft.
+  (defun jccb/pop-to-mark-command-advice (orig-fun &rest args)
+    (let ((p (point)))
+      (when (eq last-command 'save-region-or-current-line)
+        (apply orig-fun args)
+        (apply orig-fun args)
+        (apply orig-fun args))
+      (dotimes (i 10)
+        (when (= p (point)) (apply orig-fun args)))))
 
-(bind-key "C-S-P" #'pop-to-mark-command)
+  (advice-add 'pop-to-mark-command :around #'jccb/pop-to-mark-command-advice))
 
 (use-package jccb-misc
   :ensure nil
@@ -1676,6 +1677,8 @@ comment to the line."
 
 (use-package highlight-quoted
   :hook (emacs-lisp-mode . highlight-quoted-mode))
+
+(use-package macrostep)
 
 ;; (use-package highlight-defined
 ;;   :hook (emacs-lisp-mode . highlight-defined-mode))
@@ -1940,10 +1943,14 @@ Lisp function does not specify a special indentation."
   (add-to-list 'consult-buffer-filter "^\\*")
 
   (consult-customize
+   consult-global-mark consult-mark
+   :preview-key 'any
    consult-theme consult-imenu consult-goto-line
    :preview-key '(:debounce 0.2 any)
 
    consult-buffer
+   :preview-key '("C-S-<return>")
+
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
@@ -2077,28 +2084,10 @@ Lisp function does not specify a special indentation."
 ;; (use-package elisp-demos
 ;;   :commands elisp-demos-advice-helpful-update)
 
-(use-package helpful
-  :commands helpful--read-symbol
-  :bind (([remap describe-command]  . helpful-command)
-         ([remap describe-key]      . helpful-key)
-         ([remap describe-symbol]   . helpful-symbol)
-         ([remap describe-function] . helpful-callable)
-         ([remap describe-variable] . helpful-variable)
-         ("C-h F"                   . helpful-function)
-         ("C-h ."                   . helpful-at-point))
+(use-package help
+  :ensure nil
   :init
-  (with-eval-after-load 'apropos
-    ;; patch apropos buttons to call helpful instead of help
-    (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
-      (button-type-put
-       fun-bt 'action
-       (lambda (button)
-         (helpful-callable (button-get button 'apropos-symbol)))))
-    (dolist (var-bt '(apropos-variable apropos-user-option))
-      (button-type-put
-       var-bt 'action
-       (lambda (button)
-         (helpful-variable (button-get button 'apropos-symbol)))))))
+  (setq help-window-keep-selected t))
 
 (use-package whitespace-cleanup-mode
   :init (global-whitespace-cleanup-mode t))
@@ -2296,20 +2285,8 @@ Lisp function does not specify a special indentation."
 
 (use-package graphviz-dot-mode)
 
-;; (use-package sh-scrip t
+;; (use-package sh-script
 ;;   :hook (sh-mode . flymake-mode))
-
-(add-to-list 'display-buffer-alist
-             '("\\*Help"
-               (display-buffer-same-window)))
-(add-to-list 'display-buffer-alist
-             '("\\*helpful"
-               (display-buffer-same-window)))
-(add-to-list 'display-buffer-alist
-             '("\\*vterm*"
-               (display-buffer-at-bottom)
-               (window-height . 20)))
-
 
 (setq recenter-positions '(5 bottom))
 
@@ -2318,13 +2295,40 @@ Lisp function does not specify a special indentation."
 
 (use-package gptel
   :if (fboundp 'jccb/get-gemini-key)
+  :bind ("C-c a m" . gptel-menu)
+  :bind ("C-c a a" . gptel-send)
+  :bind ("C-c a r" . gptel-rewrite)
   :config
   ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
   (setq gptel-model 'gemini-2.0-flash-exp
         gptel-backend (gptel-make-gemini "Gemini jccb"
                         :key #'jccb/get-gemini-key
-                        :stream t)))
+                        :stream t))
+  (gptel-make-ollama "Ollama"
+    :host "localhost:11434"
+    :stream t
+    :models '(zephyr:latest
+              llama3.2:latest)))
 
+(use-package ellama
+  :if (fboundp 'jccb/get-gemini-key)
+  :bind ("C-c a e" . ellama-transient-main-menu)
+  :config
+  (setopt ellama-provider (make-llm-gemini :key (jccb/get-gemini-key)
+                                           :chat-model "gemini-1.5-flash-latest"))
+  (setopt ellama-provider
+          (make-llm-ollama
+           ;; this model should be pulled to use it
+           ;; value should be the same as you print in terminal during pull
+           :chat-model "llama3:8b-instruct-q8_0"
+           :embedding-model "nomic-embed-text"
+           :default-chat-non-standard-params '(("num_ctx" . 8192))))  )
+
+;; (use-package shell-maker)
+
+;; (use-package chatgpt-shell
+;;   :config
+;;   (setq (chatgpt-shell-gemini-key #'jccb/get-gemini-key)))
 
 (use-package beancount
   :mode ("\\.beancount\\'" . beancount-mode))
@@ -2360,8 +2364,6 @@ The DWIM behaviour of this command is as follows:
     (keyboard-quit))))
 
 (bind-key "C-g" #'prot/keyboard-quit-dwim)
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
