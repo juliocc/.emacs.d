@@ -994,16 +994,6 @@
 
 (use-package transient)
 
-;; TODO: git-commit is now part of magit, why do I need it here?
-(use-package git-commit
-  :hook (git-commit-mode . jccb/git-commit-mode-hook)
-  :config
-  (global-git-commit-mode +1)
-  (setq git-commit-summary-max-length 70)
-  (defun jccb/git-commit-mode-hook ()
-    ;;(turn-on-flyspell)
-    (setq fill-column 70)))
-
 (use-package magit
   ;;:defer 1
   :bind (("C-c C-g" . magit-status)
@@ -1011,6 +1001,7 @@
          ("C-c g"   . magit-file-dispatch)
          ("C-c M-g" . magit-dispatch))
   :config
+  (global-git-commit-mode +1)
   (setq
    magit-bury-buffer-function #'magit-restore-window-configuration
    ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
@@ -1022,7 +1013,8 @@
    magit-delete-by-moving-to-trash t
    magit-git-executable (executable-find magit-git-executable)
    magit-revision-insert-related-refs 'all
-   magit-save-repository-buffers 'dontask))
+   magit-save-repository-buffers 'dontask
+   git-commit-summary-max-length 70))
 
 
 (use-package llm
