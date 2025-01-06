@@ -339,16 +339,12 @@
                            (y-or-n-p-with-timeout prompt 2 nil)))
 
 
-;; A second, case-insensitive pass over `auto-mode-alist' is time wasted, and
-;; indicates misconfiguration (or that the user needs to stop relying on case
-;; insensitivity).
 (setq auto-mode-case-fold nil)
 
-;; Disable warnings from legacy advice system. They aren't useful, and what can
-;; we do about them, besides changing packages upstream?
-(setq ad-redefinition-action 'accept)
+;; ;; Disable warnings from legacy advice system. They aren't useful, and what can
+;; ;; we do about them, besides changing packages upstream?
+;; (setq ad-redefinition-action 'accept)
 
-;; Make apropos omnipotent. It's more useful this way.
 (setq apropos-do-all t)
 
 (setq-default highlight-tabs t)
@@ -384,6 +380,7 @@
 
 (use-package project
   :ensure nil)
+
 
 ;;==================================================
 ;; Completion
@@ -1288,8 +1285,8 @@ Now write the commit message:
 (use-package visual-fill-column
   :commands visual-fill-column-mode
   :init
-  (setq  visual-fill-column-width 80
-         visual-fill-column-center-text t))
+  (setq visual-fill-column-width 80
+        visual-fill-column-center-text t))
 
 (setq long-line-threshold 5000)
 (setq large-hscroll-threshold 5000)
@@ -2212,6 +2209,7 @@ Lisp function does not specify a special indentation."
   :ensure nil
   :init
   (setq repeat-exit-key (kbd "<TAB>"))
+  (setq repeat-exit-timeout 1.0)
   (repeat-mode t))
 
 (defun jccb/replace-copyright nil
@@ -2308,7 +2306,8 @@ Lisp function does not specify a special indentation."
     :host "localhost:11434"
     :stream t
     :models '(zephyr:latest
-              llama3.2:latest)))
+              llama3.2:latest
+              qwen2.5:14b)))
 
 (use-package ellama
   :if (fboundp 'jccb/get-gemini-key)
@@ -2324,11 +2323,6 @@ Lisp function does not specify a special indentation."
            :embedding-model "nomic-embed-text"
            :default-chat-non-standard-params '(("num_ctx" . 8192))))  )
 
-;; (use-package shell-maker)
-
-;; (use-package chatgpt-shell
-;;   :config
-;;   (setq (chatgpt-shell-gemini-key #'jccb/get-gemini-key)))
 
 (use-package beancount
   :mode ("\\.beancount\\'" . beancount-mode))
