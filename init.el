@@ -250,7 +250,17 @@
 
 (use-package highlight-numbers
   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
-  :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
+  :config
+  (setq highlight-numbers-generic-regexp
+        (rx symbol-start
+            (optional (any "+-"))
+            (or (seq (one-or-more digit)
+                     (optional (seq "." (zero-or-more digit))))
+                (seq "." (one-or-more digit)))
+            (optional (or "e" "E")
+                      (optional (or "+" "-"))
+                      (one-or-more digit))
+            symbol-end)))
 
 ;; (use-package highlight-escape-sequences
 ;;   :hook (prog-mode . hes-mode))
