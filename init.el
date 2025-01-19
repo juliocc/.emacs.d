@@ -867,7 +867,8 @@
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   ;;(setq aw-keys '(?a ?s ?d ?f       ?j ?k ?l))
   (setq aw-dispatch-always t)
-  (ace-window-display-mode +1))
+  ;; (ace-window-display-mode +1)
+  )
 (bind-key "<f2>" #'previous-buffer)
 (bind-key "S-<f2>" #'next-buffer)
 (bind-key "C-M-o" #'mode-line-other-buffer)
@@ -1332,8 +1333,27 @@ Now write the commit message:
 (use-package elec-pair
   :ensure nil
   :config
+
+  ;; https://old.reddit.com/r/emacs/comments/1hwf46n/weekly_tips_tricks_c_thread_20250108_week_01/m63mddk/
+  (defun my/electric-pair-conservative-inhibit (char)
+    (or
+     ;; I find it more often preferable not to pair when the
+     ;; same char is next.
+     (eq char (char-after))
+     ;; Don't pair up when we insert the second of "" or of ((.
+     (and (eq char (char-before))
+          (eq char (char-before (1- (point)))))
+     ;; I also find it often preferable not to pair next to a word.
+     (eq (char-syntax (following-char)) ?w)
+     ;; Don't pair at the end of a word, unless parens.
+     (and
+      (eq (char-syntax (char-before (1- (point)))) ?w)
+      (eq (preceding-char) char)
+      (not (eq (char-syntax (preceding-char)) 40) ;; 40 is open paren
+           ))))
+
+  (setq electric-pair-inhibit-predicate #'my/electric-pair-conservative-inhibit)
   (setq electric-pair-preserve-balance nil)
-  (setq electric-pair-inhibit-predicate #'electric-pair-conservative-inhibit)
   (setq electric-pair-delete-adjacent-pairs t)
   (setq electric-pair-skip-whitespace nil)
   (setq electric-pair-open-newline-between-pairs t)
