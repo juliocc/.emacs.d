@@ -87,12 +87,12 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
-(defvar elpaca-installer-version 0.8)
+(defvar elpaca-installer-version 0.10)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1
+                              :ref nil :depth 1 :inherit ignore
                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
                               :build (:not elpaca--activate-package)))
 (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
@@ -102,7 +102,7 @@
   (add-to-list 'load-path (if (file-exists-p build) build repo))
   (unless (file-exists-p repo)
     (make-directory repo t)
-    (when (< emacs-major-version 28) (require 'subr-x))
+    (when (<= emacs-major-version 28) (require 'subr-x))
     (condition-case-unless-debug err
         (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
@@ -125,12 +125,10 @@
     (load "./elpaca-autoloads")))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
-
 (setq use-package-enable-imenu-support t)
 (setq use-package-always-ensure t)
 
 (elpaca elpaca-use-package
-  ;; Enable Elpaca support for use-package's :ensure keyword.
   (elpaca-use-package-mode))
 
 (elpaca-wait)
@@ -184,7 +182,6 @@
   (set-face-attribute 'italic nil :slant 'normal))
 
 (use-package doom-modeline
-  :ensure t
   :init
   (size-indication-mode +1)
   (column-number-mode +1)
@@ -866,7 +863,7 @@
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   ;;(setq aw-keys '(?a ?s ?d ?f       ?j ?k ?l))
-  (setq aw-dispatch-always t)
+  (setq aw-dispatch-always nil)
   ;; (ace-window-display-mode +1)
   )
 (bind-key "<f2>" #'previous-buffer)
@@ -1014,6 +1011,7 @@
   :config
   (global-git-commit-mode +1)
   (setq
+   magit-format-file-function #'magit-format-file-nerd-icons
    magit-bury-buffer-function #'magit-restore-window-configuration
    ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
    magit-no-confirm '(stage-all-changes unstage-all-changes discard resurrect)
@@ -1022,11 +1020,12 @@
    ;; magit-branch-adjust-remote-upstream-alist '(("origin/master" "master"))
    magit-branch-prefer-remote-upstream '("master" "main")
    magit-delete-by-moving-to-trash t
-   magit-git-executable (executable-find magit-git-executable)
+   ;;magit-git-executable (executable-find magit-git-executable)
    magit-revision-insert-related-refs 'all
    magit-save-repository-buffers 'dontask
    git-commit-summary-max-length 70))
 
+(use-package ztree)
 
 (use-package llm
   :custom
@@ -1041,7 +1040,7 @@
          ("C-c C-g" . magit-gptcommit-commit-accept))
   :init
   (setq magit-gptcommit-llm-provider (make-llm-gemini :key (jccb/get-gemini-key)
-                                                      :chat-model "gemini-1.5-flash-latest")
+                                                      :chat-model "gemini-2.5-pro-exp-03-25")
         magit-gptcommit-prompt "You are an expert programmer writing a commit message.
 You went over every file diff that was changed in it.
 Summarize the commit into a single specific and cohesive theme.
@@ -1531,9 +1530,9 @@ Now write the commit message:
          ("M-S" . sort-lines)
          ("M-m" . apply-macro-to-region-lines)))
 
-(use-package change-inner
-  :bind (("C-c i" . change-inner)
-         ("C-c o" . change-outer)))
+;; (use-package change-inner
+;;   :bind (("C-c i" . change-inner)
+;;          ("C-c o" . change-outer)))
 
 (use-package rainbow-mode
   :hook (css-mode html-mode))
@@ -1654,6 +1653,8 @@ comment to the line."
 
 (use-package yaml-mode
   :mode "\\.yaml?\\'")
+
+(use-package jq-mode)
 
 (use-package json-mode
   :mode "\\.json?\\'")
@@ -1853,7 +1854,7 @@ Lisp function does not specify a special indentation."
 ;;   (setq pyvenv-mode-line-indicator
 ;;         '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] "))))
 
-(use-package pyenv-mode)
+;; (use-package pyenv-mode)
 
 (use-package imenu
   :ensure nil
@@ -1959,7 +1960,7 @@ Lisp function does not specify a special indentation."
         register-preview-function #'consult-register-format)
 
   ;; show filtered buffers with SPC
-  (add-to-list 'consult-buffer-filter "^\\*")
+  ;; (add-to-list 'consult-buffer-filter "^\\*")
 
   (consult-customize
    consult-global-mark consult-mark
@@ -2103,6 +2104,16 @@ Lisp function does not specify a special indentation."
 ;; (use-package elisp-demos
 ;;   :commands elisp-demos-advice-helpful-update)
 
+(use-package helpful
+  :commands helpful--read-symbol
+  :bind (([remap describe-command]  . helpful-command)
+         ([remap describe-key]      . helpful-key)
+         ([remap describe-symbol]   . helpful-symbol)
+         ([remap describe-function] . helpful-callable)
+         ([remap describe-variable] . helpful-variable)
+         ("C-h F"                   . helpful-function)
+         ("C-h ."                   . helpful-at-point)))
+
 (use-package help
   :ensure nil
   :init
@@ -2173,7 +2184,10 @@ Lisp function does not specify a special indentation."
 (defun jccb/set-black-bg nil
   (face-remap-add-relative 'default '(:background "black")))
 
-(use-package eat)
+(use-package eat
+  :config
+  (setq process-adaptive-read-buffering nil)
+  (setq read-process-output-max (* 4 1024 1024)))
 
 (use-package keypression
   :commands keypression-mode)
@@ -2313,14 +2327,21 @@ Lisp function does not specify a special indentation."
 (use-package surround
   :bind-keymap ("M-'" . surround-keymap))
 
+(use-package change-inner
+  :after surround
+  :bind (:map surround-keymap
+         ("I" . change-inner)
+         ("O" . change-outer)))
+
 (use-package gptel
   :if (fboundp 'jccb/get-gemini-key)
-  :bind ("C-c a m" . gptel-menu)
-  :bind ("C-c a a" . gptel-send)
-  :bind ("C-c a r" . gptel-rewrite)
+  :bind ("C-S-<f5>" . gptel-menu)
+  :bind ("<f5> <f5>" . gptel-send)
+  :bind ("<f5> r" . gptel-rewrite)
+  :bind ("<f5> g" . gptel)
   :config
-  ;; (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
-  (setq gptel-model 'gemini-2.0-flash-exp
+  (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
+  (setq gptel-model 'gemini-2.5-pro-exp-03-25
         gptel-backend (gptel-make-gemini "Gemini jccb"
                         :key #'jccb/get-gemini-key
                         :stream t))
@@ -2331,20 +2352,8 @@ Lisp function does not specify a special indentation."
               llama3.2:latest
               qwen2.5:14b)))
 
-(use-package ellama
-  :if (fboundp 'jccb/get-gemini-key)
-  :bind ("C-c a e" . ellama-transient-main-menu)
-  :config
-  (setopt ellama-provider (make-llm-gemini :key (jccb/get-gemini-key)
-                                           :chat-model "gemini-1.5-flash-latest"))
-  (setopt ellama-provider
-          (make-llm-ollama
-           ;; this model should be pulled to use it
-           ;; value should be the same as you print in terminal during pull
-           :chat-model "llama3:8b-instruct-q8_0"
-           :embedding-model "nomic-embed-text"
-           :default-chat-non-standard-params '(("num_ctx" . 8192))))  )
-
+(use-package gptel-fn-complete
+  :bind ("<f5> c" . gptel-fn-complete))
 
 (use-package beancount
   :mode ("\\.beancount\\'" . beancount-mode))
