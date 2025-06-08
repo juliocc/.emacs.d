@@ -87,7 +87,7 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
-(defvar elpaca-installer-version 0.10)
+(defvar elpaca-installer-version 0.11)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -122,9 +122,10 @@
   (unless (require 'elpaca-autoloads nil t)
     (require 'elpaca)
     (elpaca-generate-autoloads "elpaca" repo)
-    (load "./elpaca-autoloads")))
+    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
+
 (setq use-package-enable-imenu-support t)
 (setq use-package-always-ensure t)
 
@@ -934,20 +935,16 @@
 ;;==================================================
 (when *is-a-mac*
   (setq delete-by-moving-to-trash t)
-  ;; left and right commands are meta
+  ;; left commands is meta
   (setq mac-command-modifier 'meta)
-  (setq mac-right-command-modifier 'super)
-  (setq mac-right-option-modifier 'hyper)
   ;; left opt key is super
   (setq mac-option-modifier 'super)
-  ;; right opt is ignored by emacs (useful for mac-style accent input)
-  ;; left and right controls are control
+  ;; control is control
   (setq mac-control-modifier 'control)
-
-  (setq mac-right-control-modifier 'left)
+  ;; pass down left command to MacOS
+  (setq ns-right-alternate-modifier 'none)
   ;; function key is hyper
-  (setq mac-function-modifier 'hyper)
-  (setq default-input-method "MacOSX"))
+  (setq mac-function-modifier 'hyper))
 
 (when *is-a-windowed-mac*
   ;; breaks doom theme ??
@@ -961,15 +958,7 @@
   (setq ns-use-fullscreen-animation nil)
   (setq ns-pop-up-frames nil)
   (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-  (add-to-list 'default-frame-alist '(ns-appearance . dark))
-  ;; set my path manually on mac
-  ;; (Deprecated in favor of fix-mac-path.sh)
-  ;; (setenv "LANG" "en_US.UTF-8")
-  ;; (let* ((mypaths '("~/bin" "~/homebrew/bin" "~/google-cloud-sdk/bin/"))
-  ;;        (expanded (mapcar 'expand-file-name mypaths)))
-  ;;   (setenv "PATH" (concat (string-join expanded ":") ":" (getenv "PATH")))
-  ;;   (setq exec-path (append expanded exec-path)))
-  )
+  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
 
 
 (use-package reveal-in-osx-finder
@@ -1686,6 +1675,40 @@ comment to the line."
 (setq-default python-indent-offset 2)
 
 
+(defun uv-activate ()
+  "Activate Python environment managed by uv based on current project directory.
+Looks for .venv directory in project root and activates the Python interpreter."
+  (interactive)
+  (let* ((project-root (project-root (project-current t)))
+         (venv-path (expand-file-name ".venv" project-root))
+         (python-path (expand-file-name
+                       (if (eq system-type 'windows-nt)
+                           "Scripts/python.exe"
+                         "bin/python")
+                       venv-path)))
+    (if (file-exists-p python-path)
+        (progn
+          ;; Set Python interpreter path
+          (setq python-shell-interpreter python-path)
+
+          ;; Update exec-path to include the venv's bin directory
+          (let ((venv-bin-dir (file-name-directory python-path)))
+            (setq exec-path (cons venv-bin-dir
+                                  (remove venv-bin-dir exec-path))))
+
+          ;; Update PATH environment variable
+          (setenv "PATH" (concat (file-name-directory python-path)
+                                 path-separator
+                                 (getenv "PATH")))
+
+          ;; Update VIRTUAL_ENV environment variable
+          (setenv "VIRTUAL_ENV" venv-path)
+
+          ;; Remove PYTHONHOME if it exists
+          (setenv "PYTHONHOME" nil)
+
+          (message "Activated UV Python environment at %s" venv-path))
+      (error "No UV Python environment found in %s" project-root))))
 
 ;; (use-package scss-mode
 ;;   :config
