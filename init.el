@@ -215,10 +215,12 @@
 ;; ()[]{}<>«»‹› 6bB8&0ODdoa 1tiIlL|\/
 ;; !ij c¢ 5$Ss 7Z2z 9gqp nmMNNMW uvvwWuuw
 ;; x×X .,·°;:¡!¿?`'‘’   ÄAÃÀ TODO"
+;;(use-package show-font)
 
-(let ((jccb/font-name "Iosevka SS04")
+(let ((jccb/font-name "CommitMono")
+      ;; (jccb/font-name "Iosevka SS04")
       (jccb/vp-font-name "Roboto")
-      (jccb/font-size (if *is-a-windowed-mac* 170 150)))
+      (jccb/font-size (if *is-a-windowed-mac* 160 150)))
   (if (member jccb/font-name (font-family-list))
       (progn (set-face-attribute 'default nil
                                  :family jccb/font-name
@@ -267,7 +269,7 @@
 ;;   :ensure nil
 ;;   :hook ((prog-mode conf-mode) . display-fill-column-indicator-mode))
 
-(setq hscroll-margin 5
+(setq hscroll-margin 2
       hscroll-step 1
       ;; Emacs spends too much effort recentering the screen if you scroll the
       ;; cursor more than N lines past window edges (where N is the settings of
@@ -275,14 +277,15 @@
       ;; during large-scale scrolling commands. If kept over 100, the window is
       ;; never automatically recentered.
       scroll-conservatively 101
-      scroll-margin 3
+      scroll-margin 2
       scroll-preserve-screen-position t
       ;; Reduce cursor lag by a tiny bit by not auto-adjusting `window-vscroll'
       ;; for tall lines.
       auto-window-vscroll nil
       ;; mouse
       mouse-wheel-scroll-amount '(5 ((shift) . 2))
-      mouse-wheel-progressive-speed nil)  ; don't accelerate scrolling
+      mouse-wheel-progressive-speed nil ; don't accelerate scrolling
+      recenter-positions '(top 0.25 middle 0.75 bottom))
 
 (pixel-scroll-precision-mode 1)
 
@@ -1016,43 +1019,22 @@
 
 (use-package ztree)
 
-(use-package llm
-  :custom
-  (llm-warn-on-nonfree nil)
-  :init
-  (require 'llm-gemini))
+;; THE FILE DIFFS:
+;; ```
+;; %s
+;; ```
+;; Now write the commit message:
+;; ")
 
-(use-package magit-gptcommit
-  :after (magit jccb-local llm)
-  :demand t
-  :bind (:map git-commit-mode-map
-         ("C-c C-g" . magit-gptcommit-commit-accept))
-  :init
-  (setq magit-gptcommit-llm-provider (make-llm-gemini :key (jccb/get-gemini-key)
-                                                      :chat-model "gemini-2.5-pro-exp-03-25")
-        magit-gptcommit-prompt "You are an expert programmer writing a commit message.
-You went over every file diff that was changed in it.
-Summarize the commit into a single specific and cohesive theme.
-Remember to write in only one line, no more than 50 characters.
-Write your response using the imperative tense following the kernel git commit style guide.
-Write a high level title. Do not include a label in front of the commit title.
+;;   :config
+;;   ;; Enable magit-gptcommit-mode to watch staged changes and generate commit message automatically in magit status buffer
+;;   ;; This mode is optional, you can also use `magit-gptcommit-generate' to generate commit message manually
+;;   ;; `magit-gptcommit-generate' should only execute on magit status buffer currently
+;;   ;; (magit-gptcommit-mode 1)
 
-THE FILE DIFFS:
-```
-%s
-```
-Now write the commit message:
-")
-
-  :config
-  ;; Enable magit-gptcommit-mode to watch staged changes and generate commit message automatically in magit status buffer
-  ;; This mode is optional, you can also use `magit-gptcommit-generate' to generate commit message manually
-  ;; `magit-gptcommit-generate' should only execute on magit status buffer currently
-  ;; (magit-gptcommit-mode 1)
-
-  ;; Add gptcommit transient commands to `magit-commit'
-  ;; Eval (transient-remove-suffix 'magit-commit '(1 -1)) to remove gptcommit transient commands
-  (magit-gptcommit-status-buffer-setup))
+;;   ;; Add gptcommit transient commands to `magit-commit'
+;;   ;; Eval (transient-remove-suffix 'magit-commit '(1 -1)) to remove gptcommit transient commands
+;;   (magit-gptcommit-status-buffer-setup))
 
 ;; (use-package magit-todos
 ;;   :after magit)
@@ -1097,7 +1079,7 @@ Now write the commit message:
     (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
 
 (use-package git-link)
-(use-package git-timemachine)
+;; (use-package git-timemachine)
 ;; (setq dired-vc-rename-file t)
 
 ;;==================================================
@@ -1300,6 +1282,7 @@ Now write the commit message:
         markdown-asymmetric-header t
         markdown-italic-underscore t
         markdown-content-type "application/xhtml+xml"
+        markdown-fontify-whole-heading-line t
         markdown-css-paths
         '("https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
           "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css")
@@ -1392,6 +1375,7 @@ Now write the commit message:
   :bind ("M-z" . zap-up-to-char))
 
 (use-package so-long
+  :ensure nil
   :init (global-so-long-mode t))
 
 (use-package dtrt-indent
@@ -1962,6 +1946,9 @@ Lisp function does not specify a special indentation."
          ("M-s u" . consult-focus-lines)
          ;; Isearch integration
          ("M-s e" . consult-isearch-history)
+         ("M-s ." . consult-line-symbol-at-point)
+         ("M-s ." . consult-line-symbol-at-point)
+         ("M-s M-s ." . isearch-forward-symbol-at-point)
          :map isearch-mode-map
          ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
          ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
@@ -1984,6 +1971,12 @@ Lisp function does not specify a special indentation."
 
   ;; show filtered buffers with SPC
   ;; (add-to-list 'consult-buffer-filter "^\\*")
+
+  (defun consult-line-symbol-at-point ()
+    "Search for a line matching the symbol found near point."
+    (interactive)
+    (consult-line
+     (or (thing-at-point 'symbol))))
 
   (consult-customize
    consult-global-mark consult-mark
@@ -2083,7 +2076,7 @@ Lisp function does not specify a special indentation."
         '(embark-minimal-indicator  ; default is embark-mixed-indicator
           embark-highlight-indicator
           embark-isearch-highlight-indicator))
-
+  (add-to-list 'vertico-multiform-categories '(embark-keybinding grid))
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
@@ -2104,10 +2097,30 @@ Lisp function does not specify a special indentation."
 ;; Misc
 ;;==================================================
 
-;; Use ssh connection sharing, but let me manage it from my ~/.ssh/config
-(customize-set-variable 'tramp-use-connection-share t)
-;; (customize-set-variable 'tramp-ssh-controlmaster-options nil)
-(customize-set-variable 'tramp-ssh-controlmaster-options "-o ControlMaster=auto -o ControlPath=/Users/jccb/.ssh/tmp/master-%%C -o ControlPersist=8h")
+;; ;; Use ssh connection sharing, but let me manage it from my ~/.ssh/config
+;; (customize-set-variable 'tramp-use-connection-share t)
+;; ;; (customize-set-variable 'tramp-ssh-controlmaster-options nil)
+;; (customize-set-variable 'tramp-ssh-controlmaster-options "-o ControlMaster=auto -o ControlPath=/Users/jccb/.ssh/tmp/master-%%C -o ControlPersist=8h")
+
+;; Tramp optimizations.
+;; https://coredumped.dev/2025/06/18/making-tramp-go-brrrr./
+(setq remote-file-name-inhibit-locks t
+      tramp-use-scp-direct-remote-copying t
+      remote-file-name-inhibit-auto-save-visited t)
+
+(setq tramp-copy-size-limit (* 1024 1024) ;; 1MB
+      tramp-verbose 2)
+
+(connection-local-set-profile-variables
+ 'remote-direct-async-process
+ '((tramp-direct-async-process . t)))
+
+(connection-local-set-profiles
+ '(:application tramp :protocol "scp")
+ 'remote-direct-async-process)
+
+(setq magit-tramp-pipe-stty-settings 'pty)
+
 
 (use-package kmacro-x
   :init (kmacro-x-atomic-undo-mode t))
@@ -2161,32 +2174,32 @@ Lisp function does not specify a special indentation."
                 eat-mode-hook))
   (add-hook hook #'sanityinc/no-trailing-whitespace))
 
-(use-package which-key
-  :custom
-  ;; (which-key-sort-order #'which-key-key-order)
-  (which-key-sort-uppercase-first nil)
-  (which-key-add-column-padding 1)
-  (which-key-max-display-columns nil)
-  (which-key-min-display-lines 5)
-  (which-key-idle-delay 1)
-  (which-key-idle-secondary-delay 0.05)
-  (which-key-use-C-h-commands nil)
-  (which-key-side-window-max-height 0.3)
-  (which-key-side-window-slot -10)
-  (which-key-show-prefix 'top)
-  (which-key-show-remaining-keys t)
-  (which-key-max-description-length 45)
-  (which-key-dont-use-unicode nil)
-  ;;(which-key-compute-remaps t)
-  (which-key-allow-multiple-replacements t)
-  ;; (which-key-special-keys nil)
-  ;; (which-key-popup-type 'minibuffer)
-  (which-key-preserve-window-configuration t)
-  ;; (which-key-show-transient-maps t)
-  :init
-  (which-key-mode t)
-  :config
-  (which-key-setup-side-window-bottom))
+;; (use-package which-key
+;;   :custom
+;;   ;; (which-key-sort-order #'which-key-key-order)
+;;   (which-key-sort-uppercase-first nil)
+;;   (which-key-add-column-padding 1)
+;;   (which-key-max-display-columns nil)
+;;   (which-key-min-display-lines 5)
+;;   (which-key-idle-delay 1)
+;;   (which-key-idle-secondary-delay 0.05)
+;;   (which-key-use-C-h-commands nil)
+;;   (which-key-side-window-max-height 0.3)
+;;   (which-key-side-window-slot -10)
+;;   (which-key-show-prefix 'top)
+;;   (which-key-show-remaining-keys t)
+;;   (which-key-max-description-length 45)
+;;   (which-key-dont-use-unicode nil)
+;;   ;;(which-key-compute-remaps t)
+;;   (which-key-allow-multiple-replacements t)
+;;   ;; (which-key-special-keys nil)
+;;   ;; (which-key-popup-type 'minibuffer)
+;;   (which-key-preserve-window-configuration t)
+;;   ;; (which-key-show-transient-maps t)
+;;   :init
+;;   (which-key-mode t)
+;;   :config
+;;   (which-key-setup-side-window-bottom))
 
 (use-package copy-as-format
   :commands copy-as-format)
@@ -2345,7 +2358,7 @@ Lisp function does not specify a special indentation."
 ;; (use-package sh-script
 ;;   :hook (sh-mode . flymake-mode))
 
-(setq recenter-positions '(5 bottom))
+;; (setq recenter-positions '(5 bottom))
 
 (use-package surround
   :bind-keymap ("M-'" . surround-keymap))
@@ -2364,7 +2377,8 @@ Lisp function does not specify a special indentation."
   :bind ("<f5> g" . gptel)
   :config
   (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
-  (setq gptel-model 'gemini-2.5-pro-exp-03-25
+  (setq gptel-model 'gemini-2.5-flash
+        gptel-expert-commands t
         gptel-backend (gptel-make-gemini "Gemini jccb"
                         :key #'jccb/get-gemini-key
                         :stream t))
@@ -2375,8 +2389,21 @@ Lisp function does not specify a special indentation."
               llama3.2:latest
               qwen2.5:14b)))
 
-(use-package gptel-fn-complete
-  :bind ("<f5> c" . gptel-fn-complete))
+(use-package yaml)
+(use-package templatel)
+
+(use-package gptel-prompts
+  :after (gptel yaml templatel)
+  :ensure (:host github :repo "jwiegley/gptel-prompts")
+  :config
+  (gptel-prompts-update)
+  ;; Ensure prompts are updated if prompt files change
+  (gptel-prompts-add-update-watchers))
+
+;; (use-package gptel-fn-complete
+;;   :bind ("<f5> c" . gptel-fn-complete))
+
+;;(use-pac)
 
 (use-package beancount
   :mode ("\\.beancount\\'" . beancount-mode))
