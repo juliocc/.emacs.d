@@ -992,7 +992,9 @@
 ;;   :config
 ;;   (setq magit-delta-delta-args (append magit-delta-delta-args '("--features" "magit-delta"))))
 
+;;(use-package cond-let)
 (use-package transient)
+(use-package ztree)
 
 (use-package magit
   ;;:defer 1
@@ -1017,7 +1019,6 @@
    magit-save-repository-buffers 'dontask
    git-commit-summary-max-length 70))
 
-(use-package ztree)
 
 ;; THE FILE DIFFS:
 ;; ```
@@ -1989,16 +1990,16 @@ Lisp function does not specify a special indentation."
 
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
+   consult-source-bookmark consult-source-file-register
+   consult-source-recent-file consult-source-project-recent-file
    consult-line
    :preview-key '("C-S-<return>"
                   :debounce 0.1 "<up>" "<down>"))
 
   ;; narrow to files by default
-  (dolist (src consult-buffer-sources)
-    (unless (eq src 'consult--source-buffer)
-      (set src (plist-put (symbol-value src) :hidden t))))
+  ;; (dolist (src consult-buffer-sources)
+  ;;   (unless (eq src 'consult--source-buffer)
+  ;;     (set src (plist-put (symbol-value src) :hidden t))))
 
   ;;(define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   (advice-add #'register-preview :override #'consult-register-window)
@@ -2006,7 +2007,7 @@ Lisp function does not specify a special indentation."
 
   ;; using full file names in buffer
   ;; https://amitp.blogspot.com/2024/05/emacs-consult-buffer-filenames.html
-  (defun my/consult--source-buffer ()
+  (defun my/consult-source-buffer ()
     "Make consult-buffer match the entire filename of a buffer"
     ;; items is a list of (name . buffer)
     (let ((items (consult--buffer-query :sort 'visibility
@@ -2025,16 +2026,17 @@ Lisp function does not specify a special indentation."
            (setq label (propertize label 'face 'consult-buffer)))
          (cons label buffer))
        items)))
-  (defvar my/consult--source-buffer
+  (defvar my/consult-source-buffer
     `(:name     "Open file"
       :narrow   ?o
       :category buffer
       :history  buffer-name-history
       :state    ,#'consult--buffer-state
       :default  t
-      :items    ,#'my/consult--source-buffer)
+      :items    ,#'my/consult-source-buffer)
     "Buffer with filename matching for `consult-buffer'.")
-  (cl-nsubst 'my/consult--source-buffer 'consult--source-buffer consult-buffer-sources))
+  (cl-nsubst 'my/consult-source-buffer 'consult-source-buffer consult-buffer-sources)
+  )
 
 (use-package consult-eglot)
 
