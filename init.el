@@ -848,17 +848,17 @@
   )
 
 (use-package winum
-  :bind*
-  ("M-0" . winum-select-window-0-or-10)
-  ("M-1" . winum-select-window-1)
-  ("M-2" . winum-select-window-2)
-  ("M-3" . winum-select-window-3)
-  ("M-4" . winum-select-window-4)
-  ("M-5" . winum-select-window-5)
-  ("M-6" . winum-select-window-6)
-  ("M-7" . winum-select-window-7)
-  ("M-8" . winum-select-window-8)
-  ("M-9" . winum-select-window-9)
+  ;; :bind*
+  ;; ("M-0" . winum-select-window-0-or-10)
+  ;; ("M-1" . winum-select-window-1)
+  ;; ("M-2" . winum-select-window-2)
+  ;; ("M-3" . winum-select-window-3)
+  ;; ("M-4" . winum-select-window-4)
+  ;; ("M-5" . winum-select-window-5)
+  ;; ("M-6" . winum-select-window-6)
+  ;; ("M-7" . winum-select-window-7)
+  ;; ("M-8" . winum-select-window-8)
+  ;; ("M-9" . winum-select-window-9)
   :init
   (winum-mode +1))
 
@@ -873,6 +873,7 @@
 (bind-key "<f2>" #'previous-buffer)
 (bind-key "S-<f2>" #'next-buffer)
 (bind-key "C-M-o" #'mode-line-other-buffer)
+;;(bind-key "C-x C-b" #'mode-line-other-buffer)
 (bind-key "C-x k" #'kill-current-buffer)
 
 (use-package jccb-windows
@@ -1005,6 +1006,7 @@
   :config
   (global-git-commit-mode +1)
   (setq
+   magit-diff-visit-prefer-worktree t
    magit-format-file-function #'magit-format-file-nerd-icons
    magit-bury-buffer-function #'magit-restore-window-configuration
    ;; magit-revision-show-gravatars '("^Author:     " . "^Commit:     ")
@@ -1086,6 +1088,10 @@
 ;;==================================================
 ;; Search settings
 ;;=================================================
+
+(use-package consult-ripfd
+  :ensure (:host github :repo "jdtsmith/consult-ripfd")
+  :bind  ("s-F" . consult-ripfd))
 
 (use-package ripgrep
   :commands ripgrep-regexp)
@@ -1392,7 +1398,8 @@
   :commands dumb-jump-xref-activate
   :init
   (add-to-list 'xref-backend-functions #'dumb-jump-xref-activate t)
-  (setq dumb-jump-prefer-searcher 'rg))
+  (setq dumb-jump-prefer-searcher 'rg)
+  (setq xref-show-definitions-function #'xref-show-definitions-completing-read))
 
 ;; (use-package xref
 ;;   :hook (xref-after-jump . xref-pulse-momentarily)
@@ -1446,10 +1453,14 @@
 
 ;; Cut/copy the current line if no region is active
 (use-package whole-line-or-region
-  :hook ((text-mode prog-mode conf-mode) . whole-line-or-region-local-mode)
-  ;;:bind ("C-w" . backward-kill-word)
+  ;; :hook ((text-mode prog-mode conf-mode) . whole-line-or-region-local-mode)
+  ;; :bind ("C-w" . backward-kill-word)
   :config
-  (whole-line-or-region-global-mode +1))
+  (whole-line-or-region-global-mode +1)
+  (with-eval-after-load 'embark
+    (cl-pushnew 'embark--mark-target
+                (alist-get 'whole-line-or-region-delete-region
+                           embark-around-action-hooks))))
 
 (use-package puni
   ;; :hook ((after-init . puni-global-mode)
@@ -2441,6 +2452,18 @@ The DWIM behaviour of this command is as follows:
     (keyboard-quit))))
 
 (bind-key "C-g" #'prot/keyboard-quit-dwim)
+
+
+;; (use-package show-inactive-region
+;;   :hook (prog-mode . show-inactive-region-mode))
+
+(use-package visual-shorthands
+  :config
+  (global-visual-shorthands-mode 1))
+
+(use-package javelin
+  :config
+  (global-javelin-minor-mode 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; closing
