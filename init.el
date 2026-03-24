@@ -87,15 +87,15 @@
                     ":+VERS-TLS1.3")
                 ":+VERS-TLS1.2")))
 
-(defvar elpaca-installer-version 0.11)
+(defvar elpaca-installer-version 0.12)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                               :ref nil :depth 1 :inherit ignore
                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca--activate-package)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+                              :build (:not elpaca-activate)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
        (build (expand-file-name "elpaca/" elpaca-builds-directory))
        (order (cdr elpaca-order))
        (default-directory repo))
@@ -342,7 +342,7 @@
       nobreak-char-display 0
       large-file-warning-threshold 100000000
       image-animate-loop t
-      find-file-visit-truename t
+      find-file-visit-truename nil
       vc-follow-symlinks t
       ind-file-suppress-same-file-warnings t)
 
@@ -1061,6 +1061,10 @@
 ;;   (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
 ;;   (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
 ;;   (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+
+(use-package magit-pre-commit
+  :ensure (:host github :repo "DamianB-BitFlipper/magit-pre-commit.el")
+  :after magit)
 
 (use-package diff-hl
   :after magit
