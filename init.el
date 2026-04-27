@@ -1907,13 +1907,13 @@ Lisp function does not specify a special indentation."
   ;;             ("C-c C-e" . eglot-rename)
   ;;             ("C-c C-o" . python-sort-imports)
   ;;             ("C-c C-f" . eglot-format-buffer))
-  :hook ((bash-mode . eglot-ensure)
-         (sh-mode . eglot-ensure)
-         (python-mode . eglot-ensure)
-         (markdown-mode . eglot-ensure)
-         (yaml-mode . eglot-ensure)
-         (json-mode . eglot-ensure)
-         (go-mode . eglot-ensure))
+  ;; :hook ((bash-mode . eglot-ensure)
+  ;;        (sh-mode . eglot-ensure)
+  ;;        (python-mode . eglot-ensure)
+  ;;        (markdown-mode . eglot-ensure)
+  ;;        (yaml-mode . eglot-ensure)
+  ;;        (json-mode . eglot-ensure)
+  ;;        (go-mode . eglot-ensure))
   ;; :custom
   ;; (eglot-report-progress nil)
   ;; :config
@@ -2114,10 +2114,14 @@ Lisp function does not specify a special indentation."
 ;; Misc
 ;;==================================================
 
-;; ;; Use ssh connection sharing, but let me manage it from my ~/.ssh/config
-;; (customize-set-variable 'tramp-use-connection-share t)
-;; ;; (customize-set-variable 'tramp-ssh-controlmaster-options nil)
-;; (customize-set-variable 'tramp-ssh-controlmaster-options "-o ControlMaster=auto -o ControlPath=/Users/jccb/.ssh/tmp/master-%%C -o ControlPersist=8h")
+(customize-set-variable 'tramp-use-connection-share nil)
+
+;; Disable VC over tramp
+(setq vc-ignore-dir-regexp
+      (format "\\(%s\\)\\|\\(%s\\)"
+              vc-ignore-dir-regexp
+              tramp-file-name-regexp))
+
 
 ;; Tramp optimizations.
 ;; https://coredumped.dev/2025/06/18/making-tramp-go-brrrr./
@@ -2125,8 +2129,7 @@ Lisp function does not specify a special indentation."
       tramp-use-scp-direct-remote-copying t
       remote-file-name-inhibit-auto-save-visited t)
 
-(setq tramp-copy-size-limit (* 1024 1024) ;; 1MB
-      tramp-verbose 2)
+(setq tramp-copy-size-limit (* 1024 1024)) ;; 1MB
 
 (connection-local-set-profile-variables
  'remote-direct-async-process
