@@ -65,7 +65,8 @@
 ;; Silence compiler warnings as they can be pretty disruptive
 (setq native-comp-async-report-warnings-errors 'silent)
 ;; try to remove old compilation caches after 10 seconds idle
-(run-with-idle-timer 10 nil #'native-compile-prune-cache)
+(when (fboundp 'native-compile-prune-chance)
+  (run-with-idle-timer 10 nil #'native-compile-prune-cache))
 
 ;;==================================================
 ;; Setup package management tools
